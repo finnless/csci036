@@ -1,0 +1,462 @@
+---
+title: "Class Notes 9-9-2024 Data Transformation with dplyr"
+author: "Sarah Cannon"
+date: "9/9/2024"
+output: html_document
+---
+
+
+# Announcements
+
+Homework 2 Due tomorrow (TUESADAY) night at 11:59pm on Gradescope as a PDF. Assign *all* pages to a question! https://help.gradescope.com/article/fnbn2knmq1-how-can-i-submit-my-homework-as-a-pdf
+
+Upcoming office hours: 
+
+- Tuesday 10:30-11:30am and 2-3pm
+- Wednesday 1:15-2:15pm
+
+Homework Collaboration: If want to be connected with classmates, send me an email; will put students in touch with each other
+
+Template for class notes: On Canvas, Files > Class Materials > 9-9 Class Notes Template
+
+QCL one-on-one appointments and drop-in schedule: https://www.cmc.edu/qcl/mentoring
+
+Questions about upcoming schedule?
+
+Questions from preclass video?
+
+
+
+# Transforming Data 
+
+```{r, message = FALSE}
+library(nycflights13)
+library(tidyverse) # Or: dplyr, which has a subset of what's in the tidyverse
+```
+
+```{r}
+flights
+```
+
+## Filter
+
+```{r}
+lateflights <- filter(flights, dep_delay > 60)
+lateflights
+```
+
+What is really happening: making a TRUE/FALSE list for every row
+
+```{r}
+head(flights$dep_delay > 60, 150)
+```
+
+Keep only rows corresponding to TRUE
+
+Is this all flights that did not depart within 60 minutes of their scheduled time?
+
+NO!
+
+```{r}
+tail(flights)
+```
+
+We missed the flights that didn't take off! 
+
+Data often has missing values. E.g., a survey respondent didn't fill out age.
+
+Appears in data frame as NA: "Not Available"
+(Similar to NaN: two types of unavailable values) 
+
+Data set we'll be using in activity has some NA values: 
+
+```{r}
+starwars
+```
+
+Cannot compare NA's to values, such comparisons result in NA: 
+
+```{r}
+NA > 60
+```
+
+```{r}
+NA + 70
+```
+
+```{r}
+tail(flights$dep_delay > 60, 150)
+```
+
+filter() only keep values that are TRUE, not values that are FALSE or NA
+
+We can explicitly check to determine whether something is NA
+
+```{r}
+is.na(3)
+is.na(NA)
+```
+
+Can apply to vectors as well: 
+
+```{r}
+x <- c(56, 2, NA, 42)
+is.na(x)
+```
+
+Find all flights that didn't take off: 
+
+```{r}
+filter(flights, is.na(dep_time))
+```
+
+There were 8255 flights with no departure time listed
+
+Would need to know more about how the data was collected to be sure these were actually cancelled/never took off.
+
+Should also check that dep_delay is NA exactly when dep_time is NA, etc. 
+
+Could there be a flight with dep_time = NA, but dep_delay != NA? 
+(Can use ! to negate True/False values)
+
+```{r}
+x <- c(3,5,7,NA,9)
+is.na(x)
+!is.na(x) # checking whether things are not NA
+```
+
+(This applies to any TRUE/FALSE vectors, including others that might appear in a filter())
+
+```{r}
+filter(flights, is.na(dep_time), !is.na(dep_delay))
+filter(flights, !is.na(dep_time), is.na(dep_delay))
+```
+
+(Recall: in filter, comma acts like AND)
+
+Are no rows, so there are no flights where dep_time is NA but dep_delay is not NA, and vice versa
+
+Can check arr_time, arr_delay, air_time too. 
+
+All flights that did not take off within an hour of their scheduled departure time: 
+
+```{r}
+not_on_time <- filter(flights, dep_delay > 60 | is.na(dep_delay))
+not_on_time
+```
+
+(More examples of is.na() in textbook)
+
+
+## Using arrange to order rows
+
+Will sort rows from lowest to highest: 
+
+```{r}
+arrange(flights, year, month, day)
+```
+
+- first argument = data set
+- second argument = main column to sort by 
+- third argument = column to sort by if there are ties in the first argument
+- fourth argument = column to sort by if there are ties in the first and second argument
+etc. 
+(only need to have one column to sort by, rest are optional)
+
+If you want to sort from high to low, surround that parameter with the command desc
+
+```{r}
+arrange(flights, desc(dep_delay))
+```
+
+Longest delay: 1301 minutes, or approx 21 hours
+
+(Arranging is useful for finding smallest or largest values)
+
+(usually, NA values put at end)
+
+Can put in alphabetical order too: 
+
+```{r}
+arrange(flights, dest)
+```
+
+Or in reverse alphabetical order: 
+
+```{r}
+arrange(flights, desc(dest))
+```
+
+
+## Using select to pick out columns/factors
+
+filter = choose a subset of rows based on criteria
+
+select = choose a subset of columns/variables
+
+```{r}
+select(flights, year, dep_delay)
+```
+
+First argument = data set
+
+Remaining arguments tell you which columns/variables to keep or lose, and the order to put them in. 
+
+Keep all columns/variables in a range:
+
+```{r}
+select(flights, year:day)
+```
+
+Keep all columns except year: 
+
+```{r}
+select(flights, -year)
+```
+
+Put origin first, then dest, then everything else in its original order: 
+
+```{r}
+select(flights, origin, dest, everything())
+```
+
+On homework: put relevant columns (asked about in question) first, otherwise can't see them in knitted file
+
+
+### Helper Functions
+
+To pick out variable names that meet certain criteria:
+
+starts_with()
+
+```{r}
+select(flights, starts_with("dep"))
+```
+
+contains()
+```{r}
+select(flights, contains("dep"))
+```
+
+ends_with()
+
+```{r}
+select(flights, ends_with("time"))
+```
+
+Can combine different ways of selecting columns/factors in one command: 
+```{r}
+flights_sml <- select(flights, 
+                      year:day, 
+                      ends_with("delay"), 
+                      distance, 
+                      air_time
+                      )
+flights_sml
+```
+
+R knows the command continues onto the next line because the open parentheses ( hasn't been closed yet
+
+
+## Using mutate to create new columns
+
+Example: in a spreadsheet, easy to make a new column that is the difference of two previous columns
+
+For a tibble, do this with mutate()
+
+Add two new columns:
+
+```{r}
+mutate(flights_sml, 
+       gain = dep_delay - arr_delay, 
+       speed = distance/air_time * 60 )
+```
+
+First argument = data set
+
+Other arguments = new columns and how to compute them. 
+
+Argument format: [new column name] = [formula for calculating it, in terms of other columns]
+
+For Homework: then, put relevant columns first! 
+
+```{r}
+flights_sml_newcols <- mutate(flights_sml, 
+       gain = dep_delay - arr_delay, 
+       speed = distance / air_time * 60)
+select(flights_sml_newcols, 
+       dep_delay, arr_delay, 
+       gain, distance, air_time, 
+       speed, everything())
+```
+
+Check knitted file, including PDF, to be sure all show up! 
+
+Also check: can see all of code (especially important when knitting directly to PDF)
+
+
+### if/else function, pmin and pmax
+
+Can also use if/else statements
+
+For example, what if you want to know which of arr_delay and dep_delay is larger? 
+
+ifelse function: 
+1st argument is something that evaluates to TRUE or FALSE
+2nd argument is output if first argument is TRUE
+3rd argument is ourput if the first argument is FALSE
+
+```{r}
+flights_delay <- mutate(flights, 
+                        larger_delay = ifelse(arr_delay >= dep_delay, 
+                                              "arr", 
+                                              "dep"))
+
+select(flights_delay, dep_delay, arr_delay, larger_delay)
+```
+
+
+What if just want to put the larger of the two delay amounts in that column? 
+
+```{r}
+flights_delay <- mutate(flights, 
+                        larger_delay = ifelse(arr_delay >= dep_delay, 
+                                              arr_delay, 
+                                              dep_delay))
+
+select(flights_delay, dep_delay, arr_delay, larger_delay)
+```
+
+Are really just doing a max! 
+
+**DON'T USE MAX() WITHIN MUTATE**
+
+Is a max of two different columns, not a max of a single list, use pmax instead. 
+
+```{r}
+flights_pmax <- mutate(flights, larger_delay = pmax(arr_delay, dep_delay))
+
+select(flights_pmax, dep_delay, arr_delay, larger_delay)
+```
+
+max() just finds the largest entry anywhere in both columns, and inserts that in new column: 
+
+```{r}
+flights_max <- mutate(flights, larger_delay = max(arr_delay, dep_delay))
+
+select(flights_max, dep_delay, arr_delay, larger_delay)
+```
+
+(this is almost never what you want to do)
+
+
+### str_c
+
+What if you want to combine strings in different columns? Use str_c()
+
+```{r}
+mutate(flights, route = str_c(origin, " to ", dest))
+```
+
+Arguments can be columns in the data set or fixed strings (same string used for each row)
+
+
+### rank()
+
+Use to find the order of rows without actually reordering them
+
+rank(list) returns the rank of each item in the list (from smallest to largest) 
+
+```{r}
+rank(c(9,5,8))
+```
+
+9 is the largest of the three numbers, so it has rank 3
+5 is the smallest of the numbers, so it has rank 1
+8 is the middle of the three numbers, so it has rank 2
+
+```{r}
+mutate(starwars, height_order = rank(height))
+```
+
+Luke Skywalker is the 28th shortest character in the dataset. 
+
+Note: when there's a tie, can get fractional ranks
+
+```{r}
+rank(c(9,5,8,8))
+```
+
+Note: to rank in reverse order, use desc(), just like with arrange. 
+
+
+# Filtering Helper Functions
+
+Is there a version of starts_with(), ends_with(), contains() for filtering?
+
+Yes, but it's tricky, and we'll do this later in the course. 
+
+For contains(), use str_detect()
+
+```{r}
+filter(flights, str_detect(dest, "X"))
+```
+
+For more complicated things, use regular expressions; will spend a whole week on this!
+
+Additional helper functions for filter(): Wednesday's preclass video
+
+
+# Adding TRUE, FALSE
+
+In R, TRUE values are treated as 1s, FALSE values are treated as 0s
+
+```{r}
+x <- c(TRUE, FALSE, TRUE, TRUE)
+
+sum(x) # Does 1 + 0 + 1 + 1 = 3
+```
+
+When you sum a bunch of TRUE/FALSE values, the answer is the number of TRUEs
+
+This can be very useful for understanding data
+
+How many flights have dep_delay > 60? 
+
+```{r}
+sum( flights$dep_delay > 60 ) 
+# You get NA because when you sum thins and one element is NA< the whole sum is NA
+```
+```{r}
+sum( is.na(flights$dep_delay) )
+```
+There are 8255 flights that have a departure delay of NA. 
+
+
+# Summary
+
+Can transform data via: 
+
+filter: pick out a subset of rows
+
+arrange: sort rows
+
+select: pick out a subset of columns
+
+mutate: create new columns
+
+For all, first input is the data frame, remaining inputs say what to do with it. 
+
+When you sum a bunch of TRUE/FALSE values, the answer is the number of TRUEs
+
+
+# Activity 
+
+On Canvas, Files > Class Material > 9-9 Activity
+
+If finish all regular questions, move on to bonus question.
+
+If finish bonus question, can leave: check in with Prof. Cannon before leaving
+
+Feel free to talk to/work with others around you.
+

@@ -1,0 +1,74 @@
+---
+title: "CSCI 36 - Fall 2024 - Activity - August 26"
+author: "Prof. Sarah Cannon"
+date: "8/26/2024"
+output: html_document
+---
+
+
+1. **Installing R and RStudio.** 
+
+The main programming environment we'll be using this semester is RStudio. It is already installed on all CMC lab and classroom computers. You will need a CMC account to access these computers; off-campus students who would like a CMC account should email Prof. Cannon.
+
+You can also install R and RStudio on your own personal computer, if you'd like. There are two steps to this installation, and it's important to do them in this order: 
+
+- Install R: \url{https://cloud.r-project.org/}, choose the appropriate version for your computer's operating system
+- Install RStudio: \url{https://www.rstudio.com/products/rstudio/download/}, choose the free RStudio Desktop version
+
+Even if you have R installed already, please follow these steps anyway so that you have the most up-to-date version of R. 
+
+If you have any problems with this installation process, Prof. Cannon's office hours during the first week of the semester are Wednesday 2-3pm. Or, email Prof. Cannon to set up a meeting at a different time. 
+
+
+
+2. **Here are the example commands we used in class.  Try these - and other similar commands - in the RStudio Console. What other arithmetic operations can you do? **
+
+```{r, results = 'hide'}
+2+3 
+x <- 2
+y <- 3
+x
+y
+x + y
+x - y
+```
+
+
+
+3. **Open a new RMarkdown file.  Delete all text except the first 6 lines, make a new code chunk, and run some commands similar to the previous question**
+
+
+
+
+
+4. **Download the file "8-26 Activity.rmd" from Canvas and open it in RStudio. Knit this file and take a look at what's produced. For the rest of the activity, you can work directly in this file (in code chunks) if you'd like. **
+
+
+
+
+5. **Here's the code we used for the trees data set. **
+
+```{r, results = 'hide', message = FALSE, warning = FALSE}
+trees
+?trees
+plot(trees$Girth, trees$Height)
+```
+
+**What other variable is in the trees data set?  Plot the relationship between this new variable and Girth, and this new variable and Height. What do you observe? **
+
+
+
+
+
+6. **There are many other built-in data sets in R. You can access them by typing:  **
+
+```{r, results = 'hide'}
+data()
+```
+
+> **Pick a different data set from this list.  Figure out what's in it, make some plots with this data, and describe what you've observed. Share your findings with others around you.**
+
+
+
+
+

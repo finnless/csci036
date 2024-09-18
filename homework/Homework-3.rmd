@@ -1,0 +1,504 @@
+---
+title: "Homework 3"
+name: "Prof. Sarah Cannon"
+date: "Due 9/17/2024"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+**Classmates/other resources consulted:** N.A.
+
+
+```{r, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(nycflights13)
+# To make the figures show up smaller in the knitted file:
+knitr::opts_chunk$set(fig.width=5, fig.height=3)
+```
+
+> **Throughout this assignment, you will use the following data sets. Run the following code chunk to import these data sets: **
+
+```{r, message = FALSE}
+artists <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-01-17/artists.csv") 
+```
+
+
+
+## Question 1 (16 points)
+
+> a. **Import the artists data set by running the code chunk above. Output this data set and explain what is in it (you can find more information about the data set at https://github.com/rfordatascience/tidytuesday/tree/master/data/2023/2023-01-17)**
+
+
+```{r}
+artists
+```
+This data set lists several artists and information about their representation in Art textbooks and other venues.
+
+
+> b. **Transform the artists data set to only include rows where the book is Janson.**
+
+```{r}
+filter(artists, book == "Janson")
+```
+
+
+> c. **Transform the artists data set to only include rows where the edition_number is larger than 10. **
+
+```{r}
+filter(artists, edition_number > 10)
+```
+
+
+
+> d. **Transform the artists data set to only include rows where the artist's nationality is Chinese, Indian, Japanese, Korean, Iranian, or Thai. **
+
+```{r}
+filter(artists, artist_nationality %in% c("Chinese", "Indian", "Japanese", "Korean", "Iranian", "Thai"))
+```
+
+
+> e. **Transform the artists data set to only include rows where the artist's nationality is *not* Chinese, Indian, Japanese, Korean, Iranian, or Thai. Hint: just make one small change to your code from the previous part. **
+
+```{r}
+filter(artists, !artist_nationality %in% c("Chinese", "Indian", "Japanese", "Korean", "Iranian", "Thai"))
+```
+
+> f. **Transform the artists data set to only include rows where the artist's nationality is French and the year is between between 2000 and 2010.**
+
+```{r}
+filter(artists, artist_nationality == "French", year > 2000, year < 2010)
+```
+
+
+> g. **Transform the artists data set to only include rows where the artist's nationality includes "American". For example, you should artists that are American, German-American, Cuban-American, etc.  You should not need to type out all of these nationalities in your solution.**
+
+```{r}
+filter(artists, grepl("American", artist_nationality))
+```
+
+
+> h. **Transform the artists data set to only show rows where the artist's gender is female or their race is not white**
+
+```{r}
+filter(artists, artist_gender == "Female"| !artist_race == "White")
+```
+
+
+
+
+&nbsp;
+
+## Question 2 (10 points)
+
+> a. **Sort the artists data set by edition_number, from earliest (first edition) to latest.**
+
+```{r}
+artists %>% arrange(edition_number)
+```
+
+
+
+> b. **Sort the artists data set by year, from the most recent year to the oldest year. **
+
+```{r}
+artists %>% arrange(desc(edition_number))
+```
+
+> c. **Write a command to output the columns of artists from artist_name to artist_ethnicity, in order. Hint: You should not need to write them all out.**
+
+```{r}
+select(artists, artist_name:artist_ethnicity)
+```
+
+
+> d. **Write a command to output all variables of artists except for moma_count_to_year and whitney_count_to_year.  Hint: You should not need to write them all out.**
+
+
+```{r}
+select(artists, -moma_count_to_year, -whitney_count_to_year)
+```
+
+
+> e. **Write a command to output year and all columns of the artists data set that reference artists, that is, that include the string "artist" in the column name.  Hint: you should not need to write out all columns that include the string "artist". **
+
+```{r}
+select(artists, year, matches("artist"))
+```
+
+
+
+&nbsp;
+
+## Question 3 (8 points)
+
+> a. (3 points) **Explain why the following three commands all produce the same tibble**
+
+```{r}
+artists %>% filter(artist_name == "Lorna Simpson") %>% select(artist_name, year, whitney_count_to_year)
+```
+
+```{r}
+Lorna_Simpson <- filter(artists, artist_name == "Lorna Simpson") 
+select(Lorna_Simpson, artist_name, year, whitney_count_to_year)
+```
+
+```{r}
+select(filter(artists, artist_name == "Lorna Simpson"), artist_name, year, whitney_count_to_year)
+```
+
+The same transformations are being performed in each case, just written in different ways and in a different order.
+
+
+
+> b. (5 points) **Write a command or series of commands that (1) transforms the artists data set to only keep rows where the year is 1990 or later; (2) adds a new column for the total museum exhibition count, which is the moma_count_to_year plus the whitney_count_to_year; (3) Sorts the data by total number of museum exhibitions, from largest to smallest; and (4) moves the artist, year, total museum exhibitions, moma_count_to_year, and whitney_count_to_year to the left of the data set, displaying all the other columns after them. (Hint: use pipes) **
+
+
+```{r}
+artists %>%
+  filter(year >= 1990) %>%
+  mutate(total_count_to_year = moma_count_to_year + whitney_count_to_year) %>%
+  arrange(desc(total_count_to_year)) %>%
+  select(artist_name, year, total_count_to_year, moma_count_to_year, whitney_count_to_year, everything())
+```
+
+
+
+&nbsp;
+
+## Question 4 (10 points)
+
+>a. **Explain why the comparison x == y in the following code doesn't produce FALSE, even though x and y are different vectors. **
+
+```{r}
+x <- c(5,2,9,4)
+y <- c(5,2,11,6)
+x == y
+```
+
+Piece wise comparison. 
+
+
+> b. **Explain why you get the answer that you do in the following code.**
+
+```{r}
+
+x <- c(TRUE, TRUE, FALSE, TRUE)
+
+y <- c(TRUE, FALSE, TRUE, FALSE)
+
+x | y
+
+```
+
+Piecewise OR comparison.
+
+
+> c. **Explain why you get the answer that you do in the following code.**
+
+```{r}
+x <- c(TRUE, TRUE, FALSE, FALSE, TRUE, TRUE, TRUE, FALSE)
+sum(x)
+```
+
+Counts trues.
+
+> d. **Explain why the following results return FALSE, and how you should compare these values instead. You can give one explanation for both, you do not need to give a separate explanation for each. (note: every computer is different, and while they both return FALSE on my computer, they may not both return FALSE on your computer. Regardless, discuss why FALSE might show up as an output and what you should do instead). **
+
+```{r}
+0.58 - 0.08 == 0.5
+sqrt(7)^2 == 7
+```
+
+Floating point operations are non-deterministic. Instead check if difference is within a small tolerance level.
+
+> e. **This code makes a small tibbles with information about three pets (you don't need to know how this code chunk works):**
+
+```{r}
+pets <- tibble(name = c("Sparky", "Lassie", "Patches"), 
+               weight_last_month = c(30, 55, 12), 
+               weight_this_month = c(32, 53, 11))
+pets
+```
+
+> **You want to add a new column to this tibble that says which of the two weight values for each pet is smaller, and write the following code:**
+
+```{r}
+pets %>% mutate(smaller_weight = min(weight_last_month, weight_this_month))
+```
+
+> **Explain how you should change your code so that the new column correctly has values 30, 53, and 11.**  
+Need to do piecewise min.
+
+```{r}
+pets %>% mutate(smaller_weight = pmin(weight_last_month, weight_this_month))
+```
+
+
+
+&nbsp;
+
+## Question 5 (4 points)
+
+>a. **Why does NA | TRUE not result in NA, but NA | FALSE results in NA?  (Hint: What is the definition of | ? When is A|B TRUE?)**
+
+```{r}
+NA | TRUE
+NA | FALSE
+```
+
+| is the OR operator which returns TRUE if at least one of the operands is TRUE. Since NA is not known to be true or false, the output is NA.
+
+
+>b. **Why does NA & FALSE not result in NA? ** 
+
+```{r}
+NA & FALSE
+```
+
+& is the AND operator which returns false if either A or B is FALSE.
+
+
+&nbsp;
+
+## Question 6 (14 points)
+
+> a. (3 points) **Summarize the values in the artists data set:  Make a new tibble with a single row, and values for the earliest year, the most recent year, the mean space_ratio_per_page_total, the median space_ratio_per_page_total, and the total number of rows. **
+
+```{r}
+artists %>% summarize(
+  earliest_year = min(year),
+  most_recent_year = max(year),
+  mean_space_ratio_per_page_total = mean(space_ratio_per_page_total),
+  median_space_ratio_per_page_total = median(space_ratio_per_page_total),
+  total_rows = n()
+  )
+```
+
+
+
+> b. (2 points)  **Provide the same information as in the previous part, but with a row for each artist_race instead of one row for the whole data set.**
+
+```{r}
+race_summary <- artists %>% group_by(artist_race) %>%
+  summarize(
+  earliest_year = min(year),
+  most_recent_year = max(year),
+  mean_space_ratio_per_page_total = mean(space_ratio_per_page_total),
+  median_space_ratio_per_page_total = median(space_ratio_per_page_total),
+  total_rows = n()
+  )
+
+race_summary
+```
+
+
+> c. (3 points) **Using the table you made in part (b), make a bar chart that has a bar for each artist_race, where the height (or length) of the bar is the average space_ratio_per_page_total.**
+
+```{r}
+ggplot(race_summary, aes(x = artist_race, y = mean_space_ratio_per_page_total)) + geom_bar(stat = "identity")
+```
+          
+
+
+> d. (3 points) **We see in the previous two parts that one of the artist_race values is N/A. Why does the following command not work to find the artists in the data set where the race is N/A, and how would you change it so it does?**
+
+```{r}
+filter(artists, is.na(artist_race))
+```
+
+The command doesn't work because N/A is encoded as a string in this example. Filtering by the string "N/A" works.
+
+```{r}
+filter(artists, artist_race == "N/A")
+```
+
+
+> e. (3 points) **Instead of changing your command, change the data set:  Add a new column for race: this column should be identical to the artist_race column for the races that are not N/A, but the races that are N/A should instead be something that can be found using is.na().**
+
+```{r}
+mutate(artists, artist_race_na = ifelse(grepl("N/A", artist_race), NA, artist_race))
+```
+
+
+
+## Question 7 (6 points) 
+
+> a. (2 points) **For the flights data set, make a new column that ranks the flights according to arrival delay, from largest to smallest.**
+
+```{r}
+mutate(flights, arr_delay_rank = dense_rank(desc(arr_delay)))
+```
+
+
+> b. (2 points) **Modify your code from the previous part so that your new column ranks the flights according to arrival delay from largest to smallest *within each day of the year*. That is, all flights on January 1st should be ranked from largest to smallest, all flights on January 2nd should be ranked from largest to smallest, etc.**
+
+```{r}
+flights %>% group_by(year, month, day) %>%
+  mutate(arr_delay_rank = dense_rank(desc(arr_delay)))
+```
+
+
+> c. (2 points) **Filter the data set you made in the previous part to only contain the flight(s) with the longest arrival delay on each day, that is, flights where the rank of the arrival delay is less than 2  (Your resulting table will have 366 rows because one day had a tie for the most-delayed flight, where both flights received rank 1.5). **
+
+```{r}
+flights %>% group_by(year, month, day) %>%
+  mutate(arr_delay_rank = dense_rank(desc(arr_delay))) %>%
+  filter(arr_delay_rank < 2)
+```
+
+
+
+
+## Question 8 (10 points) 
+
+> a. (3 points) **In the flights data set, the hour column identifies which hour during the day each flight was scheduled to take off. Make a summary tibble that shows, for each hour, how many flights were scheduled to take off and, of the flights that did take off, what the median and mean departure delays are. **
+
+```{r}
+hourly_flights <- flights %>%
+  group_by(hour) %>%
+  summarize(
+          count_flights = n(),
+          median_dep_delay = median(dep_delay, na.rm = TRUE),
+          mean_dep_delay = mean(dep_delay, na.rm = TRUE)
+  )
+
+hourly_flights
+```
+
+
+
+> b. (2 points) **Make a line graph (using a new geom we used this week) that shows, for each hour during the day, what the average departure delay is for that hour. **
+
+```{r}
+ggplot(hourly_flights, aes(x = hour, y = mean_dep_delay)) + geom_line()
+```
+
+
+
+> c.  (5 points) **Write a command or series of commands that (1) Removes from the flights data set all flights where the hour is 1 (there is only one such flight, and removing it will improve our visualization), (2) Groups the flights data set by hour, (3) Makes a summary tibble showing both the total number of flights and the number of canceled flights each hour, (4) Makes a new column for frac_canceled, which is the number of canceled flights divided by the total number of flights, and (5) Makes a line graph that shows the frac_canceled values for each hour. **
+
+> **Based on this line graph, what hour of the day would you prefer to fly?**
+
+```{r}
+summary_flights <- flights %>%
+  filter(hour != 1) %>%
+  group_by(hour) %>%
+  summarize(
+    total_flights = n(),
+    canceled_flights = sum(is.na(dep_time))
+  ) %>%
+  mutate(frac_canceled = canceled_flights / total_flights)
+
+ggplot(summary_flights, aes(x = hour, y = frac_canceled)) +
+  geom_line()
+```
+I want to fly at max. 19 o clock.
+
+
+
+
+## Question 9 (6 points)
+
+> a. **In the U.S., mailing addresses have zipcodes consisting of five digits, then a dash, then four digits. An example might be 91711-4285.  Suppose you have a tibble, like the following example, where the first five digits are in a different column than the last four digits. **
+
+```{r, echo = FALSE}
+zip_codes = tibble(Zip = c("91711", "20322", "93782", "78392", "87639", "47628", "20874"), 
+                   PlusFour = c("3452", "3009", "8473", "8762", "2563", "5416", "5726"))
+zip_codes
+```
+
+> **Add a new column in this data set consisting of the entire zip code, in the correct format.**
+
+```{r}
+mutate(zip_codes, zip_combined = paste(Zip, PlusFour, sep = "-"))
+```
+
+
+> b. **Explain, in your own words, what geom_smooth() does, and make a ggplot (using any data set you'd like) that uses geom_smooth() and at least one other appropriately-chosen geom.** 
+
+geom_smooth is a line plot that also shows the confidence interval for the series. Here are some examples.
+
+```{r}
+ggplot(summary_flights, aes(x = hour, y = frac_canceled)) +
+  geom_smooth()
+```
+
+```{r}
+ggplot(mtcars, aes(x = hp, y = mpg)) +
+  geom_point() +
+  geom_smooth()
+```
+
+
+&nbsp;
+
+## Question 10 (3 points)
+
+> **As we discussed in class, removing NA values from a calculation without investigating why those values are NA is a bad idea. Come up with your own example (different from the ones we discussed in class) where removing NA values when performing a calculation could introduce bias in your results. **
+
+Survey respondents of a specific class not answering a specific question that made them uncomfortable. This would bais the results and remove important information.
+
+
+&nbsp;
+
+## Question 11 (13 points)
+
+> **Consider the following data set, where each row is an individual who contracted a Delta Variant Covid-19 case in the UK.**
+
+```{r}
+covid <- read_csv("https://www.openintro.org/data/csv/simpsons_paradox_covid.csv")
+covid
+```
+
+
+> a. (3 points) **Group the data set by vaccine status and outcome, and make a summary table with four rows (for each combination of vaccinated/unvaccinated and death/survive) and a column showing the number of individuals in each of these four categories.  With a calculator (because we haven't learned how to do this yet with code), what fraction of vaccinated individuals died and what fraction of unvaccinated individuals died? Which is higher?**
+
+```{r}
+covid %>%
+  group_by(vaccine_status, outcome) %>%
+  summarize(count = n())
+```
+
+Fraction of vaccinated individuals who died: 0.0041 (or about 0.41%)
+Fraction of unvaccinated individuals who died: 0.0017 (or about 0.17%)
+
+
+
+
+> b. (2 points) **Now filter the data set to only include individuals under 50, and perform the same steps as part (a). Which group had higher death rates, vaccinated or unvaccinated individuals? **
+
+```{r}
+covid %>%
+  filter(age_group == "under 50") %>%
+  group_by(vaccine_status, outcome) %>%
+  summarize(count = n())
+```
+
+Fraction of vaccinated individuals who died: 0.0002 (or about 0.02%)
+Fraction of unvaccinated individuals who died: 0.0003 (or about 0.03%)
+
+
+> c. (2 points) **Now filter the data set to only include individuals who are in the age group 50 +, and perform the same steps as parts (a) and (b). Which group had higher death rates, vaccinated or unvaccinated individuals? **
+
+```{r}
+covid %>%
+  filter(age_group != "under 50") %>%
+  group_by(vaccine_status, outcome) %>%
+  summarize(count = n())
+```
+
+Fraction of vaccinated individuals who died: 0.017 (or about 1.7%)
+Fraction of unvaccinated individuals who died: 0.06 (or about 6%)
+
+
+
+> d. (3 points) **Explain, in your own words, how your answers to (a), (b), and (c) don't contradict each other. You may find it helpful to look at https://en.wikipedia.org/wiki/Simpson%27s_paradox**
+
+The results show Simpson's paradox, which means that a trend looks one way in separate groups but changes when the groups are combined. For example, vaccinated people under 50 had lower death rates, but when we look at everyone together, vaccinated people had higher death rates because more older people, who are more at risk, were vaccinated.
+
+> e. (3 points) **What ethical harms can result from failing to group data in relevant ways, or otherwise grouping (or failing to group) data inappropriately?**
+
+
+If data isn’t grouped the right way, it can lead to wrong conclusions, like thinking a treatment is harmful when it’s actually helping. This can cause people to make bad decisions, like avoiding vaccines. This is why ethics are always important when working with data.
+

@@ -1,0 +1,109 @@
+---
+title: "8-26 Class Notes"
+author: "Sarah Cannon"
+date: "2024-08-26"
+output: html_document
+---
+
+
+# Slides
+
+Can be found on Canvas, in the Files section
+
+
+# Overview of R, RStudio
+
+R - programming language we'll be using this semester
+
+RStudio - the development environment (program) we'll be using this semester to write code in R
+
+Can run commands in console (bottom left by default), such as: 
+
+2+3 
+  (outputs 5)
+  
+x <- 3
+  (stores the value 3 in a variable x, no output)
+  
+y <- 2 
+  (stores the value 2 in variable y, no output)
+  
+x
+  (outputs 3)
+  
+y 
+  (outputs 2)
+  
+x + y 
+  (outputs 5)
+  
+x - y
+  (outputs 1)
+  
+Notes: 
+- no output when storing a variable
+- can see current variables in the Environment panel (top right) 
+
+
+# RMarkdown 
+
+However, we'll rarely use the console (except to install packages)
+
+Instead, we'll use RMarkdown
+
+File > New > RMarkdown
+
+Or, simply open a .rmd file 
+  (You can find these notes as "8-26 Class Notes.rmd" in the Files section of Canvas)
+
+RMarkdown: 
+
+- A way of organizing code into a single file that you can run in chunks or run all at once (Similarish to Jupyter Notebooks)
+- File > New File > RMarkdown. Files end in .rmd
+- For now, delete default text after header
+- Can insert code chunks in RMarkdown, and run commands there just like you would in the console by clicking green arrow 
+
+```{r}
+3+2
+```
+(Shortcut to insert code chunk: CTRL+ALT+I or CMD+Option+I)
+
+- Can run multiple commands at once:
+
+```{r}
+x <- 3
+y <- 2
+x+y
+x-y
+```
+
+# Data and Plots
+
+Just enough to get you started! 
+
+Look at built-in data set trees: 
+```{r}
+trees 
+```
+
+Get more information about the data set trees: 
+```{r}
+?trees
+```
+
+Make a scatterplot with Girth and Height: 
+```{r}
+plot(trees$Girth, trees$Height)
+```
+
+
+# Knitting
+
+Produces a nice version of your document, with both text and code! We'll talk more about knitting in the second class.
+
+
+# Activity
+
+Classes will end with an activity!  Find it on Canvas, in the Files section ("8-26 Activity.pdf")
+
+

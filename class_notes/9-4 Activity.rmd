@@ -1,0 +1,152 @@
+---
+title: "Class Activity 9/4 ggplots"
+author: "Sarah Cannon"
+date: "9/4/2024"
+output: html_document
+---
+
+> **Make sure you have the correct library installed and included.**
+
+```{r}
+#install.packages("tidyverse")
+library(tidyverse)
+```
+
+> **You'll use the following data set ice_cream for Questions 3-6. You don't need to know how this table is made. **
+
+```{r}
+ice_cream <- tibble( name = c("Student A", "Student B", "Student C", 
+                        "Student D", "Student E", "Student F", 
+                        "Student G", "STudent H", "Student I", 
+                        "Student J", "Student K", "Student L" , 
+                        "Student M", "Student N", "Student O",
+                        "Student P", "Student Q", "Student R",
+                        "Student S", "Student T", "Student U",
+                        "Student V", "Student W", "Student X"), 
+                      flavor = c("Chocolate", "Strawberry", "Chocolate", "Strawberry", 
+                        "Vanilla", "Chocolate", "Chocolate", "Strawberry", 
+                        "Vanilla", "Chocolate", "Vanilla", "Strawberry", 
+                        "Vanilla", "Chocolate", "Chocolate", "Vanilla",
+                        "Chocolate", "Vanilla", "Chocolate", "Strawberry",
+                        "Vanilla", "Chocolate", "Vanilla", "Strawberry"), 
+                      college = c("CMC", "CMC", "CMC", "Scripps", "Pomona", 
+                                  "HMC", "Pomona", "Pitzer", "HMC", "Pomona", 
+                                  "CMC", "Scripps", "Scripps", "Pitzer", "Pomona",
+                                  "Pitzer", "Pomona", "Pitzer", "HMC", "Pomona", 
+                                  "CMC", "Scripps", "Scripps", "Pitzer"))
+ice_cream
+```
+
+
+> **1. In this plot, what is the data set being plotted, and how many points are there in this plot? **
+
+```{r}
+ggplot(data = midwest) + 
+  geom_point(mapping = aes(x = area, y = popdensity, size = poptotal, color = state))
+```
+
+Midwest dataset. 437 points.
+
+> **2. The plot in Question 1 contains four variables/columns worth of data.  What are those four variables, and how is each represented in the plot? **
+
+x = area, y = popdensity, size = poptotal, color = state
+
+
+> 3. **For the ice_cream data set, look at the distribution of ice cream flavor among the students by making a **bar plot**.  What do you observe? What flavors are most and least popular?**
+
+```{r}
+ggplot(data = ice_cream) + geom_bar(mapping = aes(flavor))
+```
+
+Cockolate most
+Vanill least
+
+
+
+> 4. **Look at the distribution of college among the students by making a **composition plot**.  What do you observe?**
+
+```{r}
+ggplot(data = ice_cream) + geom_bar(mapping = aes(flavor, fill = college))
+```
+
+po loves choccolate
+mudd hates strawberry
+
+> 5. **Look at the relationship between ice cream and college for the students in this data set. Try at least three different plots showing this relationship.  What do you observe?**
+
+```{r}
+ggplot(data = ice_cream) + geom_bar(mapping = aes(college, fill = flavor))
+```
+
+```{r}
+ggplot(data = ice_cream) + geom_bar(mapping = aes(fill = flavor, x = college), position = "dodge")
+```
+
+
+> 6. **Of the different plots you made in Question 5, which was most helpful?  Explain why it best conveys it's information, and what your takeaways from this plot are.  **
+
+
+The last one.
+
+
+> **BONUS: MAPS.  We already saw we can transform the coordinates of our data using coord_flip(). Here we'll see how make maps that are scaled correctly.**
+
+> **First, here's how to make a map of California, using the map_data function and geom_polygon, which draws out a polygon. Be sure to install the appropriate libraries.**
+
+```{r}
+# This imports the necessary data and creates the maps
+library(maps)
+states <- map_data(map = "county")
+ca <- subset(states, region == "california")
+
+#This draws California
+ggplot(data = ca) + 
+  geom_polygon(mapping = aes(x = long, y = lat, group = group))
+```
+
+> **BONUS A. Change the color and fill in the above plot so that the different counties in California are visible: the counties should be white and the lines between them black. ** 
+
+```{r}
+#This draws California
+ggplot(data = ca) + 
+  geom_polygon(mapping = aes(x = long, y = lat, group = group))
+```
+
+
+
+> **BONUS B. This map of California definitely isn't to scale! Look into the coord_quickmap() function, and add an additional layer to your ggplot that scales things correctly. **
+
+
+
+
+> **BONUS C. You can now add on any data that has latitude and longitude on top of this map! For example, this code makes a data set called wildfires that has the latitude and longitude of wildfires in California since the start of 2023. (Note: Make sure you have the tidyverse package installed and loaded in order for this code to run).**
+
+```{r}
+# Import wildfire data and make table called wildfires
+# You don't need to know (yet!) how this data set was made
+wildfires <- read_csv("https://www.fire.ca.gov/imapdata/mapdataall.csv") %>% 
+  select(name = incident_name, 
+         long = incident_longitude, 
+         lat = incident_latitude, 
+         acres = incident_acres_burned, 
+         date = incident_dateonly_extinguished) %>% 
+  filter(long < -110, long > -180, lat> 30, lat <= 42, date > "2023-01-01")
+
+# Output the wildfires data set
+wildfires
+```
+
+> **Plot the locations of all these fires using a geom_point, rescaling as appropriate (you don't have to put this on top of the California map yet; that's the next step! Just get the geom_point working correctly first).**
+
+
+
+
+> **BONUS D. Put it all together into one plot, with the wildfires points on top of the California map. Note if the data needed for a geom is different from the data specified within the ggplot() function, you can just use an argument data = wildfires, for example, within a geom to use the wildfire data just for that particular geom.**
+
+
+
+
+> **BONUS E: Adjust the size of your points to correspond to how many acres the fires burned.  Be careful: how many points don't end up plotted in this case?**
+
+
+

@@ -1,0 +1,447 @@
+---
+title: '8-28 Class Notes: R, RStudio Introduction'
+author: "Prof. Sarah Cannon"
+date: "8/28/2024"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# Announcements
+
+- This template is available on Canvas (Files > Class Files)
+- Tip: Save in a folder dedicated to this class (not downloads folder)
+- First part of class: R/RStudio Introduction
+- Second part of class: Discussion of Data Ethics Case Studies
+- Tomorrow: Check and make sure you have access to Wednesday's preclass video on VidGrid
+- Due Friday, 12pm (noon): Complete Intro Survey on Gradescope
+- Before class on Wednesday (9/4): Watch preclass video on VidGrid
+- Due Wednesday (9/4) at 11:59pm on Gradescope: Homework 1 (released tomorrow morning)
+- Upcoming office hours (individual meetings or other questions):
+  - Tuesday 1:45-3:30pm
+  - Wednesday 1:15-2:15pm
+
+Questions? 
+
+
+# R and RStudio
+
+From last class: 
+
+- Main programming environment we will be using this semester
+- Can run commands in console, or in code chunks in an RMarkdown file
+- Stored variables show up in environment tab
+ 
+With console: 
+
+We won't work in the console much! 
+
+## RMarkdown: 
+
+- A way of organizing code into a single file that you can run in chunks or run all at once (Similarish to Jupyter Notebooks)
+- Can insert code chunks in RMarkdown, and run commands there just like you would in the console by clicking green arrow 
+- Can run multiple commands at once
+
+```{r}
+x <- 3
+y <- 2
+x+y
+x-y
+```
+
+- We will mostly use RMarkdown: Can download this template file, and follow along
+
+
+### Why use RMarkdown? 
+
+Can "publish": Produce a nice document. Called Knitting. For now, we'll knit to html. 
+
+How do you open html files? 
+
+
+Helps with the communication step of the data science process 
+Can explain what your code is doing
+Also keeps track of/remembers all commands, so you know exactly what you did to your data.
+
+
+### RMarkdown Commands
+
+NOT "What you see is what you get"
+
+Sections: 
+
+Lists: 
+
+bold text
+
+italic text
+
+Math mode: Use dollar signs: 
+
+
+
+Math on its own line, centered: 
+
+
+
+LaTeX: a typesetting language for math
+
+Important: no spaces after first dollar sign, before the last dollar sign: 
+$a^2$
+
+Most LaTeX math commands can be used in RMarkdown. 
+
+
+### Knitting to PDF
+
+Produces nicer document; in the long-term (beyond this class), you will probably want to do this
+
+But, need to have LaTeX installed on your computer for this to work (which is why I don't require it)
+
+Steps on Canvas
+
+
+### Homework: PDF submissions
+
+Gradescope can only accept PDF files for Homework submissions
+
+Option 1: 
+
+Option 2: 
+
+
+Be sure to assign questions to pages 
+
+https://www.gradescope.com/get_started#student-submission
+
+
+
+
+
+### RMarkdown Header
+
+Shouldn't need to change standard header (may look slightly different on different systems)
+
+But, can change title, author, date if you want
+
+Other options reflect how you have recently knit it
+
+Are other options you can set, for example to make document interactive
+
+
+
+## R Objects
+
+We've seen variables/objects that are numbers: 
+
+```{r}
+x <- 3
+```
+
+Just like in python, variables/objects can be more that just numbers 
+
+### Lists
+
+Can combine numbers into a single list: 
+
+```{r}
+y <- c(-2, 3, 5)
+```
+
+
+ 
+
+Lists don't work quite the same way as python, though. Operations on lists usually operate on each element separately: 
+
+```{r}
+
+```
+
+It's costly/expensive to change the length of y. It's fairly easy to change one value, though:
+
+```{r}
+
+```
+
+
+
+
+Let's look at: 
+```{r}
+
+```
+
+
+One of two types of 'empty' values we'll see.
+
+
+### Tables
+
+R has some built-in variables/data sets. 
+
+```{r}
+cars
+```
+
+Note: Running a code chunk only shows first ten rows
+
+CAREFUL: Depending on type of table, may show entire table in knitted file!
+
+DO NOT submit homework with entire data sets displayed!
+
+To only show first ten rows, use head function
+
+```{r}
+head(cars)
+```
+
+To access a single column of a data table, do tablename$columnname - produces a list
+
+```{r}
+
+```
+
+Use head command on long lists too: 
+
+```{r}
+
+```
+
+To access a row: 
+
+```{r}
+cars[4,]
+```
+
+To access a specific entry: 
+
+```{r}
+cars[4,2]
+cars$dist[4]
+```
+
+To get more information about a built-in function or variable, use ?
+```{r}
+
+```
+
+
+## R Functions
+
+R has some built-in functions we'll use frequently
+
+c is one example of a function - takes in several values and combines them into a single variable; 
+
+```{r}
+y <- c(-2, 5, 3)
+y
+```
+
+Some other useful functions *that take one argument, a list* are: 
+
+```{r}
+ mean(y) # sum of the elements divided by the number of elements
+ sd(y) # Standard Deviations of the elements: how spread out they are
+ sum(y) # add up the elements
+ median(y) # when all elements are sorted in numerical order, the middle element
+ min(y) # smallest element
+ max(y) # largest element 
+```
+
+Comment within a code chunk:
+
+Comments in an RMarkdown document outside a code chunk: 
+
+Run current line of code chunk only: CTRL+Enter
+
+Run current code chunk (all of it): Click green arrow, or CTRL+Shift+Enter
+
+These functions need to take a list as the first argument. This gives the wrong answer: 
+```{r}
+mean(-2, 3, 5)
+```
+
+Instead, combine value into a list: 
+
+```{r}
+mean(c(-2, 3, 5))
+```
+
+What happens when one value is NaN? 
+
+```{r}
+z <- sqrt(y)
+z
+mean(z)
+```
+
+
+If one value is NaN, so is the whole mean/sum/etc. 
+
+
+### min vs. pmin
+
+min - the smallest value across all arguments/lists
+pmin - parallel min - 
+
+```{r}
+l1 <- c(3,6,10)
+l2 <- c(1, 7, 8)
+
+#Finds the minimum value across both l1 and l2
+
+
+# Compares l1 and l2 entrywise
+pmin(l1, l2)
+
+```
+
+Note: for pmin, l1 and l2 should be the same length
+
+```{r}
+l3 <- c(4,5)
+pmin(l1, l3)
+
+```
+
+
+
+(because l1 is longer than l3, entries of l3 are repeated in order until it's the same length as l1)
+(Don't need to know exactly what happens when l1 and l3 aren't the same length, but should know that you shouldn't do this!)
+
+
+
+
+Note: same for max, pmax, but for maximum instead of minimum. 
+
+
+
+## Defining our own functions, function arguments
+
+Can also define your own functions: 
+(We mostly won't do this, but it's useful here to understand how arguments of functions work in R)
+
+```{r}
+add2 <- function(a = 2, b = 4) {
+  s <- a + 2*b
+  return(s)
+}
+```
+
+Note: 2 and 4 are the default values for a and b 
+(what gets used if these arguments aren't specified)
+
+Note function appears in Environment panel (it's an R object!)
+
+```{r}
+add2()
+```
+
+When one of the arguments isn't specified when the function is called, the default values are used
+
+```{r}
+
+```
+
+Also assumed: 
+
+Arguments are assumed:
+
+Can manually specify if you want
+
+```{r}
+add2(b = 3)
+add2 (b = 3, a = 5)
+```
+
+Best practice: Specify which argument is which (a = 5, b = 7, etc.) 
+
+
+
+## R Libraries
+
+R has some built-in functions, commands, variables
+
+To add more, use libraries! 
+
+If you try to use a function in a library without installing/loading that library first, get an error
+```{r}
+# ggplot(data = cars) + geom_point(mapping = aes(x = speed, y = dist))
+```
+
+The very first time you use a library on a machine, need to install it (need to use quotes around library name)
+Can do this in a code chunk, or in the console
+Only need to run this command once
+
+```{r}
+
+```
+
+Note: install.packages() commands will cause errors when knitting.
+If do in code chunk, comment them out after running once. 
+
+After installing it, every time you open R, need to load this library. No quotation marks. 
+
+```{r, message = FALSE}
+library(tidyverse)
+```
+
+Loading tidyverse can output a lot of message in the knitted file; change start of code chunk to {r, message = FALSE} to hide this. 
+
+Now, can use any functions from the tidyverse package: 
+
+```{r}
+ggplot(data = cars) + geom_point(mapping = aes(x = speed, y = dist))
+```
+
+
+Packages might have functions, data, or both. 
+
+```{r}
+# install.packages("nycflights13")
+library(nycflights13)
+flights
+```
+
+
+
+## Troubleshooting/Debugging
+
+What to do if your code doesn't work/doesn't produce the answer you expected/your file won't knit? 
+
+This is a skill that you'll get better at with practice! 
+
+- Read through code to look for any obvious typos
+
+- Compare your code to similar code chunks we've written in class; are there any differences? 
+
+- Look at any error messages you're receiving; what are they trying to tell you? 
+  - Knitting errors will show up in the bottom left, with line numbers
+
+- Start simple and build up: Start with a simple command that you know works, and gradually build up until you have the whole code chunk.  
+
+- Try to figure out exactly which part of the command is causing the issue
+
+
+## Checking your answers
+
+When finishing a question, always pause and ask, "Is this answer reasonable"? 
+
+Ex. You're looking at data of all flights departing a single airport in a year, and you find that the average departure delay is 389 minutes.  Probably not right! 
+
+Go back and look at the question, make sure you're answering all parts of it.
+
+
+## Data Ethics Activity
+
+In small groups.
+
+
+## Data Ethics Key Takeaways
+
+
+
+
+
+
+

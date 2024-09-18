@@ -1,0 +1,87 @@
+---
+title: "2-1 In-class Activity"
+author: "Sarah Cannon"
+date: "2/1/2024"
+output: html_document
+---
+
+# Activity: group_by and summarize
+
+```{r, message = FALSE}
+library(tidyverse)
+```
+
+We'll be using the starwars data set again. 
+
+>1. **What command would you use to group the starwars characters by species? _Write this command in two ways, using pipes and not using pipes_. How many species are there? **
+
+```{r}
+starwars %>%
+  group_by(species) %>%
+    summarize(count = n())
+```
+
+```{r}
+summarize(group_by(starwars, species), count=n())
+```
+
+```{r}
+starwars %>%
+  summarize(species_count = n_distinct(species))
+```
+
+38 species
+
+
+
+>2. **Make a summary tibble that displays the average mass for each species. What is the average mass of the Droids whose mass you know? Use pipes. The answer is not NA. ** 
+
+```{r}
+summarize()
+```
+
+
+
+>3. **Make summary tibble that displays the average mass for each species, and also displays the number of characters of each species.  How many Cerean characters are there? How many characters are there whose species is NA? Use pipes.**
+
+
+
+>4. **Make summary tibble that displays the average mass for each species and the average height for each species. What is the average height of Droids? **
+
+
+
+
+>5. **Make a scatterplot that plots the average height vs. average mass of the different species. Your plot will have fewer than 38 data points.  How many does it have, and why do you think this is? **
+
+
+
+
+> 6. **Make a bar chart that has a bar for each species that appears in the data set, where the length of each bar is the average mass of characters with that species (whose mass is known).**
+
+
+
+
+> **BONUS: Using rank() and n() within filter.**
+
+> **While we've used rank() within mutate and n() within summarize, you can use both directly within filter as well!  For example, this is one way to find the three lightest characters in the data set: **
+
+```{r}
+filter(starwars, rank(mass) <= 3 )
+```
+
+> **BONUS 1: Use the rank command to find the ten shortest characters in the data set: **
+
+
+
+
+> **BONUS 2: Using the rank command, make a tibble that consists of the two lightest characters of each species. Hint: your resulting tibble should have 47 rows.**
+
+
+
+
+> **BONUS 3: Using n(), make a tibble that only contains characters where the species of that character appears at least 10 times in the data set. Hint: your resulting tibble should have 41 rows.**
+
+
+
+
+

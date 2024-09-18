@@ -1,0 +1,35 @@
+---
+title: "cs36-activity-0826"
+author: "Nolan Windham"
+output: html_document
+date: "2024-08-27"
+---
+
+
+## Activity
+
+
+Make a scatterplot with Volume and Height: 
+```{r}
+plot(trees$Volume, trees$Height)
+```
+
+
+Make a scatterplot with Volume and Girth: 
+```{r}
+plot(trees$Volume, trees$Girth)
+```
+
+## Beaver Data
+
+```{r}
+plot(beaver1$temp)
+```
+
+This plot shows series of beaver's tempurature over time. Note that the time variable is not included here. The measurements are just shown in series.
+The plot suggests a cyclical pattern with the tempurature of the beaver.
+
+```{r}
+plot(EuStockMarkets)
+```
+This shows the daily closing prices of EU stock indices between 1991 and 1998 according to the help file. There is a clear upward trend over time in the value of each index. It's a good idea to invest in indices instead of picking your own stocks unless you really really know what you are doing!

@@ -1,0 +1,500 @@
+---
+title: "Class Notes 9-11 - Transforming Data"
+author: "Sarah Cannon"
+date: "9/11/2024"
+output: html_document
+---
+
+
+## Announcements
+
+Homework 2: If using extension hours, final deadline Thursday 11:59pm
+
+Homework 3: Posted tomorrow morning, due Tuesday 11:59pm (all about data transformations)
+
+Upcoming Office Hours: 
+- Monday 1:15-2:15
+- Tuesday 10:30-11:30 and 2-3
+- Wednesday 1:15-2:15
+
+Homework Collaboration: If want to be connected with classmates, send me an email; will put students in touch with each other
+
+Template for class notes: On Canvas, Files > Class Materials > 9-11 Class Notes Template
+
+QCL one-on-one appointments and drop-in schedule: https://www.cmc.edu/qcl/mentoring
+
+Questions about upcoming schedule?
+
+
+# Transforming Data
+
+```{r, message = FALSE}
+library(nycflights13)
+library(tidyverse)
+```
+
+## Preclass Video: Pipes and Filter Helper Functions
+
+```{r}
+filter(flights, between(dep_delay, 0, 10))
+
+flights %>% filter(between(dep_delay, 0, 10))
+```
+
+Questions from preclass video?
+
+
+## Grouping and Summarizing
+
+What we're *not* doing today: using the summary() function
+
+```{r}
+summary(cars)
+```
+
+We're using the *summarize* function (or summarise)
+
+At first, nothing happens!
+
+```{r}
+summarize(flights)
+```
+
+We didn't say what to include in the summarize.
+
+Here's an example: 
+
+```{r}
+summarize(cars, avg_distance = mean(dist))
+```
+
+Makes a new table, single column called avg_distance, calculated by doing mean(dist)
+
+Format: 
+
+summarize([data table], [name for new column 1] = [how new column 1 is calculated])
+
+Note: Format for new columns similar to format for mutate
+
+OR, use pipes! 
+
+```{r}
+cars %>% summarize(avg_distance = mean(dist))
+```
+
+Can add multiple columns at the same time: 
+
+```{r}
+cars %>% summarize(avg_distance = mean(dist), 
+                   avg_speed = mean(speed), 
+                   min_speed = min(speed)
+                   )
+```
+
+within summarize, use min, not pmin
+within mutate, use pmin, not min
+min = min of entire column(s)
+pmin = entry-wise min across columns
+
+Let's summarize flights: 
+
+```{r}
+flights %>% summarize(avg_dep_delay = mean(dep_delay),
+                      med_dep_delay = median(dep_delay))
+```
+We have NA values. 
+
+But this makes sense - we already know there's flights with dep_delay = NA, and we also know that taking a mean of a bunch of numbers, where some are NA, will  output NA.
+
+```{r}
+mean(flights$dep_delay)
+```
+
+Another option: remove the NA values when taking the mean
+
+BE CAREFUL WHEN DOING THIS: Check why values are NA. Simply removing NA values without understanding why they're there can lead to bias in data set. 
+
+For flights: removing NA values means we will find the average departure delay *of the flights that took off* excluding the flights that didn't take off.
+
+Add na.rm = TRUE inside mean/median/max/sum/etc. to remove any NA values from the calculation. 
+
+```{r}
+flights %>% summarize(avg_dep_delay = mean(dep_delay, na.rm = TRUE), 
+                      med_dep_delay = median(dep_delay, na.rm = TRUE))
+```
+
+ **BE CAREFUL** removing NA values from calculations. 
+
+```{r}
+?mean
+```
+
+Recall from Monday: Can use sum(is.na([some column])) to find number of NA values. This can also be done within summarize.  
+
+```{r}
+flights %>% summarize(num_no_takeoff = sum(is.na(dep_delay)))
+```
+
+Summing a list of TRUE/FALSE values give you the number of TRUEs
+
+But, if there are NA values, get NA
+
+Can also remove NA values from sums to get number of TRUE values even when there are NA values: 
+
+```{r}
+flights %>% summarize(num_flights_delayed_more_than_60 = 
+                                sum(dep_delay > 60, na.rm = TRUE))
+```
+
+
+## group_by
+
+Takes a tibble and breaks it down into groups. 
+
+At first, when using this command, nothing appears to change in our table! 
+
+```{r}
+group_by(flights, month)
+by_month <- flights %>% group_by(month)
+by_month
+```
+
+by_month looks the same as flights! Group information at top
+
+If your data is all in a box, think of group_by like writing on the outside of the box: "whenever you open this box and try to summarize the data, use these groups." 
+
+Data itself remains unchanged, there is just some extra information attached to it. 
+
+Now, when use summarize(), treats each group separately: 
+
+```{r}
+by_month %>% summarize(avg_delay = mean(dep_delay, na.rm = TRUE))
+```
+
+Because the by_month data set had been grouped by month, there are 12 groups in the data, summarize calculates for each group separately. 
+
+This is the first command we've learned that uses a part of the data table that we can't see.
+
+For everything we've done so far using summarize(), if you group first, can get values for each group. 
+
+```{r}
+flights %>% group_by(month) %>% 
+  summarize(num_delayed_more_than_60 = sum(dep_delay > 60, na.rm = TRUE))
+```
+
+
+### n()
+
+Can use other functions besides mean
+
+Can use anything you could use for summarize: median(), min(), max(), sum(), etc. 
+
+A new function: n(): This counts how many rows there are; when data is grouped, counts how many rows there are in each group. 
+
+```{r}
+summarize(by_month, 
+            avg_delay = mean(dep_delay, na.rm = TRUE), 
+            med_delay = median(dep_delay, na.rm = TRUE), 
+            num_flights_this_month = n())
+```
+
+Note: Generally the n() function should be used within summarize, mutate, filter,... (on it's own it's not that interesting). 
+
+Can use n() in mutate as well: 
+
+```{r}
+by_month %>% 
+  mutate(number_of_flights_this_month = n())
+```
+
+There were 27004 flights schedule in January, so every row for January has this value; rows for other months will have other values. 
+
+(most useful as an intermediate step, for example if you now want to do additional calculations...)
+
+
+### rank()
+
+We learned rank() on Monday: ranks rows according to a given column
+
+When data is grouped: ranks within groups
+
+```{r}
+by_month %>% mutate(order_within_month_by_Dep_delay = rank(dep_delay))
+```
+
+The first row is the 17759.5th least delayed flights in January. 
+
+(remember: can get ranks with 0.5 because of ties)
+
+
+### Avoiding intermediate values using pipes; combining transformations
+
+by_month is an intermediate value - didn't really need it, can use pipes instead! 
+
+```{r}
+flights %>% 
+  group_by(month) %>% 
+  summarize(delay = mean(dep_delay, na.rm = TRUE))
+```
+
+This is how you'll most often want to use group_by: with pipes, before summarize
+
+Suppose we are interested in how flight delays are related to the distance of the flights. 
+
+Just making a scatterplot of this isn't very useful  (also slow)
+
+```{r}
+ggplot(data = flights) + geom_point(mapping = aes(x = distance, y = arr_delay))
+```
+
+Instead, let's find the average delay for each destination
+
+```{r}
+flights %>% 
+  group_by(dest) %>% 
+  summarize(num_flights = n(), 
+            dist_to_dest = mean(distance, na.rm = TRUE), 
+            dest_delay = mean(arr_delay, na.rm = TRUE))
+```
+
+Let's only look at destinations with at least 20 flights: easy to add this in using pipes! 
+
+```{r}
+flights %>% 
+  group_by(dest) %>% 
+  summarize(num_flights = n(), 
+            dist_to_dest = mean(distance, na.rm = TRUE), 
+            dest_delay = mean(arr_delay, na.rm = TRUE)) %>% 
+  filter(num_flights >= 20)
+```
+
+Filtering before summarize: reference columns in original data set
+Filtering after summarize: reference columns made in summary table (like num_flights)
+
+Let's plot it! Using pipes, we can pass this data table directly into ggplot. 
+
+```{r}
+flights %>% 
+  group_by(dest) %>% 
+  summarize(num_flights = n(), 
+            dist_to_dest = mean(distance, na.rm = TRUE), 
+            dest_delay = mean(arr_delay, na.rm = TRUE)) %>% 
+  filter(num_flights >= 20) %>% 
+  ggplot() + geom_point(mapping = aes(x = dist_to_dest, 
+                                      y = dest_delay, 
+                                      size = num_flights), alpha = 0.3)
+```
+
+Observation: as distance gets longer, delay gets shorter 
+
+Key ideas: 
+- can use pipes to pass things to ggplots
+- for making useful plots, sometimes you want to group and summarize first
+
+
+### new geom: geom_smooth
+
+This draws a curve that shows the general trend of the data
+
+Often drawn of top of a geom_point, using same mapping 
+
+```{r}
+flights %>% 
+  group_by(dest) %>% 
+  summarize(num_flights = n(), 
+            dist_to_dest = mean(distance, na.rm = TRUE), 
+            dest_delay = mean(arr_delay, na.rm = TRUE)) %>% 
+  filter(num_flights >= 20) %>% 
+  ggplot() + geom_point(mapping = aes(x = dist_to_dest, 
+                                      y = dest_delay, 
+                                      size = num_flights), 
+                        alpha = 0.3) + 
+      geom_smooth(mapping = aes(x = dist_to_dest, 
+                                      y = dest_delay))
+```
+
+Shaded region: standard error ("uncertainty" in curve)
+
+To remove: se = FALSE
+
+To draw a line rather than a curve: method = 'lm'
+
+```{r}
+flights %>% 
+  group_by(dest) %>% 
+  summarize(num_flights = n(), 
+            dist_to_dest = mean(distance, na.rm = TRUE), 
+            dest_delay = mean(arr_delay, na.rm = TRUE)) %>% 
+  filter(num_flights >= 20) %>% 
+  ggplot() + geom_point(mapping = aes(x = dist_to_dest, 
+                                      y = dest_delay, 
+                                      size = num_flights), 
+                        alpha = 0.3) + 
+            geom_smooth(mapping = aes(x = dist_to_dest, 
+                                      y = dest_delay), se = FALSE, method = 'lm')
+```
+
+
+### Grouping by multiple columns
+
+Note: can also group by multiple columns: 
+
+```{r}
+flights %>% group_by(month, day) %>% 
+  summarize(avg_dep_delay = mean(dep_delay, na.rm = TRUE))
+```
+
+For each month/day combo in the data set, have a row in your summarized table
+
+All other aspects of summarizing are the same
+
+Example Question: Which route (destination/origin pair) has the longest average delay? 
+
+```{r}
+flights %>% group_by(origin, dest) %>% 
+  summarize(average_arr_delay = mean(arr_delay, na.rm = TRUE)) %>% 
+  arrange(desc(average_arr_delay))
+```
+
+Answer: EWR -> CAE (Newark, NJ to Columbia, SC)
+
+
+## geom_bar with stat = "identity"
+
+What if you want a plot that shows the average arrival delay by month? 
+
+```{r}
+average_monthly_delay <- by_month %>% summarize(avg_delay = mean(dep_delay, na.rm = TRUE))
+average_monthly_delay
+```
+
+Before: bar charts for *counts* only (or, when using position = "fill", for proportions)
+
+Now: bar charts where lengths/heights are *data values*
+
+Every geom has a default stat: for geom_bar, it's count
+
+```{r}
+?geom_bar
+```
+
+To use explicit data values rather than counts, need to change the stat argument
+
+Use stat = "identity" to use explicit values in the data rather than counting to get the heights of your bars. 
+
+```{r}
+ggplot(data = average_monthly_delay) + 
+  geom_bar(mapping = aes(x = month, y = avg_delay), stat = "identity")
+```
+
+Need to set an x and a y aesthetic (no longer have y as counting by default) 
+
+Be careful: if an x-value has multiple y-values, will just add them in the plot!  Using stat = "identity" could produce a plot that's not what you want. 
+
+```{r}
+# This code makes an example tibble
+# You don't need to know how it works
+gpas <- tibble(college = c("CMC", "HMC", "Scripps", "Pitzer", "Pomona", 
+                           "CMC", "HMC", "Scripps", "Pitzer", "Pomona"), 
+               major = c("DS", "DS", "DS", "DS", "DS", 
+                         "Math", "Math", "Math", "Math", "Math"), 
+               GPA = c(3.5,3.4,3.7,3.9,3.2,3.6,3.5,3.8,3.9,3.4))
+gpas
+```
+
+```{r}
+ggplot(data = gpas) + geom_bar(mapping = aes(x = college, y = GPA, fill = major), stat = "identity")
+```
+
+Better: make a summary table first of exact values you want to see in the plot, and then use geom_bar with stat = "identity"
+
+Alternately: using geom_bar with stat = "identity" is the same as using geom_col() 
+
+```{r}
+ggplot(data = average_monthly_delay) + 
+  geom_col(mapping = aes(x = month, y = avg_delay))
+```
+
+
+## A new geom: geom_line
+
+geom_line: connects consecutive data points with a line. 
+
+Only use when your data is a series/sequential (x-values that have a meaningful order, one y-value per x-value).
+
+Can be used in place of geom_point (if one y-value for each x-value) or in place of geom_bar with stat = "identity" (the the x-values have a meaningful order) 
+
+```{r}
+ggplot(data = average_monthly_delay) + 
+  geom_line(mapping = aes(x = month, y = avg_delay))
+```
+
+```{r}
+economics
+ggplot(data = economics) + 
+  geom_line(aes(x = date, y = psavert))
+```
+
+Mostly used for time series, when x-values are dates, hours, years, etc. to show how a y-variable is changing over time. 
+
+Won't work is data is not sequential: 
+
+```{r}
+# This is not a good plot
+ggplot(data = mpg) + geom_line(mapping = aes(x = cty, y = hwy))
+```
+
+Note: geom_line does not draw a line. Draws many line segments, connecting each data point to the next. 
+
+Note: Can also use geom_smooth to draw a curve on top of your line plot. 
+
+
+
+## Reminder: Using pipes to select columns
+
+Recall: In Homework: use  select to put relevant columns first
+
+From last class: 
+```{r}
+flights_newcols <- mutate(flights, 
+       gain = dep_delay - arr_delay, 
+       speed = distance / air_time * 60)
+
+select(flights_newcols, gain, dep_delay, arr_delay, speed, distance, air_time, everything())
+```
+
+This is much easier with pipes!
+
+```{r}
+mutate(flights, 
+       gain = dep_delay - arr_delay, 
+       speed = distance / air_time * 60) %>% 
+  select(gain, dep_delay, arr_delay, speed, distance, air_time, everything())
+```
+
+
+
+# Summary
+
+summarize(): use to compute mean, median, sum, min, etc. of data columns
+
+group_by(): Doesn't change any data values, attaches extra information to data set that indicates certain future calculations should be done for each group separately
+
+
+geom_smooth(): draws a curve that approximates the trends in the data
+
+geom_bar() with stat = "identity": For making a bar chart where lengths/heights of bars are values given in the data (not counts)
+
+geom_line(): draws line segments connecting consecutive data points; only use for sequential data
+
+
+# Activity
+
+On Canvas, Files > Class Material > 9-11 Activity
+
+If finish all regular questions, move on to bonus question.
+
+If finish bonus question, can leave: check in with Prof. Cannon before leaving
+
+Feel free to talk to/work with others around you.
+

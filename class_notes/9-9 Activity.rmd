@@ -1,0 +1,108 @@
+---
+title: "9-9 In-class Activity"
+author: "Sarah Cannon"
+date: "9/9/2024"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+```{r, message = FALSE}
+library(tidyverse)
+```
+
+We'll be using the starwars data set.  First, just take a look at it and familiarize yourself with it: 
+
+```{r}
+starwars
+```
+
+
+>1. **Give a command that outputs the name, gender, homeworld, and birth year variables from starwars ** 
+
+```{r}
+starwars %>%
+  select(name, gender, homeworld, birth_year)
+
+```
+
+
+>2. **What three characters have the smallest masses? Write a command that will show them. **
+
+```{r}
+starwars %>%
+  arrange(mass) %>%
+  select(name, mass) %>%
+  filter(!is.na(mass)) %>%
+  head(3)
+```
+
+
+>3. **Give a command that adds a column to the data set called mass_height_ratio, which is a character's mass divided by their height.** 
+
+```{r}
+starwars %>%
+  mutate(mass_height_ratio = mass / height)
+```
+
+
+
+>4. **Give a command that returns a table containing all characters that have mass greater than 136 or have blue eyes. How many are there?** 
+
+```{r}
+result <- starwars %>%
+  filter(mass > 136 | eye_color == "blue")
+
+result
+
+nrow(result)
+```
+
+
+>5. **Give a command that returns all characters whose mass is not available.** 
+
+```{r}
+starwars %>%
+  filter(is.na(mass))
+```
+
+
+>6. **Give a command or series of commands that reorders the variables/columns of starwars, so that all the variables/columns with an "e" in the variable/column name appear first, followed by all the other variables/columns in their original order.**
+
+```{r}
+cols_with_e <- names(starwars)[grepl("e", names(starwars))]
+cols_without_e <- setdiff(names(starwars), cols_with_e)
+
+starwars %>%
+  select(all_of(cols_with_e), all_of(cols_without_e))
+```
+
+
+
+>BONUS 1: **Give a single command that return a data frame that contains all characters with blonde hair.  Hint: there are 4. ** 
+
+```{r}
+starwars %>%
+  filter(str_detect(str_to_lower(hair_color), "blond"))
+
+```
+
+
+
+>BONUS 2: **Make a data table with the variables name, hair_color, skin_color, eye_color, and weight in pounds (not kilograms). It should contain all human characters, and be sorted by their birth year.** 
+
+```{r}
+starwars %>%
+  filter(species == "Human") %>%
+  mutate(weight_lbs = mass * 2.20462) %>%
+  select(name, hair_color, skin_color, eye_color, weight_lbs, birth_year) %>%
+  arrange(birth_year)
+```
+
+
+
+
+
+
+

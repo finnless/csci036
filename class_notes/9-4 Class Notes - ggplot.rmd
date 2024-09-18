@@ -1,0 +1,441 @@
+---
+title: "Class Notes 9-4-24"
+author: "Sarah Cannon"
+date: "9/4/2024"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+#This makes figures smaller when the file is knit, which can help with readability when you have a long document with many figures
+knitr::opts_chunk$set(fig.width=4, fig.height=3)
+```
+
+## Announcements
+
+Homework 1 Due Tonight at 11:59pm on Gradescope as a PDF. Assign *all* pages to a question!
+https://help.gradescope.com/article/fnbn2knmq1-how-can-i-submit-my-homework-as-a-pdf
+
+Upcoming office hours: 
+
+- Monday 1:15-2:15pm
+- Tuesday 10:30-11:30am and 2-3pm
+- Wednesday 1:15-2:15pm
+
+Homework Collaboration: If want to be connected with classmates, send me an email; will put students in touch with each other
+
+Template for class notes: On Canvas, Files > Class Materials > 9-4 Class Notes Template
+
+Homework 2 (50 points, half normal length): Due **TUESDAY**, 9/10 
+
+Questions about upcoming schedule?
+
+
+
+# Scatterplots
+
+## Preclass Video
+
+Make plots by adding visual elements and transformations layer by layer. 
+
+```{r}
+library(ggplot2) #Or: library(tidyverse) - ggplot2 is part of tidyverse!
+```
+
+Example: 
+
+```{r}
+ggplot(data = mpg)  +
+  geom_point(mapping = aes(x = displ, y = hwy, color = class))
+```
+
+(To split command up onto separate line: Put + at the end of the previous line) 
+
+Questions from Pre-class Video? 
+
+
+## Inside/Outside aesthetic
+
+Can change all points to the same color: 
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy), color = "blue", shape = "square")
+```
+
+Inside aes(): when it depends on data values 
+Outside aes(): when it applies to the entire plot/ every data value
+
+This is another example of functions using default values: geom_point() has an argument for color, it's just set to black unless it's otherwise specified. 
+
+## Adding a Third Variable - Numeric and Categorical
+
+Scatterplots: for showing relationships between two variables (columns)
+
+In general, variables = columns; observations = rows
+
+```{r}
+mpg
+```
+
+(later in this course: how to transform data so this is true)
+
+Sometimes, want to incorporate a third (or fourth!) variable into the plot.
+
+Variables come in two types: categorical and numerical
+
+Numerical Variables: values are numbers
+
+Ex. displ
+
+Categorical variables: values come from a list of possibilities
+
+Ex. manufacturer column of mpg, drv column of mpg
+
+
+To see the different values a categorical variable can take on: 
+
+```{r}
+unique(mpg$manufacturer)
+unique(mpg$drv)
+unique(mpg$displ)
+```
+
+Ambiguous cases exist! 
+
+For example: year - whether you consider it to be categorical or numeric depends on context
+
+
+### Option 1: color
+
+Can be used for categorical variables when there aren't too many categories (every category gets a different color)
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, color = class))
+```
+
+(If there were 50 different classes, it might be hard to distinguish them)
+
+Can be used for numeric variables too: get a color gradient
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, color = cty))
+```
+
+
+
+### Option 2: Size
+
+Best when used for numeric variables 
+
+(Saw in preclass video: not a great choice for categorical variables like class)
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, size = cty))
+```
+
+
+### Option 3: Shape
+
+Can only be used for categorical variables when there's 6 or fewer categories
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, shape = class))
+```
+
+Note: PAY ATTENTION TO WARNINGS!!!! Points for class "suv" are omitted from the plot, there were 62 of them. 
+
+There are only 3 value for drv: 
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, shape = drv))
+```
+
+Note are some points on top of each other!  Will learn how to deal with this next. 
+
+
+## Additional geom_point options
+
+How many data points should there be?  One for each row!
+
+```{r}
+mpg
+```
+Can see number of rows at the bottom left of the displayed table. 
+Or, ask for number of rows explicitly!
+
+```{r}
+nrow(mpg)
+```
+
+When there is rounding, may end up with points on top of each other. A few different ways to see if this is happening. 
+
+1. Use position = "jitter"
+
+```{r}
+ggplot(data = mpg) + geom_point(mapping = aes(x = displ, y = hwy), position = "jitter")
+```
+
+
+2.Use alpha to make points partially transparent.  Value should be between 0 (totally transparent) and 1 (not at all transparent) 
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy), alpha = 0.25)
+```
+
+
+3.  Use geom_count: makes points bigger when there's more observations there. 
+
+```{r}
+ggplot(data = mpg) + geom_count(mapping = aes(x = displ, y = hwy), alpha = 0.25)
+```
+
+Which option you use depends on your data, and which best conveys the information you want to convey.
+
+
+
+# Bar Charts for Categorical Variables
+
+Scatterplots need at least two numeric variables
+
+What if you want to begin to understand categorical variables? 
+Use bar charts! 
+
+Show how frequently different values (from the list of possibilities) show up in the data set
+
+Q. How frequently do different manufacturers appear in the mpg data set? 
+
+Use geom_bar
+
+```{r}
+ggplot(data = mpg) + geom_bar(mapping = aes(x = manufacturer))
+```
+
+No y aesthetic is needed - only need one variable for a bar chart
+
+Default y value is count 
+
+Can sometimes be hard to read x-axis: can flip this plot, make horizontal instead of vertical bars. 
+
+Option 1: Set y = manufacturer
+
+```{r}
+ggplot(data = mpg) + 
+  geom_bar(mapping = aes(y = manufacturer))
+```
+
+(Now the x-axis is count) 
+
+
+Option 2: Add another layer to our plot: a transformation layer
+
+```{r}
+ggplot(data = mpg) + 
+  geom_bar(mapping = aes(x = manufacturer)) + 
+  coord_flip()
+```
+
+By default, all geom_bars do is count the number of times different values appear. 
+
+(will see later on how to do much more with them)
+
+
+## Composition Chart
+
+Uses color, not separate bars, to look at how many times different categories appear in the data.
+
+Like a bar chart with a single bar: no x-value, but you can color the single bar according to the parts of the data.
+
+We'll switch to using the diamonds data set 
+
+```{r}
+diamonds
+ggplot(data = diamonds) + geom_bar(mapping = aes(x = cut))
+```
+
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(fill = cut, x = ""), width = 0.3)
+```
+
+(width = 0.3 is just to make it look nicer, not required)
+
+Just like with bar charts, by default y is count
+
+Check: are just under 54,000 diamonds in the data, this plot is counting all of them. 
+
+Can change y-axis to proportions instead of count: position = "fill" 
+
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = "", fill = cut), position = "fill", width = 0.3)
+```
+
+Now y axis goes from 0 to 1: while label still says count, values are proportions/fractions. 
+
+Will learn later in class how to change it - YOU SHOULD ALWAYS CHANGE THE Y-AXIS LABEL
+
+
+## Bar charts with two categorical Variables
+
+What is relationship between cut and clarity for diamonds? 
+
+```{r}
+ggplot(data = diamonds) + geom_bar(mapping = aes(x = clarity))
+```
+
+What if we want to understand the relationship between cut and clarity? Both are categorical variables. 
+
+We can do this! Just make a composition plot for each clarity level, rather than one composition plot for the whole data set. 
+
+```{r}
+ggplot(data = diamonds) + geom_bar(mapping = aes(x = clarity, fill = cut ))
+```
+Among ideal diamonds, there are the most diamonds that are clarity VS2
+
+Ideal diamonds seem to the most likely cut for every clarity level except SL2 and maybe L1, too small to tell. 
+
+By default, y axis is counting the number of times each of these occurs in the data set. 
+
+If want to compare proportions rather than counts: use position = "fill". This makes all bars the same height. 
+
+```{r}
+ggplot(data = diamonds) + geom_bar(mapping = aes(x = clarity, fill = cut), position = "fill")
+```
+
+Lose: Information about how many diamonds there are of each clarity, which clarity levels appear more frequently, etc.
+
+Gain: Information about how the proportions of different cuts within each clarity level compare. 
+
+(Note: Should always change y-axis to say proportion, rather than count)
+
+Takeaways: Diamonds of IF clarity are most likely to be ideal cut.  As clarity increases, so does likelihood of being ideal cut. 
+
+By swapping x and fill, can learn different things about your data: 
+
+```{r}
+ggplot(data = diamonds) + geom_bar(mapping = aes(fill = clarity, x = cut), position = "fill")
+```
+
+
+What if we want to turn each column of colors back into a bar chart?  Use position = "dodge"
+
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = clarity, fill = cut), position = "dodge" )
+```
+
+Which options you use depends on your questions/what you're trying to learn from your data. 
+
+Options: 
+
+- position: default, "fill", "dodge" 
+- which variable is x, which variable is fill
+
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(fill = clarity, x = cut), position = "dodge" )
+```
+
+(same bars, just grouped/colored differently)
+
+
+# Additional Options: Titles, Labels, Limits
+
+You can change your plot by adding even more layers! 
+
+## Titles
+
+To add a title: do + ggtile("Your TItle Here") 
+
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(x = cut, fill = clarity), position = "dodge") + 
+  ggtitle("Color and Clarity in the Diamonds Data Set")
+```
+
+
+## Axis Labels
+
+To change an axis label: use + labs(x = "New x label", y = "New y label")
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, color = class), position = "jitter") + 
+  labs(x = "Displacement", y = "Highway Miles per Gallon")
+```
+
+When using proportion = "fill" in bar charts - always change y label from "count" to something that's correct, like "Proportion" or "Fraction" 
+
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(fill = clarity, x = cut), position = "fill") + 
+  labs(y = "Proportion")
+```
+
+Want plots to be clear, readable, and convey useful information!
+
+Can also use labs() for: title, subtitle, and much more! 
+
+```{r}
+ggplot(data = diamonds) + 
+  geom_bar(mapping = aes(fill = clarity, x = cut), position = "fill") + 
+  labs(y = "Proportion", title = "Cut and Clarity of Diamonds", subtitle = "From the Diamonds Data Set")
+```
+
+
+## Axis limits
+
+Maybe you only want to look at a subset of the data;use xlim() or ylim()
+
+
+```{r}
+ggplot(data = mpg) +
+  geom_point(mapping = aes(x = displ, y = hwy, color = class), position = "jitter") + 
+  labs(x = "Displacement", y = "Highway Miles per Gallon") + 
+  xlim(5,7)
+```
+
+Note: Pay attention to warnings, and how many points have been omitted by adding these limits!
+
+Warning told us that there were 198 rows that were removed when we added these x-limits. 
+
+
+# Summary
+
+Can make ggplots by adding on various layers - some layers involve data, some layers involve transformations, some layers involve other edits/additions
+
+geom_point: make a scatterplot
+- Use for two numeric variables, can add in additional variables via color, size, shape
+- Other options include position, alpha, using geom_count() instead
+
+geom_bar: make a bar chart that counts how many times different values appear in the data
+- Can use for 1 or 2 categorical variables
+- options include position, which variable is x, which variable is fill
+
+Additional layers: 
+
+- coord_flip(): Flips x and y axis
+- ggtitle(): adds a title
+- labs(): changes axis labels, add subtitle/title
+- xlim(), ylim(): changes bounds on axes
+
+
+# Activity
+
+On Canvas, Files > Class Material > 9-4 Activity
+
+If finish all regular questions, move on to bonus question (plotting wildfires).
+
+If finish bonus question, can leave: check in with Prof. Cannon before leaving
+
+Feel free to talk to/work with others around you.
+
+
