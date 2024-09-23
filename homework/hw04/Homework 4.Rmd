@@ -1,0 +1,390 @@
+---
+title: "Homework 4"
+author: "Sarah Cannon"
+date: "2024-09-24"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+**Classmates/other resources consulted:** [type answer here]
+
+To make the figures show up smaller in the knitted file: 
+```{r}
+# To make the figures show up smaller in the knitted file
+# This just improves readability for your graders, 
+# so a single figure doesn't take up almost an entire page
+knitr::opts_chunk$set(fig.width=4, fig.height=3)
+```
+
+> **Be sure to load the tidyverse and import the following data sets.**
+
+```{r}
+library(tidyverse)
+
+species <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-05-02/species.csv") %>% 
+  mutate(commontype = ifelse(str_detect(commonname, "ouse"), "Mouse", "Rat")) %>% 
+  select(scientificname, commonname, commontype, granivore, meanhfl, meanwgt, juvwgt)
+
+london_marathon <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-04-25/london_marathon.csv") %>% 
+  select(Year, Applicants, Accepted, Starters, Finishers) %>% 
+  pivot_longer(Applicants:Finishers, names_to = "Category", values_to = "Count")
+
+artists <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-01-17/artists.csv")
+```
+
+
+## Question 1 (8 points)
+
+> **This question explore the species data set. **
+
+>a. (2 points) **Make a boxplot of the mean hind foot length for the species in this data set. **
+
+
+
+> b. (2 points) **Looking at the boxplot you made in the previous part, what is the inter-quartile range (IQR) for the values in the meanhfl column?**
+
+
+
+> c. (2 points) **Explain, in your own words, why your boxplot from part (a) has three points on one side of the box but no points on the other side of the box.** 
+
+
+
+> d. (2 points) **Make a plot showing two boxplots, one for the mean hindfoot length when the commontype is Mouse and one for the mean hindfoot length when the commontype is Rat. They should be displayed on the same plot, not on separate plots or in separate facets.**
+
+
+
+
+## Question 2 (8 points)
+
+> a. (3 points) **Make a histogram of the mean weight of the species in the species data set. Pick an appropriate binwidth, and justify (in your own words) why you chose that binwidth. **
+
+
+
+> b. (2 points) **Modify your plot from the previous part to have two histograms, in two different facets, one showing the mean weight for species where the common type is Mouse and one showing the mean weight for species where the common type is Rat.**
+
+
+
+> c. (3 points) **Suppose you some data where every value in a particular column is a multiple of 100, such as the amount column in the following sales table: **
+
+```{r}
+sales <- tibble(amount = c(100, 300, 200, 500, 900, 1000, 800, 800, 700, 1500, 300, 400, 600, 600, 500, 700, 800, 900, 1000, 1200, 1300, 300, 800, 1000, 1500, 1800, 1900, 2100, 2300, 2500, 2100, 1600, 1700, 1900, 3000, 2000, 2300, 2600, 1700, 1800))
+sales
+```
+
+> **Suppose you want to make a histogram with this data. Explain, in your own words, why a binwidth of 150 is a bad choice.**
+
+
+
+
+
+
+## Question 3 (6 points)
+
+> **Consider the following scatterplot you made on Homework 2.**
+
+```{r}
+ggplot(data = species) + 
+  geom_point(mapping = aes(x = meanhfl, y = meanwgt, color = commontype))
+```
+
+> a. (2 points) **Modify this scatterplot to draw a single curve on top of this data that approximates the trend of the data.** 
+
+
+
+
+> b. (2 points) **Modify the scatterplot at the start of the question to draw two curves on top of this data that show the general trend of the points for each of the two commontypes - there should be one curve for mouse, and one curve for rat.**
+
+
+
+
+> c. (2 points) **Consider the London_marathon data.  Make a line graph showing the counts of runners in different categories over time; there should be a separate line for each Category.**
+
+
+
+
+
+## Question 4 (4 points)
+
+> **For each situation below, give two different examples of types of plots you could make. For each, be clear about how each variable involved will be represented in the plot. **
+
+> a. (2 points) **You want to understand the distribution of one numeric variable.** 
+
+
+
+
+> b. (2 points) **You want to understand the relationship between one categorical variable and one numerical variable**
+
+
+
+
+
+## Question 5 (3 points) 
+
+> **You can change the style of your plot by adding a theme. For the follow plot, try out several of the other theme options (https://ggplot2.tidyverse.org/reference/ggtheme.html).  Pick your favorite, display it here, and describe what you like about it. **
+
+```{r}
+ggplot(data = species) + 
+  geom_point(mapping = aes(x = meanhfl, y = meanwgt))
+```
+
+
+
+
+
+
+
+## Question 6 (7 points)
+
+> **For this question, consider the following plot:** 
+
+```{r}
+ggplot(data = species) + 
+  geom_point(mapping = aes(x = meanhfl, y = meanwgt))
+```
+
+> a. (2 points) **Add a third categorical variable to this plot using color, and change the default colors used to be some other colors of your choice.**
+
+
+
+> b. (2 points) **Add a third numeric variable to this plot using color, and change the default colors used at each end of the color gradient to be some other colors of your choice.**
+
+
+
+> c. (3 points) **Add a third categorical variable to this plot using color, and change the default colors used to be one of the standard color palettes in the RColorBrewer package.**
+
+
+
+
+
+## Question 7 (3 points) 
+
+> **Explain, in your own words, what a weighted average is.  Give an example (different from any we discussed in class or saw in the activity) of when you might want to do a weighted average. **
+
+
+
+
+## Question 8 (17 points) 
+
+> a. (2 points) **Explain, in your own words, what the following code is doing and why you get the answer you do.**
+
+```{r}
+mean(c(TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE))
+```
+
+
+
+> b. (2 points) **Explain, in your own words, what the data type is in the new column is_small that is created by the following code, and why it is that data type.**
+
+```{r}
+species %>% 
+  mutate(is_small = (meanwgt < 50)) 
+```
+
+
+
+
+> c. (2 points) **Explain, in your own words, what the following code is doing and why you get the answer that you do. What does the single number you get in your answer tell you about your data? **
+
+```{r}
+species %>% 
+  mutate(is_small = (meanwgt < 50)) %>% 
+  summarize(x = mean(is_small))
+```
+
+
+
+
+
+> d. (2 points) **Explain, in your own words, why the code here gives the same result as the previous question.**
+
+```{r}
+species %>% 
+  summarize(x = mean(meanwgt < 50))
+```
+
+
+
+
+
+> e. (3 points) **Using the artists data set, write code to create a data set with one row and two columns, where the first column contains the number of artists in the data set who's race is not White, and the second column contains the fraction of artists in the data set that are not White. **
+
+
+
+
+> f. (3 points) **Use code to perform the same calculations in the previous part, but for each combination of year and book separately. What do you observe about the frequency of non-white artists appearing in textbooks over time? **
+
+
+
+> g. (3 points) **Make a line graph with year on the x-axis and the fraction of non-White artists on the y-axis. There should be two lines, one for each book. What do you observe in this plot?**
+
+
+
+
+
+
+
+## Question 9 (14 points)
+
+> **This question concerns the pets_info.csv and pets_info2.csv files that were attached to the homework assignment.**
+
+> a. (2 points) **Import the pets_info.csv file, without specifying any additional arguments inside the read_csv() function except the file name.  Explain why the tibble you get is not what you want.** 
+
+
+
+
+> b. (2 points) **Add a parameter to your import command to correctly import the data in pets_info.csv into a tibble, with the correct column names.** 
+
+
+
+
+> c. (2 points) **Consider the pets_info2.csv file attached to the homework assignment; it does not have column names, but the columns are, in order, Name, Species, Age,  and Date Adopted.  Import the pets_info2.csv file and specify the column names as you do.**
+
+
+
+
+> d. (2 points) **Explain, in your own words, the benefits of using read_csv() instead of read.csv().**
+
+
+
+
+> e. (3 points)  **What happens when one row of a csv file has a different number of commas than other rows? Explain in your own words.  You can refer to the following two examples in your explanation if you'd like, though make sure your explanation is more general than just these two examples.  Be sure to mention any errors or warnings that might occur. ** 
+
+```{r}
+read_csv("a,b,c,d
+         1,2,3,4
+         5,6,7
+         8,9,10,11")
+```
+```{r}
+read_csv("a,b,c,d
+         1,2,3,4
+         5,6,7,8,9
+         10,11,12,13")
+```
+
+
+
+ 
+
+> f. (3 points) **In 2-4 sentences, explain in your own words when importing data directly using a URL is a good idea, and when importing data directly using a URL is a bad idea. **
+
+
+
+
+
+
+
+## Question 10 (6 points)
+
+> a. **Suppose you want to parse the string "$67,000" to sixty-seven thousand. How would you do this? **
+
+
+
+> b. **Suppose you want to parse the string "67.000,00" to mean sixty-seven thousand. How would you do this?**
+
+
+
+> c. **Explain the difference between parse_double() and parse_number().  Give an example of when you should use parse_number(), and when you should use parse_double().**
+
+
+
+
+## Question 11 (6 points)
+
+> a. (3 points) **Import the attached data set "Monthly_amounts.txt". After importing, correct the data types of the columns largest_amount and average_amount to be what they should be.  Explain any warnings you get.**
+
+
+
+
+> b. (3 points) **For the same data set, specify additional option(s) while importing so that, after importing but before using any other functions, the largest_amount and average_amount columns are both a numeric data type. Then, correct the data type of the largest_amount column to be what it should be.  **
+
+
+
+
+
+## Question 12 (9 points) 
+
+> a. (2 points) **Explain, in your own words, what the fill() function does. Describe an example, different from any we talked about in class, of when you might want to use this function.**
+
+
+
+
+> b. (2 points) **Give some examples of data that is implicitly missing from this tibble. **
+
+```{r, echo = FALSE}
+campus_visitors <- tribble(
+  ~School, ~Day_of_week, ~TimeOfDay, ~NumVisitors,
+  "CMC", "Monday", "Morning", 23,
+  "CMC", "Monday", "Afternoon", 23,
+  "CMC", "Monday", "Evening", 32,
+  "CMC", "Tuesday", "Morning", 42,
+  "CMC", "Tuesday", "Afternoon", 11,
+  "CMC", "Tuesday", "Evening", 12,
+  "CMC", "Wednesday", "Evening", 8,
+  "CMC", "Thursday", "Morning", 3,
+  "CMC", "Thursday", "Afternoon", 0,
+  "CMC", "Thursday", "Evening", 14,
+  "CMC", "Friday", "Morning", 3,
+  "CMC", "Friday", "Afternoon", 35,
+  "CMC", "Saturday", "Afternoon", 35,
+  "HMC", "Monday", "Afternoon", 52,
+  "HMC", "Monday", "Evening", 22,
+  "HMC", "Tuesday", "Morning", 24,
+  "HMC", "Tuesday", "Afternoon", 19,
+  "HMC", "Wednesday", "Afternoon", 25,
+  "HMC", "Wednesday", "Evening", 43,
+  "HMC", "Thursday", "Morning", 63,
+  "HMC", "Thursday", "Afternoon", 4,
+  "HMC", "Thursday", "Evening", 0,
+  "Pitzer", "Monday", "Morning", 0,
+  "Pitzer", "Monday", "Afternoon", 23,
+  "Pitzer", "Monday", "Evening", 54,
+  "Pitzer", "Tuesday", "Morning", 23,
+  "Pitzer", "Tuesday", "Evening", 22,
+  "Pitzer", "Wednesday", "Morning", 25,
+  "Pitzer", "Thursday", "Evening", 14,
+  "Scripps", "Monday", "Morning", 19,
+  "Scripps", "Monday", "Afternoon", 14,
+  "Scripps", "Monday", "Evening", 23,
+  "Scripps", "Tuesday", "Morning", 11,
+  "Scripps", "Tuesday", "Evening", 15,
+  "Scripps", "Wednesday", "Morning", 5,
+  "Scripps", "Thursday", "Evening", 9,
+  "Scripps", "Sunday", "Evening", 9
+)
+campus_visitors
+```
+
+
+
+> c. **(3 points) Use the command we learned in class to add rows to this tibble that correspond to the missing data; how many rows do you get?  Explain why you get this number.**
+
+
+
+> d. **(2 points) Do you think there is still data implicitly missing from the tibble you made in part b? Explain. Hint: Use what other knowledge you might have about the columns/values involved. **
+
+
+
+
+
+
+## Question 13 (9 points)
+
+> **As we start importing data from more sources, it's important to have information about the data and how it was collected. Read the research paper "Datasheets for Datasets," available at https://arxiv.org/abs/1803.09010.**
+
+> a. **Explain why it's important to fully document the creation of data sets, and what ethical harms may result if data set are not thoroughly documented. **
+
+
+
+
+> b. **Of all the questions listed in Section 3, which one surprised you most? Explain why, despite being surprising to you, having an answer to that question in a datasheet is important. **
+
+
+
+
+> c. **For the artists data set from last week's homework (See https://github.com/rfordatascience/tidytuesday/blob/master/data/2023/2023-01-17/readme.md and the various other links included on that page, such as https://research.repository.duke.edu/concern/datasets/q811kk70n?locale=en): how thorough was the documentation accompanying this data set?  Give some examples of questions from Section 3 that you were able to find answers to, and give some examples of questions from Section 3 that you were not able to find answers to.**
+
+
+
+
