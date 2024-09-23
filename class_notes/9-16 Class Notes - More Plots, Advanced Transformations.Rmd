@@ -1,0 +1,543 @@
+---
+title: "Class Notes 9-16 - Advanced ggplots, data transformations"
+author: "Sarah Cannon"
+date: "9/16/2024"
+output: html_document
+---
+
+```{r}
+knitr::opts_chunk$set(fig.width=4, fig.height=3)
+```
+
+## Announcements
+
+Homework 3 Due tomorrow night at 11:59pm on Gradescope as a PDF. Assign *all* pages to a question! https://help.gradescope.com/article/fnbn2knmq1-how-can-i-submit-my-homework-as-a-pdf
+
+Upcoming office hours: 
+
+- **Tuesday 3-4:30pm** (no morning office hours) 
+- Wednesday 1:15-2:15pm
+
+Template for class notes: On Canvas, Files > Class Materials > 9-16 Class Notes Template. 
+
+QCL one-on-one appointments and drop-in schedule: https://www.cmc.edu/qcl/mentoring
+
+Questions about upcoming schedule?
+
+Questions from pre-class video?
+
+
+## Visualizing with ggplot
+
+```{r}
+library(tidyverse)
+```
+
+Previously: Many types of plots! 
+Today: A more principled viewpoint about when to use which kinds of plots
+
+
+## Single-variable plots
+
+First, always look at variables individually to understand spread/range/distribution.
+
+Categorical variables:
+
+- bar chart
+- composition plot 
+
+Numerical variables:
+
+- boxplot
+
+```{r}
+ggplot(data = mpg) + geom_boxplot(aes(x = cty))
+```
+
+- histogram 
+
+```{r}
+ggplot(data = mpg) + 
+  geom_histogram(aes(x = cty), color = "black", fill = "white")
+```
+
+Can change binwidth: 
+
+```{r}
+ggplot(data = mpg) + 
+  geom_histogram(aes(x = cty), color = "black", fill = "white", binwidth = 5)
+```
+
+Choosing the right number of bins takes practice!  Depends on what questions you're asking about your data. 
+
+Here's a bad value for binwidth: 
+
+```{r}
+ggplot(data = mpg) + 
+  geom_histogram(aes(x = cty), color = "black", fill = "white", binwidth = 0.75)
+```
+
+Why are there so many gaps between 10 and 20? 
+
+These gaps are artificial! 
+All cty values are integers
+ 
+```{r}
+mpg
+```
+ 
+When the bins have width less than one, some bins can't have any data values in them! 
+
+If data is integers: Always set the bindwith to be an integer. 
+
+If data is rounded to 2 decimal places: Binwidth should not be more than 2 decimal places.  And so on... 
+
+A good binwidth for this plot: 1 or 2 or 5
+
+Too few bins: hides some interesting features. 
+
+```{r}
+ggplot(data = mpg) + 
+  geom_histogram(aes(x = cty), color = "black", fill = "white", binwidth = 8)
+```
+
+Alternately: specify number of bins rather than binwidth: 
+
+```{r}
+ggplot(data = mpg) + 
+  geom_histogram(aes(x = cty), color = "black", fill = "white", bins = 10)
+```
+
+Usually better to specify binwidth - here don't have control over width, don't know if it's an integer, etc. 
+
+But, in certain situations, might make sense to specify number of bins
+
+
+## Plots with Two Variables
+
+Two categorical variables: 
+
+- bar charts with fill
+
+Two numeric variables: 
+
+- scatterplot (geom_point)
+- line graph (geom_line - when data is sequential) 
+- geom_smooth (usually drawn on top of one of the previous two - shows general trends, not actually data)
+
+One numeric and one categorical variable
+
+- geom_bar with stat = "identity" (when there's one numeric y-value for each categorical x-value)
+- boxplots
+- histograms with facets
+
+
+### Boxplots with Two Variables
+
+Used with one numeric and one categorical variable
+
+Instead of one boxplot for the whole data set, make a separate boxplot for the data within each category
+
+Instead of just using an x aesthetic, use a y aesthetic too! 
+
+```{r}
+ggplot(data = mpg) + geom_boxplot(mapping = aes(x = cty, y = class))
+```
+
+Each category has different IQR, different whiskers, different median, different outliers, etc. 
+
+Can also color the boxes differently if you'd like: 
+
+```{r}
+ggplot(data = mpg) + geom_boxplot(aes(x = cty, y = class, fill = class))
+```
+
+Reminder: fill = color inside a share, color = outline of a shape
+
+
+### Facets
+
+This separates your plot out into multiple panels, one for each value of a categorical variable.
+
+Most useful when there's only a few values for your categorical variable. 
+
+```{r}
+ggplot(data = mpg) + 
+  geom_histogram(aes(x = cty), binwidth = 2, color = "black", fill = "white") + 
+  facet_wrap(~ drv)
+```
+
+Format: + facet_wrap( ~ cat_col_name)
+
+Can be used for any type of plot to split up according to a categorical variable, not just histograms
+
+For example, with geom_point: 
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_wrap(~ drv)
+```
+
+Not as useful when too many facets: 
+
+```{r}
+ggplot(data = mpg) + 
+  geom_histogram(aes(x = cty), binwidth = 2, color = "black", fill = "white") + 
+  facet_wrap( ~ class)
+
+```
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_wrap( ~ class)
+```
+
+
+## More than two variables
+
+Add onto existing plots using features such as color, facets, size, etc. 
+
+Example: scatterplot: for two numeric variables, but can add information about additional categorical variables with color, shape, or facets, or additional numerical variables using size or color. 
+
+```{r}
+ggplot(data = mpg) + geom_point(mapping = aes(x = displ, y = hwy, color = drv))
+```
+
+Can also add additional features to geom_smooth, geom_line: 
+
+In a geom_smooth, can get a separate curve for each value of a categorical variable. 
+
+For example, for drv: 
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = drv)) + 
+  geom_smooth(mapping = aes(x = displ, y = hwy, color = drv), se = FALSE)
+```
+
+Or, can remove color from geom_smooth to just have one curve: 
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = drv)) + 
+  geom_smooth(mapping = aes(x = displ, y = hwy), se = FALSE, color = "black")
+```
+
+
+In geom_line, can get a different line graph (collection of line segments) for different values of a categorical variable.
+
+Example from bonus activity: 
+
+```{r}
+# making the built-in data set airquality more amenable to plotting 
+# (will learn how/why to do this later!) 
+airquality <- airquality %>% mutate(Month = factor(Month))
+airquality
+
+ggplot(airquality) + geom_line(mapping = aes(x = Day, y = Wind, color = Month ))
+```
+
+To sum up: When plotting, think first about how many variables you want to represent in your plot and whether they are categorical or numeric.  Then, consider what you want to communicate/what's important in your situation: simplicity vs. detail, separate trends vs. comparing trends, etc. 
+
+
+## Themes, Colors
+
+Can change how your plot looks.
+
+There are many themes you can use in a plot.
+
+For example, make it black-and-white (useful if printing): + theme_bw()
+
+```{r}
+ggplot(data = mpg) + geom_point(aes(cty, hwy)) + theme_bw()
+```
+
+Remove grid lines, simple style: + theme_classic()
+
+```{r}
+ggplot(data = mpg) + geom_point(aes(cty, hwy)) + theme_classic()
+```
+
+Are many more themes!  https://ggplot2.tidyverse.org/reference/ggtheme.html
+
+
+### Colors: Discrete Values (Categorical variables) 
+
+Can also change the default color choices.  Can help with readability, accessibility, etc. 
+
+For example: Most common form of color-blindness is red-green color-blindness. 
+R's default when there are three colors includes both red and green.
+
+To change, use: + scale_color_manual( values = list_of_colors) 
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = drv)) +
+  geom_smooth(mapping = aes(x = displ, y = hwy, color = drv), se = FALSE) + 
+  scale_color_manual( values = c("blue", "red", "black"))
+```
+
+R has built-in colors you can reference: 
+
+```{r}
+colors()
+```
+
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = drv)) +
+  geom_smooth(mapping = aes(x = displ, y = hwy, color = drv), se = FALSE) + 
+  scale_color_manual(values=c("violet" , "wheat2" , "bisque"))
+```
+
+Or: can specify color with six-digit hexadecimal code
+For example, blue is "#0000FF"
+
+```{r}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = drv)) +
+  geom_smooth(mapping = aes(x = displ, y = hwy, color = drv), se = FALSE) + 
+  scale_color_manual(values=c("#0000FF", "darkolivegreen", "plum"))
+```
+
+
+This changes colors; to change fill, use scale_fill_manual()
+
+Can also use scale_fill_grey() and scale_color_grey() to make plots greyscale (usually use with theme_bw() or theme_classic, etc.)
+
+Built-in color sets: RColorBrewer package; see  https://r-graph-gallery.com/38-rcolorbrewers-palettes.html
+
+```{r}
+#install.packages("RColorBrewer")
+library(RColorBrewer)
+
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = drv)) +
+  geom_smooth(mapping = aes(x = displ, y = hwy, color = drv), se = FALSE) + 
+  scale_color_brewer(palette = "RdYlBu")
+```
+
+
+### Color Gradients (for numeric variables) 
+
+For example:  Color gradient by default is light blue to dark blue; another color scale might make more sense. 
+
+```{r}
+ggplot(mpg) + geom_point(aes(x = cty, y = hwy, color = displ)) 
+```
+
+Can use scale_color_gradient(): specify low and high values
+
+```{r}
+ggplot(mpg) + geom_point(aes(x = cty, y = hwy, color = displ)) + 
+  scale_color_gradient(low = "blue", high = "red")
+```
+
+Can use scale_fill_gradient() for fill instead of color.
+
+Are methods for specifying a gradient with 3 colors, or even more colors: 
+scale_color_gradient2(), scale_fill_gradient2() 
+scale_color_gradientn(), scale_fill_gradientn()
+
+
+## Overview
+
+A good visualization should: 
+
+- Pick out the aspects of the data that are important to you. 
+- Allow you to see multiple dimensions/variables simultaneously in the same plot
+- Allow comparisons across different characteristics of the data set
+- Be clearly labelled and easy to understand. 
+
+
+## Additional Data Transformations
+
+We'll cover some more advanced transformations that build on what we learned last week. 
+
+### Weighted Averages
+
+Sometimes, you want to take a *weighted* average - not all values have same weight. 
+
+```{r}
+grades <- tibble(item = c("Test 1", "Test 2", "Quiz", "Homework", "Class Engagement", "Final Project"), score = c(90, 95, 80, 95, 100, 80), weight_perc = c(16, 16, 10, 30, 8, 20))
+grades
+```
+
+Don't just want to average your grades; want to *weight* them appropriately. 
+
+Use weighted.mean function
+
+```{r}
+?weighted.mean
+```
+
+```{r}
+summarize(grades, final_grade = weighted.mean(score, weight_perc))
+```
+
+A common use: when you want to average rates, but the rates come from populations of different sizes. 
+
+```{r}
+c <- tibble(county = c("USA", "Canada", "Mexico"), 
+            rate = c(0.5, 0.1, 0.2), 
+            population_millions = c(337, 40, 131))
+c
+```
+
+Incorrect: this is not overall rate across the three countries
+
+```{r}
+mean(c$rate) # This gives the wrong overall rate
+```
+
+Correct: Need to weight according to country's population
+
+```{r}
+weighted.mean(c$rate, c$population_millions)
+```
+
+Can use weighted.mean in a summarize, or on it's own - it just depends
+
+
+
+### Sum/Mean of T/F
+
+We already saw: When sum a TRUE/FALSE vector (excluding NA values, if appropriate), answer is number of TRUEs.
+
+We used it for sum(is.na(column_name)) to count number of NA values. 
+
+Can use it more generally. 
+
+First, make a column with TRUE/FALSE values in it. 
+
+```{r}
+library(nycflights13)
+
+flights %>% mutate(is_very_delayed = ifelse( dep_delay > 60, TRUE, FALSE))
+```
+
+But, we're just putting TRUE in our new column if the condition is TRUE, and FALSE if the condition is FALSE (and NA if dep_delay is NA). 
+
+Instead, could just directly put this TRUE/FALSE value in new column
+
+```{r}
+flights %>% mutate(is_very_delayed = (dep_delay > 60))
+```
+
+Now, can sum this new column (removing NA values) to get number of very delayed flights. 
+
+```{r}
+flights %>% mutate(is_very_delayed = (dep_delay > 60)) %>% 
+  summarize(num_very_delayed = sum(is_very_delayed, na.rm = TRUE))
+```
+
+What if want to know what *fraction* of flights that take off are very delayed? 
+
+Will start with an example without any NA values. 
+
+What fraction of cars in mpg have cty > 20? 
+
+```{r}
+mpg %>% 
+  mutate(cty_greater_than_20 = (cty > 20) ) %>% 
+  summarize( num_greater_than_20 = sum(cty_greater_than_20), 
+             frac_greater_than_20 = sum(cty_greater_than_20)/n() )
+```
+
+Adding elements and dividing by the number of them is taking a mean! 
+
+```{r}
+mpg %>% 
+  mutate(cty_greater_than_20 = (cty > 20)) %>% 
+  summarize(num_greater_than_20 = sum(cty_greater_than_20), 
+            frac_greater_than_20 = mean(cty_greater_than_20))
+
+```
+Taking the mean of a TRUE/FALSE column gives you the *fraction* of the values that are TRUE. 
+
+Ex. c(T, T, F, T, F, F)
+
+sum(c(1,1,0,1,0,0))/6 = mean( c(1,1,0,1,0,0)) = 0.5
+
+What fraction of flights that took off were very delayed?  Just use mean! 
+
+```{r}
+flights %>% mutate(is_very_delayed = (dep_delay > 60)) %>% 
+  summarize(num_very_delayed = sum(is_very_delayed, na.rm = TRUE), 
+            frac_very_delayed = mean(is_very_delayed, na.rm = TRUE)
+            )
+```
+
+Or, could skip intermediate step of making new column: 
+
+```{r}
+flights %>% 
+  summarize(num_very_delayed = sum(dep_delay > 60, na.rm = TRUE), 
+            frac_very_delayed = mean(dep_delay > 60, na.rm = TRUE ))
+```
+
+To get the fraction of data satisfying some CONDITION, do: summarize( frac = mean(CONDITION))
+
+Here CONDITION is anything that evaluates to TRUE/FALSE (anything you could use in filter())
+
+Example: Fraction of flights that go to Atlanta
+CONDITION: dest == "ATL"
+
+```{r}
+flights %>% summarize(frac_to_atl = mean( dest == "ATL" , na.rm = TRUE))
+```
+
+All of this can be done with group_by() as well: 
+
+```{r}
+flights %>% group_by(origin) %>%  
+  summarize(frac_to_ATL = mean(dest == "ATL", na.rm = TRUE))
+```
+
+
+## Summary
+
+* = plots discussed today
+
+One-variable plots: 
+- bar chart (categorical)
+- composition plot (categorical)
+* boxplot (numeric)
+* histogram (numeric)
+
+Two-variable plots: 
+- scatterplot (two numeric)
+- line graph (two numeric, sequential data, one y-value for each x-value)
+- bar chart with fill (two categorical)
+- bar chart with stat = "identity" (one categorical, one numeric - one y-value for each x-value)
+* boxplot (one categorical, one numeric)
+* histogram with facets (one categorical, one numeric)
+
+To incorporate a third variable: 
+- size (numeric)
+- shape (categorical, <= 6 values)
+* color (numeric or categorical)
+* facets (categorical, few values)
+
+Can change how a plot looks using themes or alternate color choices
+
+Weighted averages: weighted.mean()
+
+To count number of rows satisfying CONDITION: sum(CONDITION)
+To get fraction of rows satisfying CONDITION: mean(CONDITION)
+
+
+## Activity
+
+On Canvas, Files > Class Material > 9-16 Activity
+
+If finish all regular questions, move on to bonus question.
+
+If finish bonus question, can leave: check in with Prof. Cannon before leaving
+
+Feel free to talk to/work with others around you.
+
+

@@ -1,0 +1,569 @@
+---
+title: "9-18 Class Notes: Importing Data, Parsing"
+author: "Sarah Cannon"
+date: "9/18/2024"
+output: html_document
+---
+
+
+# Announcements
+
+Homework 3: If using extension hours, final deadline Thursday 11:59pm
+
+Homework 4: Posted tomorrow morning, due Tuesday 11:59pm (based on class this week) 
+
+Upcoming Office Hours: 
+- Monday 1:15-2:15
+- Tuesday 10:30-11:30 and 2-3
+- Wednesday 1:15-2:15
+
+Template for class notes: On Canvas, Files > Class Materials > 9-18 Class Notes Template
+
+QCL one-on-one appointments and drop-in schedule: https://www.cmc.edu/qcl/mentoring
+
+Questions about upcoming schedule?
+
+Questions from preclass video?
+
+
+# Importing Data
+
+```{r, message = FALSE}
+library(tidyverse)
+```
+
+Most data is in CSV format (comma-separated values)
+
+Option 1: Import from URL. Possible if:
+
+- data is publicly available
+- data has correct format
+- you are confident owner of url won't move/change/delete data
+- the data set is not being constantly updated
+
+```{r}
+artists <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-01-17/artists.csv")
+artists
+```
+
+
+(Option 2: Data typed directly into read_csv as a string)
+
+```{r}
+read_csv("a,b,c
+         1,2,3
+         4,5,6")
+```
+
+(useful as a learning tool)
+
+
+Option 3: import from a file on your computer
+
+However you obtained it (downloaded, experiments, other source), you have a data file on your computer, and want to work with it in R.
+
+Example: wind turbine data for California: Download tabular data in CSV format from https://eerscmap.usgs.gov/uswtdb/data/
+
+
+```{r}
+# THis won't work
+read_csv("https://eerscmap.usgs.gov/uswtdb/assets/data/uswtdbCSV.zip")
+```
+
+Can't use a url directly, because it's not a csv file (it's a .zip) 
+
+
+## Importing data from a file
+
+To open a file, need to know where it is!
+
+Everything on your computer is stored in *directories*.
+
+Put data in _same directory_ that the R Markdown file is saved in (save your RMarkdown file if you haven't already).
+
+This data in particular: unzip/extract first, then put .csv file in same folder as your RMarkdown file.
+
+Note the .csv file shows up as excel file - excel is the most commonly used program to open CSV files.
+
+See in cells, but is not raw data! 
+
+Raw data is just comma separated values (open in a text editor to see that) 
+
+Now, can open using read_csv:
+
+```{r}
+wind <- read_csv("uswtdb_v7_1_20240814.csv")
+wind
+```
+
+May need to also reset your working directory (in files pane on bottom right, navigate to desired folder then click More > Set As Working Directory)
+
+Or, give address of where file is located, e.g. in subfolder called "datasets"
+
+```{r}
+read_csv("datasets/uswtdb_v7_1_20240814.csv")
+```
+
+Can use all the same options as from pre-class video: skip, col_names, na, etc. 
+
+To check if everything imported without errors: 
+
+```{r}
+problems(wind)
+```
+
+No parsing errors - this is an empty tibble
+
+
+## Missing Values: complete() and fill()
+
+Two ways data can be missing: 
+
+- Explicitly missing: When the value is NA (we've already discussed when it's OK to remove these NA values and when doing so might introduce bias)
+
+- Implicitly missing data: when some entire rows/observations are missing. 
+
+```{r}
+# You don't need to know how this table is created
+tb <- table1 %>% slice(1:5)
+tb
+```
+
+Chine, 2000 data is missing! Format of the other data suggests that it should be there. 
+
+Another example:
+
+```{r}
+fish_encounters
+```
+
+Missing: What stations a fish wasn't seen at! 
+
+In this case, becomes more visible when pivot: 
+
+```{r}
+# We haven't learned about pivoting yet, but will next week!
+fish_encounters %>% pivot_wider(names_from = station, values_from = seen)
+```
+
+(How to find implicitly missing values: pivoting is usually not the correct thing to do, just using it here to help you see what's missing) 
+
+
+### complete()
+
+Instead, use complete() command, which tries to figure out which data is missing 
+
+```{r}
+tb %>% complete(country, year)
+```
+
+Makes a new row for each possible combination of country and year that doesn't appear in the table' fills in NA in other columns. 
+
+Were 3 possibilities for country and 2 possibilities for year: So 2 * 3 = 6 rows in the resulting table.
+
+Good practice for clean data: if data is implicitly missing, make it explicit!
+
+complete(): 
+- first argument: data set
+- remaining arguments: columns to complete, will make sure all combinations of values in these columns appear. 
+
+```{r}
+complete(fish_encounters, fish, station)
+```
+
+Can also complete to get all possible combinations of the values in 3 columns, or 4 columns, etc. 
+
+
+### fill()
+
+When a cell is blank, sometimes means to use the value of the cell above it. But, blank cells get changed to NA when doing read_csv. 
+
+Example: sales.csv is on canvas
+
+```{r}
+sales <- read_csv("sales.csv", skip = 1)
+sales
+```
+
+Tidyverse had a specific function to help with this: fill(): replaces NA values with the values above them in the table. 
+
+```{r}
+sales %>% fill(year)
+```
+
+Be very careful using this - if applied wrong could corrupt the entire data set! 
+
+Only use when you're sure all NA values in the year column should be set to the value above them. 
+
+
+## Data Types
+
+Can see different columns have different data types: 
+
+```{r}
+artists
+```
+
+<chr>: character string; is default if data doesn't appear to be some other type.
+
+- Is NOT a single character
+- Today: turning character strings into other data types
+- Next week: working with strings directly
+
+<dbl>: floating point numbers (decimals)
+
+<int>: integer values
+
+```{r}
+library(nycflights13)
+flights
+```
+
+<lgl>: Logical; TRUE/FALSE Values
+
+```{r}
+flights %>% mutate(is_very_delayed = (dep_delay > 60)) 
+```
+
+
+## Parsing: Turning Strings into Different Data Types
+
+Note: Older versions of tidyverse are not as good at parsing. Import section of textbook uses older version of these packages.
+
+How to turn data of one type into data of another type? 
+
+- read_csv turns string data into numbers/logicals/etc.
+- mostly chooses right type; sometimes doesn't
+
+To turn string data into other types of data (numerical, logical, etc.): 
+
+
+### parse_number
+
+```{r}
+ht_wt <- read_csv("height, weight
+         3ft, 130lbs
+         1ft, 25lbs 
+         2ft, 75lbs")
+ht_wt
+```
+
+Data isn't interpreted as numbers because of the other characters present. 
+
+Can specify in read_csv what data types should be - are a few weird bugs
+
+For this class: will correct data types after import
+
+(if have really really big data - better to parse when importing using col_types argument)
+
+*parse_number*: strips away all character except numbers
+
+```{r}
+parse_number("3ft")
+parse_number(ht_wt$height)
+```
+
+parse_ functions: 
+first argument: Thing you are parsing. 
+
+- string
+- list of strings
+- column of a tibble of type <chr> 
+
+How to modify data table? mutate!
+
+```{r}
+ht_wt %>% 
+  mutate(height_ft = parse_number(height)) %>% 
+  select(-height)
+```
+
+Format: 
+
+mutate(new_col_name = parse_number(old_column_name))
+
+Can use same name - then don't need to remove old column, but be careful! 
+
+
+Note: parse_number always produces doubles, not integers. 
+
+Turning a <dbl> column into an <int> column: later this class!
+
+
+### parse_integer, parse_double
+
+Used to go directly from strings to numbers, when there are no extra characters (like ft or lbs)
+
+If a column has some entries that are not numbers, read_csv() will make the whole column type <chr> 
+
+```{r}
+read_csv("height, weight 
+         32, 130 
+         22, 65
+         x, 200
+         50, -
+         10, 15")
+```
+
+If know how missing values are represented, can correct using na argument of read_csv (preclass video) 
+
+```{r}
+read_csv("height, weight
+         32, 130 
+         22, 65
+         x, 200
+         50, -
+         10, 15", na = c("x", "-"))
+```
+
+But, if don't know what means NA, or if these values appear elsewhere where they shouldn't be converted to NA, can use parse_integer or parse_double functions.
+
+```{r}
+ht_wt2 <- read_csv("height, weight 
+         32, 130 
+         22, 65
+         x, 200
+         50,-
+         10, 15")
+h <- parse_integer(ht_wt2$height)
+h
+```
+
+To see parsing failures, use problems() 
+
+```{r}
+problems(h)
+```
+
+Got one parsing failure - expected no trailing characters (i.e. expected an integer with no decimals), but instead had x
+
+x can't be converted into an integer, because it's not one! In this case the warning is good, it's telling us what we already knew. 
+
+Can do this parse within a mutate: 
+
+```{r}
+mutate(ht_wt2, height = parse_integer(height) )
+```
+
+Or, can set what na values are within the parse: 
+
+```{r}
+mutate(ht_wt2, height = parse_integer(height, na = "x"))
+```
+
+Now don't get parsing errors (this step of adding "na = ..." isn't necessary, but can be convenient)
+
+If columns were decimals instead of whole numbers, use parse_double instead.
+
+```{r}
+ht_wt3 <- read_csv("height, weight 
+         32, 130 
+         22.1, 65
+         x, 200
+         50,-
+         10.9, 15")
+
+```
+
+If try to use parse_integer with data that's not integer:
+
+```{r}
+mutate(ht_wt3, height = parse_integer(height))
+```
+
+Instead, use parse_double.
+
+```{r}
+mutate(ht_wt3, height = parse_double(height))
+```
+
+
+*Why convert to integer, when possible?*  Floating point errors!
+
+*Why use parse_double instead of parse_number?* Get warnings if there are non-numbers in your column
+
+
+### Locales
+
+In Europe, numbers written like: 1.000,00
+
+```{r}
+price <- tibble(eu_price = c("436,98", "142,87", "526,99"))
+price
+```
+
+To parse this, use locale parameter of parse_double: 
+
+```{r}
+parse_double(price$eu_price, locale = locale(decimal_mark = ","))
+```
+
+To modify data set, use mutate: 
+
+```{r}
+price %>% mutate(eu_price = parse_double(eu_price, 
+                                         locale = locale(decimal_mark = ",")))
+```
+
+To ignore grouping marks (separating every three characters, like 1,000 or 1.000): use parse_number (and specify locale, if needed)
+
+```{r}
+parse_double("1,000") # This won't work because of the comma
+parse_number("1,000")
+parse_number("1.000", locale = locale(grouping_mark = "."))
+```
+
+### parse_logical
+
+Convert string data into TRUE/FALSE data. Will recognize: 0/1, T/F, TRUE/FALSE
+
+```{r}
+read_csv("A, B 
+         T, F
+         T, F
+         -, T") %>% 
+  mutate(A_lgl = parse_logical(A))
+```
+
+
+The most important parse functions: 
+- parse_integer()
+- parse_double()
+- parse_number()
+- parse_logical() [TRUE/FALSE, or 1/0, or T/F]
+
+Later this semester:
+- parse_character()
+- parse_factors() 
+- parse_datetime()
+- parse_date()
+- parse_time()
+
+
+## Converting doubles to integers
+
+In artists data set, many columns are doubles but they should be integers to avoid potential floating point number issues (edition_number, year, artist_unique_id, moma_count_to_year, whitney_count_to_year)
+
+```{r}
+artists
+```
+
+parse_integer converts *strings* to integers only
+
+Instead, use: as.integer(). Only works if the values are actually integers! Doesn't round, etc. 
+
+```{r}
+artists %>% mutate(year_int = as.integer(year))
+```
+
+Careful: Good practice to use round before using as.integer: 
+
+- round on it's own doesn't produce the <int> data type
+- as.integer on it's own can sometimes produce incorrect values
+- together they do the right thing!
+
+```{r}
+artists %>% mutate(year_int = as.integer(round(year)))
+```
+
+
+### Example (if time) 
+
+Sometimes, just using as.integer without rounding first can produce errors. 
+
+Here's an example of this happening with real-world data. 
+
+```{r}
+# Import Data Set (can be found on canvas)
+nz_cards <- read_csv("New-Zealand-electronic-card-transactions-january-2023.csv", skip = 1)
+nz_cards
+
+# Separate period, which is of the form YYYY.MM, into year and month columns
+nz_cards2 <- nz_cards %>% mutate(year = floor(Period),
+                                 month = (Period - floor(Period)) * 100) %>% 
+  select(Period, year, month,everything())
+nz_cards2
+
+# When filtering for month 3, get nothing!
+filter(nz_cards2, month == 3)
+
+# Instead, should be using near()
+filter(nz_cards2, near(month, 3))
+
+# Better practice: turn month into an integer column
+nz_cards3 <- nz_cards2 %>% mutate(month = as.integer(month))
+filter(nz_cards3, near(month, 3))
+
+# Several months that were converted to 3 are actually month 4!  
+# Better practice: round first, then use as.integer
+nz_cards4 <- nz_cards2 %>% mutate(month = as.integer(round(month)))
+filter(nz_cards4, near(month, 3))
+```
+
+
+
+## Other file extensions
+
+Can import files with other file extensions. 
+
+E.g., .txt files, if in csv form
+
+[file is on canvas]
+
+```{r}
+read_csv("cdcr-state-totals.txt", skip = 4)
+```
+
+For reading excel files: readxl is best package
+
+```{r}
+#install.packages("readxl")
+#library(readxl)
+#read_excel("File-Name.xlsx")
+```
+
+Note: don't use read.csv: produces a data.frame, not a tibble
+
+read_csv is better because: 
+
+- tends to be much faster at reading files
+- output is in tibble form, chooses correct data types
+- Base R functions can depend on the operating system; functions in readr (tidyverse) do not
+
+
+## Summary 
+
+Can import data using read_csv via: 
+
+- URL, only if it's stable/won't be moved or deleted)
+- (type directly into read_csv as a string)
+- A file on your computer, must be in same folder as RMarkdown file
+
+parse_number: turns strings into numbers, deletes all non-numeric characters
+
+parse_integer: turns strings into integers
+
+parse_double: turns strings into floating point numbers (decimals)
+
+parse_logical: turns strings into TRUE/FALSE values
+
+Look at warnings you receive! 
+
+locale: argument used to change decimal mark or grouping character or encoding
+
+as.integer: turns doubles into integers
+
+round: transforms double into the nearest whole number (result is still of type <dbl>)
+
+
+
+## Activity
+
+On Canvas, Files > Class Material > 9-18 Activity
+
+If finish all regular questions, move on to bonus question.
+
+If finish bonus question, can leave: check in with Prof. Cannon before leaving
+
+Feel free to talk to/work with others around you.
+
