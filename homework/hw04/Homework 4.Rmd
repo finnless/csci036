@@ -7,7 +7,7 @@ output:
   pdf_document: default
 ---
 
-**Classmates/other resources consulted:** [type answer here]
+**Classmates/other resources consulted:** N/A
 
 To make the figures show up smaller in the knitted file: 
 ```{r}
@@ -40,30 +40,54 @@ artists <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesd
 
 >a. (2 points) **Make a boxplot of the mean hind foot length for the species in this data set. **
 
-
+```{r}
+ggplot(data = species) + 
+  geom_boxplot(mapping = aes(y = meanhfl))
+```
 
 > b. (2 points) **Looking at the boxplot you made in the previous part, what is the inter-quartile range (IQR) for the values in the meanhfl column?**
 
+~26 - ~20 = ~6
 
+Calculated:
+```{r}
+species %>%
+  summarize(IQR = IQR(meanhfl))
+```
 
 > c. (2 points) **Explain, in your own words, why your boxplot from part (a) has three points on one side of the box but no points on the other side of the box.** 
 
-
+There are 3 points on the top of the boxplot because there are 3 outliers outside the whiskers which represent 1.5 * IQR.
 
 > d. (2 points) **Make a plot showing two boxplots, one for the mean hindfoot length when the commontype is Mouse and one for the mean hindfoot length when the commontype is Rat. They should be displayed on the same plot, not on separate plots or in separate facets.**
 
-
+```{r}
+species %>%
+  ggplot() +
+  geom_boxplot(mapping = aes(x = commontype, y = meanhfl))
+```
 
 
 ## Question 2 (8 points)
 
 > a. (3 points) **Make a histogram of the mean weight of the species in the species data set. Pick an appropriate binwidth, and justify (in your own words) why you chose that binwidth. **
 
+```{r}
+species %>%
+  ggplot() +
+  geom_histogram(mapping = aes(x = meanwgt), binwidth = 10)
+```
 
+A binwidth of 10 was best because it shows the story data well without being too cluttered and without interuptions in the histogram.
 
 > b. (2 points) **Modify your plot from the previous part to have two histograms, in two different facets, one showing the mean weight for species where the common type is Mouse and one showing the mean weight for species where the common type is Rat.**
 
-
+```{r}
+species %>%
+  ggplot() +
+  geom_histogram(mapping = aes(x = meanwgt), binwidth = 10) +
+  facet_wrap(~commontype)
+```
 
 > c. (3 points) **Suppose you some data where every value in a particular column is a multiple of 100, such as the amount column in the following sales table: **
 
@@ -74,6 +98,7 @@ sales
 
 > **Suppose you want to make a histogram with this data. Explain, in your own words, why a binwidth of 150 is a bad choice.**
 
+A binwidth of 150 is a bad choice because it is too small to show the distribution of the data. There are too many bins to show the data well and it will appear cluttered and jittery.
 
 
 
@@ -90,17 +115,30 @@ ggplot(data = species) +
 
 > a. (2 points) **Modify this scatterplot to draw a single curve on top of this data that approximates the trend of the data.** 
 
-
+```{r}
+species %>%
+  ggplot() +
+  geom_point(mapping = aes(x = meanhfl, y = meanwgt, color = commontype)) +
+  geom_smooth(mapping = aes(x = meanhfl, y = meanwgt))
+```
 
 
 > b. (2 points) **Modify the scatterplot at the start of the question to draw two curves on top of this data that show the general trend of the points for each of the two commontypes - there should be one curve for mouse, and one curve for rat.**
 
-
+```{r}
+ggplot(data = species) + 
+  geom_point(mapping = aes(x = meanhfl, y = meanwgt, color = commontype)) +
+  geom_smooth(mapping = aes(x = meanhfl, y = meanwgt, color = commontype))
+```
 
 
 > c. (2 points) **Consider the London_marathon data.  Make a line graph showing the counts of runners in different categories over time; there should be a separate line for each Category.**
 
-
+```{r}
+london_marathon %>%
+  ggplot() +
+  geom_line(mapping = aes(x = Year, y = Count, color = Category))
+```
 
 
 
