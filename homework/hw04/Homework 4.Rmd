@@ -148,12 +148,20 @@ london_marathon %>%
 
 > a. (2 points) **You want to understand the distribution of one numeric variable.** 
 
+1. Histogram
+The one variable is the x-axis and the y-axis is the frequency of the variable. The observations are sorted into bins and the height of each bar represents the number of observations in that bin.
 
+2. Boxplot
+The one variable is the y-axis and the x-axis is the categorical variable. The boxplot shows the distribution of the variable by showing the median, the interquartile range, and the outliers.
 
 
 > b. (2 points) **You want to understand the relationship between one categorical variable and one numerical variable**
 
+1. Bar chart
+The categorical variable is the x-axis and the y-axis is the frequency of the variable. The bars represent the number of observations in each category.
 
+2. Pie chart
+The catagorical variable is the different slices of the pie and the numerical variable is the proportion of the pie.
 
 
 
@@ -163,9 +171,11 @@ london_marathon %>%
 
 ```{r}
 ggplot(data = species) + 
-  geom_point(mapping = aes(x = meanhfl, y = meanwgt))
+  geom_point(mapping = aes(x = meanhfl, y = meanwgt)) +
+  theme_minimal()
 ```
 
+I like the minimal theme because it is simple and clean. It focuses on the data and makes the plot easy to read. It also has a grid which helps with readability.
 
 
 
@@ -183,23 +193,37 @@ ggplot(data = species) +
 
 > a. (2 points) **Add a third categorical variable to this plot using color, and change the default colors used to be some other colors of your choice.**
 
+```{r}
+ggplot(data = species) + 
+  geom_point(mapping = aes(x = meanhfl, y = meanwgt, color = commontype)) +
+  scale_color_manual(values = c("Mouse" = "red", "Rat" = "blue"))
+```
 
 
 > b. (2 points) **Add a third numeric variable to this plot using color, and change the default colors used at each end of the color gradient to be some other colors of your choice.**
 
+```{r}
+ggplot(data = species) + 
+  geom_point(mapping = aes(x = meanhfl, y = meanwgt, color = juvwgt)) +
+  scale_color_gradient(low = "blue", high = "red")
+```
 
 
 > c. (3 points) **Add a third categorical variable to this plot using color, and change the default colors used to be one of the standard color palettes in the RColorBrewer package.**
 
 
-
+```{r}
+ggplot(data = species) + 
+  geom_point(mapping = aes(x = meanhfl, y = meanwgt, color = commontype)) +
+  scale_color_brewer(palette = "Dark2")
+```
 
 
 ## Question 7 (3 points) 
 
 > **Explain, in your own words, what a weighted average is.  Give an example (different from any we discussed in class or saw in the activity) of when you might want to do a weighted average. **
 
-
+A weighted average is an average that takes into account the relative importance of each value in the data set. It is calculated by multiplying each value by its weight and then dividing by the sum of the weights.
 
 
 ## Question 8 (17 points) 
@@ -210,7 +234,7 @@ ggplot(data = species) +
 mean(c(TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, TRUE))
 ```
 
-
+This is finding the mean of the boolean values TRUE and FALSE. TRUE is 1 and FALSE is 0, so the mean is 0.375.
 
 > b. (2 points) **Explain, in your own words, what the data type is in the new column is_small that is created by the following code, and why it is that data type.**
 
@@ -219,7 +243,7 @@ species %>%
   mutate(is_small = (meanwgt < 50)) 
 ```
 
-
+The data type in the new column is a logical (lgl) data type. This is because the code is comparing the meanwgt column to 50 and returning a boolean value.
 
 
 > c. (2 points) **Explain, in your own words, what the following code is doing and why you get the answer that you do. What does the single number you get in your answer tell you about your data? **
@@ -230,7 +254,7 @@ species %>%
   summarize(x = mean(is_small))
 ```
 
-
+This code creates a logical column that is TRUE if the meanwgt is less than 50 and FALSE otherwise. It then finds the mean of this logical column, which is the fraction of TRUE values. In this case, the mean is 0.762, which means that 76.2% of the species have a mean weight less than 50.
 
 
 
@@ -241,24 +265,44 @@ species %>%
   summarize(x = mean(meanwgt < 50))
 ```
 
-
-
-
+This code skips mutating the data set. Instead it directly calculates the mean of the expression meanwgt < 50. This code is equivalent to the previous question because it is calculating the same thing.
 
 > e. (3 points) **Using the artists data set, write code to create a data set with one row and two columns, where the first column contains the number of artists in the data set who's race is not White, and the second column contains the fraction of artists in the data set that are not White. **
 
-
+```{r}
+artists %>%
+  summarize(num_non_white = sum(artist_race != "White"),
+            frac_non_white = mean(artist_race != "White"))
+```
 
 
 > f. (3 points) **Use code to perform the same calculations in the previous part, but for each combination of year and book separately. What do you observe about the frequency of non-white artists appearing in textbooks over time? **
 
+```{r}
+artists %>%
+  group_by(book, year) %>%
+  summarize(num_non_white = sum(artist_race != "White"),
+            frac_non_white = mean(artist_race != "White"))
+```
+
+For Gardner, the franction of non-white artists seems to dip after the 1930s and then rise again. For Janson, it seems to increase more steadily over time.
 
 
 > g. (3 points) **Make a line graph with year on the x-axis and the fraction of non-White artists on the y-axis. There should be two lines, one for each book. What do you observe in this plot?**
 
+```{r}
+artists %>%
+  group_by(book, year) %>%
+  summarize(num_non_white = sum(artist_race != "White"),
+            frac_non_white = mean(artist_race != "White")) %>%
+  ggplot() +
+  geom_line(mapping = aes(x = year, y = frac_non_white, color = book))
+```
 
 
-
+The fraction of non-White artists in Gardner's book fluctuates significantly over time. There is a notable dip around the 1950s and 1960s, followed by a rise in the 1970s and a significant increase after the 1990s.
+The fraction of non-White artists in Janson's book starts to increase around the 1970s from zero and continues to rise steadily over time, though the increase is more gradual compared to Gardner's book.
+Both books remain under 20% by the end.
 
 
 
@@ -268,22 +312,33 @@ species %>%
 
 > a. (2 points) **Import the pets_info.csv file, without specifying any additional arguments inside the read_csv() function except the file name.  Explain why the tibble you get is not what you want.** 
 
+```{r}
+pets_info <- read_csv("pets_info.csv")
+pets_info
+```
 
+The tibble is not clean. The column names are not at the top of of the file and there is descriptive language that is messing with proper reading.
 
 
 > b. (2 points) **Add a parameter to your import command to correctly import the data in pets_info.csv into a tibble, with the correct column names.** 
 
-
+```{r}
+pets_info <- read_csv("pets_info.csv", skip = 3)
+pets_info
+```
 
 
 > c. (2 points) **Consider the pets_info2.csv file attached to the homework assignment; it does not have column names, but the columns are, in order, Name, Species, Age,  and Date Adopted.  Import the pets_info2.csv file and specify the column names as you do.**
 
-
+```{r}
+pets_info2 <- read_csv("pets_info2.csv", col_names = c("Name", "Species", "Age", "Date Adopted"))
+pets_info2
+```
 
 
 > d. (2 points) **Explain, in your own words, the benefits of using read_csv() instead of read.csv().**
 
-
+Using the read_csv() function is better because it is faster, creates a tibble instead of a data frame, and chooses the correct data type for the columns.
 
 
 > e. (3 points)  **What happens when one row of a csv file has a different number of commas than other rows? Explain in your own words.  You can refer to the following two examples in your explanation if you'd like, though make sure your explanation is more general than just these two examples.  Be sure to mention any errors or warnings that might occur. ** 
@@ -301,12 +356,14 @@ read_csv("a,b,c,d
          10,11,12,13")
 ```
 
+When a row in a CSV file has a different number of commas than other rows, it can cause issues during the import process. The read_csv() function will try to parse each row based on the number of columns in the header row. If a row has fewer commas, it will result in NA for the missing columns. If a row has more commas, it will cause a warning and the extra values will be ignored.
 
 
  
 
 > f. (3 points) **In 2-4 sentences, explain in your own words when importing data directly using a URL is a good idea, and when importing data directly using a URL is a bad idea. **
 
+Importing data directly using a URL is a good idea if the data is publicly available. It is also beneficial if the URL is stable and won't be moved or deleted. It is important that the data won't change over time. This ensures that analysis remains reproducible and the data source remains accessible. If these conditions aren't met, it may be better to download the data first and then import it into R.
 
 
 
@@ -317,27 +374,49 @@ read_csv("a,b,c,d
 
 > a. **Suppose you want to parse the string "$67,000" to sixty-seven thousand. How would you do this? **
 
-
+```{r}
+parse_number("$67,000")
+```
 
 > b. **Suppose you want to parse the string "67.000,00" to mean sixty-seven thousand. How would you do this?**
 
+```{r}
+parse_number("67.000,00", locale = locale(grouping_mark = "."))
+```
 
 
 > c. **Explain the difference between parse_double() and parse_number().  Give an example of when you should use parse_number(), and when you should use parse_double().**
 
-
+parse_double() is used when you want to parse a string that represents a number with a decimal point. parse_number() is used when you want to parse a string that represents a number with a comma.
 
 
 ## Question 11 (6 points)
 
 > a. (3 points) **Import the attached data set "Monthly_amounts.txt". After importing, correct the data types of the columns largest_amount and average_amount to be what they should be.  Explain any warnings you get.**
 
+```{r}
+monthly_amounts <- read_csv("Monthly_amounts.txt", skip = 1) %>% 
+  mutate(largest_amount = parse_number(largest_amount),
+         average_amount = parse_number(average_amount))
+monthly_amounts
+problems(monthly_amounts)
+```
 
+There are some warnings largest_amount because a value could not be parsed as a number because it contained a (*). For average_amount, a value could not be parsed as a number because it contained a (-).
 
 
 > b. (3 points) **For the same data set, specify additional option(s) while importing so that, after importing but before using any other functions, the largest_amount and average_amount columns are both a numeric data type. Then, correct the data type of the largest_amount column to be what it should be.  **
 
-
+```{r}
+monthly_amounts <- read_csv("Monthly_amounts.txt", skip = 1, col_types = cols(
+  largest_amount = col_number(),
+  average_amount = col_number()
+))
+monthly_amounts <- monthly_amounts %>% 
+  mutate(largest_amount = parse_integer(as.character(largest_amount)))
+# Note: These instructions were really confusing to me. I did my best to interpret them.
+monthly_amounts
+```
 
 
 
@@ -345,7 +424,16 @@ read_csv("a,b,c,d
 
 > a. (2 points) **Explain, in your own words, what the fill() function does. Describe an example, different from any we talked about in class, of when you might want to use this function.**
 
+The fill() function is used to fill missing values in a column with the last observed value. This is useful when you want to fill in missing values in a column with the last known value. Some data sets have missing values that are not unknown, but need to be cleaned by looking at the last known value.
 
+Example:
+month, date, amount
+June,1,100
+,2,101
+,3,105
+,4,102
+
+We can tell that it should be June.
 
 
 > b. (2 points) **Give some examples of data that is implicitly missing from this tibble. **
@@ -394,15 +482,26 @@ campus_visitors <- tribble(
 campus_visitors
 ```
 
+Some examples:
+CMC Wednesday Morning,
+CMC Wednesday Afternoon,
+CMC Friday Evening,
+etc.
 
 
 > c. **(3 points) Use the command we learned in class to add rows to this tibble that correspond to the missing data; how many rows do you get?  Explain why you get this number.**
 
+```{r}
+campus_visitors %>%
+  complete(School, Day_of_week, TimeOfDay)
+```
+
+Got 84 rows because there are 3 schools, 7 days of the week, and 4 times of day. So 3 * 7 * 4 = 84.
 
 
 > d. **(2 points) Do you think there is still data implicitly missing from the tibble you made in part b? Explain. Hint: Use what other knowledge you might have about the columns/values involved. **
 
-
+It looks like Pomona has no data for any of the times of day.
 
 
 
@@ -413,16 +512,20 @@ campus_visitors
 
 > a. **Explain why it's important to fully document the creation of data sets, and what ethical harms may result if data set are not thoroughly documented. **
 
+Fully documenting the creation of data sets is important for ensuring transparency, reproducibility, and accountability. Without documentation, readers may misinterpret the data, leading to incorrect conclusions and potentially harmful decisions. Ethical harms include biased outcomes, privacy violations, and misuse of data, which can affect vulnerable groups.
 
 
 
 > b. **Of all the questions listed in Section 3, which one surprised you most? Explain why, despite being surprising to you, having an answer to that question in a datasheet is important. **
 
-
+The question that surprised me most was "Were any ethical review processes conducted (e.g., by an institutional review board)?" This question is important because it ensures that the data collection process adhered to ethical standards, protecting the rights and well-being of individuals involved. It highlights the importance of considering ethical implications in data collection and usage. I know CMC has an IRB. I'm working with them right now on a study.
 
 
 > c. **For the artists data set from last week's homework (See https://github.com/rfordatascience/tidytuesday/blob/master/data/2023/2023-01-17/readme.md and the various other links included on that page, such as https://research.repository.duke.edu/concern/datasets/q811kk70n?locale=en): how thorough was the documentation accompanying this data set?  Give some examples of questions from Section 3 that you were able to find answers to, and give some examples of questions from Section 3 that you were not able to find answers to.**
 
+The documentation for the artists data set was good, providing variable descriptions, data sources, and the purpose of the data collection.
 
+Questions answered: What data does the dataset contain?, What is the source of the data?, What is the purpose of the dataset?
+Questions not answered: Were any ethical review processes conducted?, What preprocessing/cleaning/labeling was done?, Are there any known errors or uncertainties in the data?
 
 
