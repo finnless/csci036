@@ -1,0 +1,79 @@
+---
+title: '9-25 Class Activity: Tidy Data'
+author: "Sarah Cannon"
+date: "9/25/2024"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r, message = FALSE}
+library(tidyverse)
+```
+
+
+# Pivots
+
+We'll be using the data set who, containing the Global Tuberculosis Report from the World Health Organization in 2014. 
+
+```{r}
+who
+```
+
+
+> 1. **What do the column names new_sp_m014 and new_sp_m1524 mean? **
+
+
+
+> 2. **Is this data set tidy? Why or why not**
+
+
+
+> 3. **To make your data set tidy, would you want to pivot longer or pivot wider?** 
+
+
+
+> 4. **Use your answer to the previous question to modify the data set: you should have a new column, called "key", which contains 'new_sp_m014', 'new_sp_m1524', etc., and a new column called cases that has the number of cases corresponding to that key. **
+
+
+
+> 5. **Using this new table, look up how many new cases of TB there were among males ages 0-14 in Afghanistan in 2006 who were smear positive. **
+
+
+
+> BONUS **The unite function can be used to bring values that are in separate columns together in one column. For example, consider table5: **
+
+```{r}
+table5
+```
+
+**The unite function can bring the century and year columns together into one column: **
+
+```{r}
+table5 %>% unite(col = new_year, century, year)
+```
+
+> **What does the unite function use as the default separator when it joins two values together? That is, what appears between century and year?**
+
+
+
+
+
+> BONUS: **Do the original century and year columns appear after the unite function is called?  Is this different from using str_c inside a mutate? **
+
+
+
+
+> BONUS: **Add an additional argument to the unite function so that the new_year column is displayed correctly, with no extra characters.**
+
+
+
+
+> BONUS: **The unite function also behaves differently with NA values.  For the following table, unite the hour and minute columns together (putting a colon between them), then perform the same operation on the original tibble instead using mutate and str_c.  What differences do you see in what's produced, particularly in the second row? **
+
+```{r}
+times <- tibble(hour = c("3", "5", "9"), minute = c("45", NA, "13"))
+```
+
+
+
