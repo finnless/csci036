@@ -1,0 +1,346 @@
+---
+title: '9-25 Class Notes: Tidy Data'
+author: "Sarah Cannon"
+date: "9/25/2024"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+knitr::opts_chunk$set(fig.width=4, fig.height=3)
+```
+
+# Announcements
+
+Homework 4: If using extension hours, final deadline Thursday 11:59pm
+
+Homework 5: Posted tomorrow, due Tuesday 11:59pm (based on class this week) 
+
+Today is the last day of material that will be on Test 1 
+- All material form the start of the semester thorugh today (including today)
+- Everything on Homeworks 1-5
+
+Next Monday 9/30: New Material (not on Test 1, will be on first homework after Test 1) 
+
+Next Tuesday 10/1: Homework 5 due
+
+Next Wednesday 10/2: Review for Test 1 in class (no preclass video)
+
+Monday 10/7: Test 1 
+
+(No Homework due Tuesday 10/8)
+
+Upcoming Office Hours: 
+- Monday 1:15-2:15
+- Tuesday 10:30-11:30 and 2-3
+- Wednesday 1:15-2:15
+
+QCL one-on-one appointments and drop-in schedule: https://www.cmc.edu/qcl/mentoring
+
+Questions about upcoming schedule?
+
+Questions from preclass video?
+
+
+# Tidy Data
+
+```{r, message = FALSE}
+library(tidyverse)
+```
+
+"Tidy data" is NOT a synonym for clean data. Tidy data is a specific data format. 
+
+In tidy data: 
+
+- Each row corresponds to an observation
+- Each column corresponds to a variable
+- Each entry only contains one value. 
+
+Nearly all the data sets we've seen so far are tidy! 
+
+```{r}
+artists <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-01-17/artists.csv") 
+artists 
+# Each row is an occurrence of an artist in an edition of a textbook
+```
+
+Why do you want tidy data?
+
+- Advantage to picking a consistent way of storing data - easier to learn tools to work with it
+- All packages in tidyverse (ggplot2, dplyr, etc.) are built specifically to work with tidy data
+- Advantage of placing variables in columns because of R's vectorized nature.
+
+Tidy Data:
+
+```{r}
+table1
+```
+
+Untidy Data:
+
+```{r}
+table2
+```
+
+
+## Turning entries into column names: pivot_wider
+
+For example, to make table2 tidy.  Want to take the 12 rows and change them back into 6 observations by combining rows with the same country/year. 
+
+Use pivot_wider(): remove the count and type variables, introduce a cases variable and a population variables
+
+pivot_wider has three main parameters: 
+
+- the data set (usually via a pipe) 
+- names_from: the column in the current table that holds the entries that we'll turn into column names. ( For table2, the type column) 
+- values_from: the existing column that has the values we'll put in the new columns we're making (for table2, the count column)
+
+```{r}
+table2 %>% pivot_wider(names_from = type, values_from = count)
+```
+
+Now, each variable has its own column, and each row has only values, not variable names. 
+
+If there are more than 2 distinct values in the names_from column, the resulting tibble will be wider. 
+
+Another Example:
+
+```{r}
+stud_info <- tribble(
+  ~Name, ~College, ~Info, ~Value, 
+  "Student A", "CMC", "GPA", 3.8, 
+  "Student B", "Scripps", "GPA", 3.7, 
+  "Student C", "Pitzer", "GPA", 3.72, 
+  "Student D", "CMC", "GPA", 3.66, 
+  "Student A", "CMC", "Graduation", 2022, 
+  "Student B", "Scripps", "Graduation", 2024, 
+  "Student C", "Pitzer", "Graduation", 2023, 
+  "Student D", "CMC", "Graduation", 2023, 
+  "Student A", "CMC", "Age", 22, 
+  "Student B", "Scripps", "Age", 20, 
+  "Student C", "Pitzer", "Age", 19, 
+  "Student D", "CMC", "Age", 20, 
+)
+stud_info
+```
+
+This data is not tidy: Each row should be one student. We don't want observations about student A split across multiple rows. 
+
+Each column should only correspond to a single variable, here the Value column actually has three different variables in it - GPAs, graduation years, and Ages. 
+
+Rule of Thumb: Does combining all the values in a column (e.g. by a sum or an average) make sense? If not, these values shouldn't be in the same column, and you probably want to pivot wider. 
+
+```{r}
+pivot_wider(stud_info, names_from = Info, values_from = Value)
+```
+
+
+
+## Turning column names into entries: pivot_longer
+
+What about when column names are values for a variable rather than the name of a variable?  
+
+```{r}
+table4a
+```
+
+This data is not tidy: 1999 and 2000 are not variables, they are really values for another variable, year. Want these values to be within a column, not as column names. 
+
+pivot_longer turns column names into entries, which removes columns and adds rows (makes your tibble longer). Often needed for cateogrical data (or census data) 
+
+pivot_longer needs 4 parameters: 
+
+- data set that you want to pivot_longer
+- which of the existing columns are values, not variables
+- make up a name for the new variable to put the current column names in (for table4a - year) 
+- make up a name for the new variable to put the values in (here, cases)
+
+
+```{r}
+table4a %>% pivot_longer(c(`1999`, `2000`), names_to = "YEAR", values_to = "CASES")
+```
+
+Note the quotes around "year" and "cases": these are new names we're creating, not objects we've already made, so need to use strings. 
+
+Also, quotes around 1999 and 2000: anytime variable names start with numbers, have spaces, or have special characters, need to use quotes around them (often, back quotes ` ). 
+
+Should also turn year column into integers. 
+
+
+Another example: 
+
+```{r, echo = FALSE}
+stud_fav_colors <- tribble(
+~ College, ~Red,  ~Green, ~Blue, ~Purple, ~Orange, ~Yellow, ~Other, 
+"Claremont McKenna College", 36, 75, 67, 24, 57, 98, 99, 
+"Harvey Mudd College", 84,72,19,45,92,54,11, 
+"Pitzer College", 36,76,21,33,23,56,44, 
+"Pomona College", 98,56,45,32,47,56,88, 
+"Scripps College", 34,56,28,73,49,87,33,
+)
+```
+
+```{r}
+stud_fav_colors
+```
+
+This data is not tidy! Column names are really different values that a variable favorite_color could take on. 
+
+Rule of Thumb: Might you want to combine/average/add values in different columns? Then they should be in the same column. Use pivot_longer. 
+
+```{r}
+stud_fav_colors %>% pivot_longer( c(Red:Other),
+                                  names_to = "Favorite_Color", 
+                                  values_to = "Num_Students")
+```
+
+This is now tidy! 
+
+Now easier to make plots showing the relationship between college and favorite color
+
+Census Data:
+
+```{r}
+cd <- read_csv("Census_disability_data_2019_B18101.csv", skip = 1)
+cd
+```
+
+Not tidy! Want to pivot_longer
+
+```{r}
+cd2 <- cd %>% pivot_longer( `Estimate!!Total:`:`Margin of Error!!Total:!!Female:!!75 years and over:!!No disability`, names_to = "Description", values_to = "Count" ) %>% 
+  select(-id, -`Geographic Area Name`)
+```
+
+If column names have special characters, spaces, or start with a number, use quotes or backquotes around them. 
+
+Still not tidy, but closer. 
+
+
+## Separating Data 
+
+Needed when table has values of two variables in one entry: 
+
+```{r}
+table3
+```
+
+In table 3, variable "rate" actually has two values: cases, then /, then population. 
+
+Or, census data above has same problem (after pivoting): Multiple descriptors are part of the same string
+
+Can use str_sub if parts always have the same number of characters (zipcodes)
+
+Another option: use separate(). Parameters are: 
+
+- data set
+- variable whose values need to be separated (rate)
+- A list with the new names of the variables you want to create when you do the separation.  (cases, population) 
+
+```{r}
+table3 %>% separate(rate, into = c("CASES", "POPULATION") ) 
+```
+
+Note: separate() guessed that / was the separator, and was correct. 
+
+separate() treats the two entries as if they're character strings, rather than values
+
+Can tell it to guess what the data types of the new columns should be: 
+
+```{r}
+table3 %>% separate(rate, into = c("cases", "population"), convert = TRUE)
+```
+
+
+For census data: 
+
+```{r}
+cd2 %>% separate(Description, into = c("measurement_type", "details") , sep = "!!", extra = "merge" )
+```
+
+Need to specify separator: use argument sep, here sep = "!!" 
+
+It cut off everything after the second !!. Two possible solutions: 
+
+- give more column names in into argument 
+- use extra = "merge" 
+
+Now can pivot_wider to get estimate and margin of error in separate columns:
+
+```{r}
+cd2 %>% separate(Description, 
+                 into = c("measurement_type", "details") , 
+                 sep = "!!", 
+                 extra = "merge" ) %>% 
+  pivot_wider(names_from = measurement_type, values_from = Count)
+```
+
+Note: Estimates and margins of error are different values, so don't want them in the same column. 
+
+(Would it make sense to sum all the estimates and all the margins of error together? No!)
+
+
+## Uniting Data
+
+unite()
+
+Opposite of separate
+
+```{r}
+table5
+```
+
+Similar to str_c within mutate
+
+More on Bonus Activity
+
+
+## Ambiguous Cases for Mulitple Values 
+
+Does a datetime column have multiple values in it?  
+
+It depends! 
+
+
+Should first and last name be together in the same column? 
+
+It depends! 
+
+
+## Summary
+
+"Tidy data" is NOT a synonym for clean data. Tidy data is a specific data format. 
+
+In tidy data: 
+
+- Each row corresponds to an observation
+- Each column corresponds to a variable/factor
+- Each entry only contains one value. 
+
+pivot_wider: used to turn entries into column names. Has 3 main arguments: 
+- The data set (frequently via a pipe)
+- names_from: the existing column that holds the entries we'll turn into new variables
+- values_from: the existing column that has the values we'll use for these new variables
+
+pivot_longer: used to turn column names into entries. Has 4 main arguments: 
+- data set (frequently via a pipe)
+- which of the existing column names are values, not variables. 
+- the name of the new variable to move the column names to. 
+- the name of the new variable to move the column values to.
+
+separate: used when a column has multiple values in a single entry
+- data set (frequently via a pipe)
+- variable whose values need to be separated (rate)
+- new names of the variables (cases, population)
+
+
+## Activity
+
+On Canvas
+
+If finish regular questions, move on to bonus questions.
+
+If finish bonus questions, check in with Prof. Cannon, then can leave. 
+
+Can work individually or with classmates. 
