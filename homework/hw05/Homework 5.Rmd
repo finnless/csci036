@@ -1,0 +1,402 @@
+---
+title: "Homework 5"
+author: "Sarah Cannon"
+date: "2024-10-01"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+**Classmates/other resources consulted:** [type answer here]
+
+
+> **Be sure to load the tidyverse.**
+
+```{r}
+library(tidyverse)
+```
+
+
+## Question 1 (6 points) 
+
+> **Parse the following dates and date/time combinations**
+
+> a. 
+
+```{r}
+d_a <- "Sep. 25, (2024)"
+```
+
+> b. 
+
+```{r}
+d_b <- "2024-februar-12"
+```
+
+(Hint: the language here is German; a list of the ISO 639-1 language abbreviations that R uses can be found at https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)
+
+
+>c. 
+
+```{r}
+dt_c <- "February 13, 2023 at 7:45 am"
+```
+
+
+&nbsp;
+
+## Question 2 (9 points)
+
+> **Consider the dates_times.csv file, in which the first column has a date and time, the second column has a date, and the third column has a time.  Import this file, then parse all three columns so that they have the correct data types.  You can either create new columns with the correct data types or replace the existing columns, it's up to you. Make sure the columns with the correct data types are the first three columns in your resulting tibble. **
+
+
+
+&nbsp;
+
+## Question 3 (4 points)
+
+> **Import the attached data set "Monthly_amounts.txt". The first column of this data set contains year and month information; parse it so that it is of the correct data type.  While the original data has no day information, what happens in your new column? **
+
+
+
+
+&nbsp;
+
+## Question 4 (6 points)
+
+> a. **Create a string in R containing the following sentence, including its punctuation: It's sunny today, but he said, "It'll be rainy tomorrow." To be sure you've made the correct string, print it out using the writeLines() function.** 
+
+> **Note: Some systems have trouble knitting files when the writeLines() function is being used.  So while you should use the writeLines() function to check your answer, you may need to comment it out in order for your file to knit successfully. **
+
+
+
+
+> b.  **Explain the difference between the strings: "a \n b" and "a \ n b". The answer is not just that one has an extra space and one doesn't. Your explanation should mention escape characters. Note: to make a backslash show up in your explanation in your knitted file, you must use two backslashes, like \\. Be sure to check your knitted file to make sure all parts of your explanation are appearing correctly.**
+
+> **Note: If you are knitting to PDF, the single backslashes in the question may cause problems when knitting. Change it to \\ to solve this problem.**
+
+
+
+&nbsp;
+
+## Question 5 (4 points)
+
+> **This question references the following strings**
+
+```{r}
+s1 <- "the cat, gracie, is sleepy"
+```
+```{r}
+s2 <- "The Dog Is Sleepy Too!"
+```
+
+> a. **Make s1 uppercase**
+
+
+
+
+> b. **Make s2 lowercase**
+
+
+
+> c. **Make the first letter of every word in s1 capitalized, while all other letters are lowercase.**
+
+
+
+>d. **Write a command that will output the number of characters in string s2.**
+
+
+
+
+
+&nbsp;
+
+## Question 6 (6 points)
+
+> **In the U.S., mailing addresses have zipcodes consisting of five digits, then a dash, then four digits. An example might be 91711-4285.  Suppose you have a tibble, like the following example, where the first five digits are in a different column than the last four digits. **
+
+```{r}
+zip_codes <- tibble(Zip = c("91711-3452", "20322-3009", "93782-8473", "78392-8762", "87639-2563", "47628-5416", "20874-5726"))
+```
+
+
+> a. **Use the str_sub() function to split the Zip column into two columns, one with the first five digits of the zip code and one with the last four digits of the zip code. **
+
+
+
+
+> b. **Use the separate() function to split the Zip column into two columns, one with the first five digits of the zip code and one with the last four digits of the zip code. **
+
+
+
+
+&nbsp;
+
+## Question 7 (8 points)
+
+> **At a particular company, an employee's email address consists of their first initial, their middle initial (if they have one), their last name, and the last two digits of their Employee ID number, followed by "@company.com". For example, for an employee Alice A. Smith with employee ID number 45398545, her email address would be AASmith45@company.com.  For an employee Bob Jones (who does not have a middle initial) with employee ID number 345582, his email address would be BJones82@company.com. For the table below, write code to add a new column consisting of each employee's email address, computed from the values in the other columns.** 
+
+```{r}
+employees <- tibble(
+  FirstName = c("Alice", "Bob", "Simba", "Nala", "Timon", "Pumbaa", "Rafiki", "Scar"), 
+  MiddleInitial = c("A", NA, "E", "Q", "P", NA, "P", "L"),
+  LastName = c("Smith", "Jones", "Clark", "Davis", "Evans", "Frank", "Ghosh", "Hills"), 
+  EmployeeID = c(45398545, 345582, 2354463, 345346, 2346377022, 20345423, 20223454, 204254))
+employees
+```
+
+
+
+
+
+&nbsp;
+
+## Question 8 (12 points)
+
+> **In each part, say whether the data is tidy or not, and explain why.**
+
+> a. 
+
+```{r, echo = FALSE}
+baseball <- tribble(~Team_Abbreviation, ~Team_Name, ~Division, ~`Wins-Losses`, 
+"TB", "Tampa Bay Rays", "East", "100-62",
+"BOS", "Boston Red Sox", "East", "92-70",
+"NYY", "New York Yankees", "East", "92-70",
+"TOR", "Toronto Blue Jays", "East", "91-71",
+"BAL", "Baltimore Orioles", "East", "52-110",
+"CHW", "Chicago White Sox", "Central", "93-69",
+"CLE", "Cleveland Indians", "Central", "80-82",
+"DET", "Detroit Tigers", "Central", "77-85",
+"KC", "Kansas City Royals", "Central", "74-88",
+"MIN", "Minnesota Twins", "Central", "73-89"
+)
+baseball
+```
+
+
+
+> b. 
+
+```{r, echo = FALSE}
+stud_info <- tribble(
+  ~Name, ~College, ~Info, ~Value, 
+  "Student A", "CMC", "GPA", 3.8, 
+  "Student B", "CMC", "GPA", 3.7, 
+  "Student C", "Pitzer", "GPA", 3.72, 
+  "Student D", "CMC", "GPA", 3.66, 
+  "Student E", "Scripps", "GPA", 3.72, 
+  "Student A", "CMC", "Graduation", 2022, 
+  "Student B", "CMC", "Graduation", 2024, 
+  "Student C", "Pitzer", "Graduation", 2023, 
+  "Student D", "CMC", "Graduation", 2023, 
+  "Student E", "Scripps", "Graduation", 2023, 
+)
+stud_info
+```
+
+
+
+> c. 
+
+```{r, echo = FALSE}
+weather_forecast <- tribble(
+  ~Day, ~Temperature_F, ~Wind_mph, ~UV_index, ~ChanceOfRain_percent, 
+  "Thursday", 71, 7, 2, 70,
+  "Friday", 63, 12, 4, 80,
+  "Saturday", 71, 10, 7, 4,
+  "Sunday", 78, 11, 7, 0,
+  "Monday", 71, 13, 6, 7,
+  "Tuesday", 70, 11, 6, 0, 
+  "Wednesday", 74, 10, 6, 0 
+)
+weather_forecast
+```
+
+
+
+
+> d. 
+
+```{r, echo = FALSE}
+diamonds_counts <- tibble(cut = c("Fair", "Good", "Very Good", "Premium", "Ideal"), 
+                          extra_small = c(32,45,67,32,14),
+                          small = c(23,45,26,78,23), 
+                          medium = c(34,45,63,78,99), 
+                          large = c(23,21,43,47,21), 
+                          extra_large = c(34,56,23,14,21))
+diamonds_counts
+```
+
+
+
+
+
+&nbsp;
+
+## Question 9 (12 points) 
+
+> **For each of these tibbles, perform the necessary operation to make it tidy. **
+
+> a. 
+
+```{r, echo = FALSE}
+avg_weather <- tribble(
+  ~month, ~metric, ~average, 
+  "September", "high_temperature", 89,
+  "September", "low_temperature", 60, 
+  "September", "rain_inches", 0.15, 
+  "September", "daylight_hours", 12.5, 
+  "October", "high_temperature", 80,
+  "October", "low_temperature", 55, 
+  "October", "rain_inches", 1.05, 
+  "October", "daylight_hours", 11.5 ,
+  "November", "high_temperature", 74,
+  "November", "low_temperature", 47, 
+  "November", "rain_inches", 1.62, 
+  "November", "daylight_hours", 10.5
+)
+avg_weather
+# Do not write your answer in this code chunk, make a new code chunk
+```
+
+
+
+> b. 
+
+```{r, echo = FALSE}
+chemicals <- tibble(Chemical_Name = c("Chemical 1", "Chemical 2", "Chemical 3",
+                                      "Chemical 4", "Chemical 5", "Chemical 6"), 
+                    Safe_Temperature_Range = c("32-212", "50-100", "45-48", 
+                                               "40-345", "100-250", "112-140")
+)
+chemicals
+# Do not write your answer in this code chunk, make a new code chunk
+```
+
+
+
+
+> c. **Information about the following data is available at https://github.com/rfordatascience/tidytuesday/blob/master/data/2023/2023-07-11/readme.md ** 
+
+```{r, echo = FALSE}
+global_temps <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-07-11/global_temps.csv") %>% select(Year:Dec)
+global_temps
+# Do not write your answer in this code chunk, make a new code chunk
+```
+
+
+
+&nbsp;
+
+## Question 10 (9 points)
+
+> a. **Consider the following example table. **
+
+```{r}
+diamonds_counts <- tibble(cut = c("Fair", "Good", "Very Good", "Premium", "Ideal"), 
+                          extra_small = c(32,45,67,32,14),
+                          small = c(23,45,26,78,23), 
+                          medium = c(34,45,63,78,99), 
+                          large = c(23,21,43,47,21), 
+                          extra_large = c(34,56,23,14,21))
+diamonds_counts
+```
+
+> **Explain in your own words why the following two code chunks produce the same tibble.** 
+
+```{r}
+diamonds_counts %>% 
+  pivot_longer(extra_small:extra_large, names_to = "Size", values_to = "Count") %>%
+  filter(Size %in% c("extra_small", "extra_large"))
+```
+
+```{r}
+diamonds_counts %>% 
+  select(cut, extra_small, extra_large) %>% 
+  pivot_longer(extra_small:extra_large, names_to = "Size", values_to = "Count")
+```
+
+
+
+
+> b. **Why doesn't the following code work as expected? Explain what went wrong here, and why the pivot_wider function doesn't work for this data set in the same way we learned in class. **
+
+```{r}
+cats <- tribble(
+  ~name,             ~names,  ~values,
+  "Gracie the Cat",   "age",       6.5,
+  "Gracie the Cat",   "height_in",   14,
+  "Gracie the Cat",   "age",       5,
+  "Patches the Cat", "age",       2,
+  "Patches the Cat", "height_in",   11
+)
+
+newtibble <- cats %>% pivot_wider(names_from = names, values_from = values)
+newtibble
+```
+
+
+
+
+
+> c. **Look up what the tidyverse's spread() and gather() functions do and explain them below.  These functions are no longer under active development, but exist in a lot of previously written code. Which functions we've learned recently are the updated versions of spread and gather? **
+
+
+
+
+&nbsp;
+
+
+## Question 11 (12 points)
+
+> **Consider the following data set; more information is available at https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-03-24/readme.md**
+
+```{r}
+brain_injuries <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-24/tbi_age.csv") %>% select(age_group:number_est) %>% filter(age_group != "Total")
+brain_injuries
+```
+
+> a. (3 points) **Make a table that displays all the different values in the age_group category and how many times each appears in the data set.**
+
+
+
+> b. (3 points) **Some of these age groups are overlapping, which is not ideal for data analysis. For example, its currently very challenging to look in-depth at the age groups 15-17 and 18-24. To simplify the age groups, it's actually easiest if they're columns!  Use a function we learned this week to turn the age_group values into columns, where the values in those columns come from the number_est column.**
+
+
+
+> c. (3 points) **By adding and subtracting columns from the table you produced in the previous part, make new columns for ages 15-17 and 18-24. Hint: the number_est for the 15-17 age group is the estimate for 0-17 minus the estimate for 0-4 and the estimate for 5-14. Keep only the type column, injury_mechanism column, and the columns for the age groups 0-4, 5-14, 15-17, and 18-24.**
+
+
+
+
+> d. (3 points) **This data is not tidy! Use an appropriate function we learned this week to make the data tidy.**
+```
+
+
+
+&nbsp;
+
+
+## Question 12 (8 points)
+ 
+> **Consider the file GPAs.csv. Import this data set, and carefully make it both clean and tidy. There will be several steps involved in this process. (the GPAs were randomly generated and do not reflect actual student grades).**
+
+
+
+
+&nbsp;
+
+## Question 13 (4 points)
+
+
+> a. (2 points) **Reflect on how this class is going for you so far - What's working well for you? What are you finding challenging? What changes can you make that might help improve your learning?**
+
+
+
+
+> b. (2 points) **With the first test coming up, how do you plan to study? What methods of studying do you think will be most effective? Outline a study plan here.**
+
+
+
+
+
