@@ -11,7 +11,6 @@ output:
 library(tidyverse)
 ```
 
-
 # Pivots
 
 We'll be using the data set who, containing the Global Tuberculosis Report from the World Health Organization in 2014. 
@@ -20,26 +19,37 @@ We'll be using the data set who, containing the Global Tuberculosis Report from 
 who
 ```
 
-
 > 1. **What do the column names new_sp_m014 and new_sp_m1524 mean? **
 
-
+The column names represent new smear-positive TB cases in males of different age groups. Specifically:
+- `new_sp_m014`: New smear-positive TB cases in males aged 0-14.
+- `new_sp_m1524`: New smear-positive TB cases in males aged 15-24.
 
 > 2. **Is this data set tidy? Why or why not**
 
-
+No, this data set is not tidy. In a tidy data set, each variable should have its own column, each observation should have its own row, and each value should have its own cell. Here, the age and gender information is embedded in the column names, which violates the tidy data principles.
 
 > 3. **To make your data set tidy, would you want to pivot longer or pivot wider?** 
 
-
+To make the data set tidy, we would want to pivot longer. This means transforming the data so that the age and gender information currently in the column names becomes values in new columns.
 
 > 4. **Use your answer to the previous question to modify the data set: you should have a new column, called "key", which contains 'new_sp_m014', 'new_sp_m1524', etc., and a new column called cases that has the number of cases corresponding to that key. **
 
-
+```{r}
+who_tidy <- who %>%
+  pivot_longer(cols = starts_with("new_sp_"), names_to = "key", values_to = "cases")
+who_tidy
+```
 
 > 5. **Using this new table, look up how many new cases of TB there were among males ages 0-14 in Afghanistan in 2006 who were smear positive. **
 
-
+```{r}
+afghanistan_2006 <- who_tidy %>%
+  filter(country == "Afghanistan", year == 2006, key == "new_sp_m014")
+afghanistan_2006_cases <- afghanistan_2006$cases
+afghanistan_2006_cases
+```
+There were 193 new smear-positive TB cases among males aged 0-14 in Afghanistan in 2006.
 
 > BONUS **The unite function can be used to bring values that are in separate columns together in one column. For example, consider table5: **
 
@@ -55,19 +65,17 @@ table5 %>% unite(col = new_year, century, year)
 
 > **What does the unite function use as the default separator when it joins two values together? That is, what appears between century and year?**
 
-
-
-
+The default separator used by the `unite` function is an underscore (`_`).
 
 > BONUS: **Do the original century and year columns appear after the unite function is called?  Is this different from using str_c inside a mutate? **
 
-
-
+No, the original `century` and `year` columns do not appear after the `unite` function is called. This is different from using `str_c` inside a `mutate`, where the original columns would remain unless explicitly removed.
 
 > BONUS: **Add an additional argument to the unite function so that the new_year column is displayed correctly, with no extra characters.**
 
-
-
+```{r}
+table5 %>% unite(col = new_year, century, year, sep = "")
+```
 
 > BONUS: **The unite function also behaves differently with NA values.  For the following table, unite the hour and minute columns together (putting a colon between them), then perform the same operation on the original tibble instead using mutate and str_c.  What differences do you see in what's produced, particularly in the second row? **
 
@@ -75,5 +83,16 @@ table5 %>% unite(col = new_year, century, year)
 times <- tibble(hour = c("3", "5", "9"), minute = c("45", NA, "13"))
 ```
 
+```{r}
+# Using unite
+times_unite <- times %>% unite(col = time, hour, minute, sep = ":")
+times_unite
+```
 
+```{r}
+# Using mutate and str_c
+times_mutate <- times %>% mutate(time = str_c(hour, minute, sep = ":"))
+times_mutate
+```
 
+When using `unite`, the NA values are merged in as a string, resulting in `5:NA` for the second row. When using `mutate` and `str_c`, the NA values are preserved, resulting in NA as the value for the second row since NA could not be merged with a string.
