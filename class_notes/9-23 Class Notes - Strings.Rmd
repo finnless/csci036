@@ -1,0 +1,429 @@
+---
+title: "9-23 Class Notes: Importing, Strings"
+author: "Sarah Cannon"
+date: "9/23/2024"
+output: html_document
+---
+
+```{r}
+knitr::opts_chunk$set(fig.width=4, fig.height=2)
+```
+
+# Announcements
+
+Homework 4 Due tomorrow night at 11:59pm on Gradescope as a PDF. Assign *all* pages to a question! https://help.gradescope.com/article/fnbn2knmq1-how-can-i-submit-my-homework-as-a-pdf
+
+Upcoming office hours: 
+
+- Tuesday 10:30-11:30 and 2-3pm
+- Wednesday 1:15-2:15pm
+
+Template for class notes: On Canvas, Files > Class Materials > 9-23 Class Notes Template. 
+
+QCL one-on-one appointments and drop-in schedule: https://www.cmc.edu/qcl/mentoring
+
+Questions about upcoming schedule?
+
+Questions from pre-class video?
+
+
+# Load Libraries
+
+```{r, message = FALSE}
+library(tidyverse)
+library(nycflights13)
+```
+
+
+# Dates, Times, Date/Times
+
+To turn strings into dates or times: 
+
+1. figure out the pattern of the date or time, using abbreviations
+
+e.g. "23 Apr 2021" is "%d %b %Y"
+
+(Tip: keep table of abbreviations handy)
+
+2. parse the date or time 
+
+```{r}
+parse_date("23 Apr 2021", "%d %b %Y")
+```
+
+Like last class, first argument is thing to parse: can be a string, a list of strings, or a column of a data set that is of type <chr> 
+
+Questions from preclass video?
+
+## datetime
+
+Often, are together in one column! 
+
+Standard format looks like: "2024-09-23 16:15"
+
+```{r}
+parse_datetime("2024-09-23 16:15")
+```
+
+If you have date-times in other formats, just need to specify the format. 
+
+See abbreviations at: https://r4ds.hadley.nz/datetimes#tbl-date-formats
+
+```{r}
+parse_datetime("23 Sep 2024, 04:15pm", "%d %b %Y, %I:%M%p")
+```
+
+Can parse entire columns rather than just a single datetime. 
+
+```{r}
+datetime <- tibble(datetime = c("Sep 21 2021, 09:35am","Aug 02 2021, 09:37am"))
+datetime %>% mutate( new_datetime = parse_datetime(datetime, "%b %d %Y, %I:%M%p"))
+```
+
+<S3: POSIXct>: data type for standard datetimes 
+
+(POSIX: set of standards for maintaining compatibility between operating system)
+
+
+
+# Strings
+
+Data type <chr> (not a single character)
+
+A _string_ is an ordered list of symbols from some alphabet
+
+(Have used them, but haven't really learned about them in depth, that's what we're going to do now)
+
+In R, to indicate a string, surround it by either single or double quotes
+
+```{r}
+string1 <- "This is a string." 
+string2 <- 'This is also a string.'
+
+string1
+string2
+```
+
+Output is always in double quotes. Good practice: get into habit of using double quotes.
+
+
+## Encodings, parse_character
+
+How are non-English characters stored? 
+
+Everything in a computer is stored in binary! As 0s and 1s.
+
+For English characters, there's an agreed upon way to turn letters into 0s and 1s (ASCII)
+
+For other languages, there have been a lot of different ways for turning characters into binary.
+
+Today: Mostly use a particular method/encoding called UTF-8 (unicode), a standard encoding (in some other countries, may still use other formats)
+
+*Key Takeaway*: If you're getting gibberish in your data, try using other encodings and the parse_character function. 
+
+
+```{r}
+x <- "\x82\xb1\x82\xf1\x82\xc9\x82\xbf\x82\xcd"
+x
+#writeLines(x)
+```
+
+```{r}
+parse_character(x, locale = locale(encoding = "Shift-JIS"))
+```
+
+If you don't know encoding, are methods to try to guess (BONUS activity) 
+
+
+
+## Escape Characters
+
+For strings, output is not always the same as input. 
+
+If you want to use single quotes in your string: As long as the outside quotes are double quotes, this is fine. 
+
+```{r}
+string3 <- "What a 'great' idea!"
+string3
+```
+
+If want to use double quotes in your string? 
+
+```{r}
+# string4 <- "She said, "Hello"" # THis doesn't work
+```
+
+One solution: use single quotes on the outside
+
+```{r}
+string4 <- 'She said, "Hello"'
+string4
+```
+
+For inside quotes: denoted with escape character \" : a backslash in a string tells you the next character should be treated differently. 
+
+(Note: To make escape characters show up in your knitted file: Use two backslashes \\ ) 
+
+To actually see string, with the quotes, use writeLines
+
+```{r}
+writeLines(string4)
+```
+
+An _escape character_ in a string is a single backslash followed by a symbol. Together, they have a different meaning inside a string. 
+
+\": Double quote that is part of your string rather than ending your string
+\': Single quote that is part of your string rather than ending your string
+\n: New line: The letter n isn't in the string, but instead denotes the start of a new line.
+\t: Inserts a tab in your string 
+\u: Beginning of a unicode character
+
+```{r}
+"\u00e1"
+"\u00b0"
+"\u263a"
+```
+
+Newline character: 
+
+```{r}
+string5 <- "This is my string! 
+This is the second line of my string!"
+string5
+writeLines(string5)
+```
+
+
+## Helpful String Functions
+
+R has built-in string functions, we'll use tidyverse alternatives 
+(specifically, the stringr package, which is part of the tidyverse)
+
+Most start with str_
+
+We've already learned two: str_detect, str_c
+
+For all of them: first argument is a string, a list of strings, or a column in a tibble of type <chr>
+
+### str_detect
+
+Returns true or false if a pattern is found. 
+
+```{r}
+artists <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-01-17/artists.csv") 
+filter(artists, str_detect(artist_nationality, "American"))
+```
+
+
+### str_c
+
+Concatenates/combines strings. 
+
+```{r}
+zip_codes <- tibble(Zip = c("91711", "20322", "93782", "78392", "87639", "47628", "20874"), 
+                   PlusFour = c("3452", "3009", "8473", "8762", "2563", "5416", "5726"))
+zip_codes
+zip_codes %>% 
+  mutate(full_zip_code = str_c(Zip, "-", PlusFour)) %>% 
+  select(full_zip_code)
+```
+
+Also works on individual strings:  
+
+```{r}
+str_c("a", "b", "c")
+str_c("Claremont", " ", "McKenna")
+```
+
+If pass a vector/list, it won't concatenate them! 
+
+```{r}
+str_c( c("x", "y", "z"))
+```
+
+When given lists of things, str_c concatenates them *entrywise*. 
+
+```{r}
+str_c( c("a", "b", "c"), c("d", "e", "f"))
+```
+
+This is actually what we're seeing above with zipcode: each column is a list, they get concatenated entrywise, and the resulting list is put in the new column. 
+
+When lists are not the same length: Get an error
+
+```{r}
+str_c( c("pre", "post"), c("run", "workout", "swim"))
+```
+
+Doesn't work with NA: The entire result becomes NA
+
+```{r}
+str_c("Claremont", NA, "McKenna")
+```
+
+### str_replace_na 
+
+If actually want NA to show up: use str_replace_na(). When applied to a string, does nothing.  When applied to NA, by default, replaces an NA with the string "NA"
+
+```{r}
+str_replace_na("Hello")
+str_replace_na(NA)
+```
+
+Or, can be used to replace NA with something else
+
+```{r}
+str_c("Claremont", str_replace_na(NA, replacement = "?"), "McKenna")
+```
+
+Can use str_replace_na within mutate/with columns, too. 
+
+```{r}
+flights %>% 
+  mutate(Announcement = str_c( "This flight takes off at ", 
+                               dep_time)) %>% tail()
+
+flights %>% 
+  mutate(Announcement = str_c( "This flight takes off at ", 
+                               str_replace_na(dep_time, replace = "XXXX"))) %>%
+  tail()
+```
+
+For flights with a departure time, that departure time is displayed; for flights where the departure time is NA, it displays the time XXXX. 
+
+
+### str_length
+
+Finds the length of strings
+
+```{r}
+str_length("abc")
+```
+
+```{r}
+str_length("") # Empty string, length 0
+```
+
+```{r}
+str_length("a\nb") # Escape characters like \n only count as one character
+```
+
+First argument is what string(s) to apply the function to: can apply it to a single string, can apply it to a list of strings, can apply it to a string column in a tibble 
+
+Can use it within a filter, for example:
+
+```{r}
+filter(diamonds, str_length(cut) >= 5)
+```
+
+
+### Changing Case
+
+str_to_upper, str_to_lower, str_to_title
+
+```{r}
+s <- "The cat in the Hat"
+str_to_lower(s)
+str_to_upper(s)
+str_to_title(s)
+```
+
+Why? If data is in inconsistent format
+
+```{r}
+pets <- tribble(
+  ~name, ~species,
+  "Sparky", "DOG",
+  "Fido", "Dog",
+  "Fluffy", "Cat", 
+  "Lassie", "DoG",
+  "Patches", "cat",
+)
+pets
+pets %>% filter(species == "dog")
+```
+
+One solution: change case so it's consistent within the column
+
+```{r}
+pets %>% mutate(species2 = str_to_title(species)) %>% filter(species2 == "Dog")
+```
+
+
+### Substrings
+
+str_sub: pulls out a substring from a given starting position to a given ending position (including both the start and the end) 
+
+```{r}
+colors <- c("blue", "red", "green")
+colors
+str_sub(colors, 2, 4)
+```
+
+Indexing in R starts at 1. 
+
+This code picks out the substring starting with the second character and ending with the fourth character (or earlier, if the string doesn't have four characters)
+
+Can use negative numbers to count back from the end. This finds the last character of each string:
+
+```{r}
+str_sub(colors, -1,-1) #-1 means the last character
+```
+
+Arguments to str_sub: 
+
+- thing you want to operate on (string, list of strings, <chr> column in a tibble)
+- starting position (inclusive)
+- ending position (inclusive)
+
+Used a lot in data cleaning when you have multiple important values in the same column. 
+
+Here's a way to use str_sub to capitalize strings (if you forget str_to_title):
+
+```{r}
+colors
+str_to_upper(str_sub(colors, 1, 1))
+str_sub(colors, 1, 1) <- str_to_upper(str_sub(colors, 1, 1))
+colors
+```
+
+str_sub only looks at positions, not what's in them. 
+
+For picking out substrings based on what's in the strings, use regular expressions; we'll learn that in a few weeks. 
+
+## Tips from Past Students
+
+- Read through class notes after class/before starting homework
+- Make yourself a summary/cheatsheet to reference while doing homework
+- Separate the concepts (e.g. only keep certain rows of a data set, turn strings into times) from the commands (e.g. filter, parse_time)
+- Start assignment earlier
+- Work with classmates
+
+
+## Summary 
+
+To parse dates, times, or datetimes: 
+
+1. Identify pattern using abbreviations %y, %m, etc. 
+2. Use appropriate parse_ function, passing pattern as the second argument
+
+Strings: 
+
+- Can be encoded in different ways
+- escape characters: \ changes the meaning of whatever character comes after it
+- str_length: find length of a string
+- str_c: combine multiple strings into one string
+- str_to_upper, str_to_lower, str_to_title: changes case of letters in strings
+- str_sub: picks out a substring by giving start and end positions
+
+
+## Activity
+
+On Canvas
+
+If finish regular questions, move on to bonus questions.
+
+If finish bonus questions, check in with Prof. Cannon, then can leave. 
+
+Can work individually or with classmates. 
+
