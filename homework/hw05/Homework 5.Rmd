@@ -52,11 +52,17 @@ parse_datetime(dt_c, "%B %d, %Y at %I:%M %p")
 
 > **Consider the dates_times.csv file, in which the first column has a date and time, the second column has a date, and the third column has a time.  Import this file, then parse all three columns so that they have the correct data types.  You can either create new columns with the correct data types or replace the existing columns, it's up to you. Make sure the columns with the correct data types are the first three columns in your resulting tibble. **
 
-```{r }
+```{r}
 dates_times <- read_csv("dates_times.csv")
+dates_times <- dates_times %>%
+  mutate(
+    Date_times_parsed = parse_datetime(Date_times, "%d-%m-%y: at %H:%M"),
+    Dates_parsed = parse_date(Dates, "%d %B %Y", locale = locale(date_names = "fr")),
+    Times_parsed = parse_time(Times, "%M minutes after %H %p")
+  ) %>%
+  select(Date_times_parsed, Dates_parsed, Times_parsed, everything())
 dates_times
 ```
-
 
 &nbsp;
 
@@ -64,6 +70,11 @@ dates_times
 
 > **Import the attached data set "Monthly_amounts.txt". The first column of this data set contains year and month information; parse it so that it is of the correct data type.  While the original data has no day information, what happens in your new column? **
 
+```{r}
+monthly_amounts <- read_csv("Monthly_Amounts.txt", skip = 1)
+mutate(monthly_amounts, Year_month_parsed = parse_date(Year_month, "%Y-%m"))
+```
+The new column will have the first day of the month as the default day.
 
 
 
@@ -73,16 +84,22 @@ dates_times
 
 > a. **Create a string in R containing the following sentence, including its punctuation: It's sunny today, but he said, "It'll be rainy tomorrow." To be sure you've made the correct string, print it out using the writeLines() function.** 
 
-> **Note: Some systems have trouble knitting files when the writeLines() function is being used.  So while you should use the writeLines() function to check your answer, you may need to comment it out in order for your file to knit successfully. **
-
-
-
+```{r}
+sentence <- "It's sunny today, but he said, \"It'll be rainy tomorrow.\""
+writeLines(sentence)
+```
 
 > b.  **Explain the difference between the strings: "a \n b" and "a \ n b". The answer is not just that one has an extra space and one doesn't. Your explanation should mention escape characters. Note: to make a backslash show up in your explanation in your knitted file, you must use two backslashes, like \\. Be sure to check your knitted file to make sure all parts of your explanation are appearing correctly.**
 
-> **Note: If you are knitting to PDF, the single backslashes in the question may cause problems when knitting. Change it to \\ to solve this problem.**
+The string "a \\n b" contains an escape character `\n`, which represents a newline. Therefore, when printed, it will display as:
 
+a
 
+ b
+
+On the other hand, "a \\ n b" does not contain a valid escape character due to the space after the backslash, so it will be printed as is, with a space and a backslash:
+
+a \\ n b
 
 &nbsp;
 
@@ -99,22 +116,31 @@ s2 <- "The Dog Is Sleepy Too!"
 
 > a. **Make s1 uppercase**
 
-
-
+```{r}
+s1_upper <- str_to_upper(s1)
+s1_upper
+```
 
 > b. **Make s2 lowercase**
 
-
+```{r}
+s2_lower <- str_to_lower(s2)
+s2_lower
+```
 
 > c. **Make the first letter of every word in s1 capitalized, while all other letters are lowercase.**
 
-
+```{r}
+s1_title <- str_to_title(s1)
+s1_title
+```
 
 >d. **Write a command that will output the number of characters in string s2.**
 
-
-
-
+```{r}
+s2_length <- str_length(s2)
+s2_length
+```
 
 &nbsp;
 
@@ -129,13 +155,22 @@ zip_codes <- tibble(Zip = c("91711-3452", "20322-3009", "93782-8473", "78392-876
 
 > a. **Use the str_sub() function to split the Zip column into two columns, one with the first five digits of the zip code and one with the last four digits of the zip code. **
 
-
-
+```{r}
+zip_codes <- zip_codes %>%
+  mutate(
+    first_five = str_sub(Zip, 1, 5),
+    last_four = str_sub(Zip, 7, 10)
+  )
+zip_codes
+```
 
 > b. **Use the separate() function to split the Zip column into two columns, one with the first five digits of the zip code and one with the last four digits of the zip code. **
 
-
-
+```{r}
+zip_codes <- zip_codes %>%
+  separate(Zip, into = c("first_five", "last_four"), sep = "-")
+zip_codes
+```
 
 &nbsp;
 
@@ -153,6 +188,19 @@ employees
 ```
 
 
+```{r}
+employees <- employees %>%
+  mutate(
+    Email = str_c(
+      str_sub(FirstName, 1, 1),
+      ifelse(is.na(MiddleInitial), "", MiddleInitial),
+      LastName,
+      str_sub(as.character(EmployeeID), -2, -1),
+      "@company.com"
+    )
+  )
+employees
+```
 
 
 
@@ -181,6 +229,7 @@ baseball
 ```
 
 
+This data is not tidy because the `Wins-Losses` column contains two values (wins and losses) in a single entry. Each column should contain only one value.
 
 > b. 
 
@@ -202,6 +251,7 @@ stud_info
 ```
 
 
+This data is not tidy because each student has multiple rows for different types of information (GPA, Graduation). Each row should represent a single observation (a student), and each column should represent a single variable.
 
 > c. 
 
@@ -220,6 +270,7 @@ weather_forecast
 ```
 
 
+This data is tidy because each row represents an observation, each column represents a variable, and each entry contains only one value.
 
 
 > d. 
@@ -234,6 +285,7 @@ diamonds_counts <- tibble(cut = c("Fair", "Good", "Very Good", "Premium", "Ideal
 diamonds_counts
 ```
 
+This data is tidy because each row represents an observation (a diamond cut), and each column represents a variable.
 
 
 
@@ -266,6 +318,11 @@ avg_weather
 # Do not write your answer in this code chunk, make a new code chunk
 ```
 
+```{r}
+avg_weather_tidy <- avg_weather %>%
+  pivot_wider(names_from = metric, values_from = average)
+avg_weather_tidy
+```
 
 
 > b. 
@@ -280,6 +337,11 @@ chemicals
 # Do not write your answer in this code chunk, make a new code chunk
 ```
 
+```{r}
+chemicals_tidy <- chemicals %>%
+  separate(Safe_Temperature_Range, into = c("Min_Temperature", "Max_Temperature"), sep = "-")
+chemicals_tidy
+```
 
 
 
@@ -291,6 +353,11 @@ global_temps
 # Do not write your answer in this code chunk, make a new code chunk
 ```
 
+```{r}
+global_temps_tidy <- global_temps %>%
+  pivot_longer(cols = Jan:Dec, names_to = "Month", values_to = "Temperature")
+global_temps_tidy
+```
 
 
 &nbsp;
@@ -323,6 +390,7 @@ diamonds_counts %>%
   pivot_longer(extra_small:extra_large, names_to = "Size", values_to = "Count")
 ```
 
+Both code chunks produce the same tibble because they both transform the data from wide to long format, focusing only on the `extra_small` and `extra_large` columns. They just do it in a different order with the first code chunk filtering the data after it's pivoted and the second code chunk filtering/selecting the data before it's pivoted.
 
 
 
@@ -342,12 +410,11 @@ newtibble <- cats %>% pivot_wider(names_from = names, values_from = values)
 newtibble
 ```
 
-
-
-
+The code doesn't work because there are 2 `age` values for Gracie the Cat but the `pivot_wider` function requires unique combinations of the `name` and `names` columns.
 
 > c. **Look up what the tidyverse's spread() and gather() functions do and explain them below.  These functions are no longer under active development, but exist in a lot of previously written code. Which functions we've learned recently are the updated versions of spread and gather? **
 
+The `spread()` function in the tidyverse is used to turn key-value pairs into columns, effectively making the data wider. The `gather()` function is used to turn columns into key-value pairs, making the data longer. They functions have been obsoleted by `pivot_wider()` and `pivot_longer()`.
 
 
 
@@ -365,18 +432,42 @@ brain_injuries
 
 > a. (3 points) **Make a table that displays all the different values in the age_group category and how many times each appears in the data set.**
 
+```{r}
+brain_injuries %>%
+  group_by(age_group) %>%
+  summarize(count = n())
+```
 
 
 > b. (3 points) **Some of these age groups are overlapping, which is not ideal for data analysis. For example, its currently very challenging to look in-depth at the age groups 15-17 and 18-24. To simplify the age groups, it's actually easiest if they're columns!  Use a function we learned this week to turn the age_group values into columns, where the values in those columns come from the number_est column.**
 
+```{r}
+brain_injuries %>%
+  pivot_wider(names_from = age_group, values_from = number_est)
+```
 
 
 > c. (3 points) **By adding and subtracting columns from the table you produced in the previous part, make new columns for ages 15-17 and 18-24. Hint: the number_est for the 15-17 age group is the estimate for 0-17 minus the estimate for 0-4 and the estimate for 5-14. Keep only the type column, injury_mechanism column, and the columns for the age groups 0-4, 5-14, 15-17, and 18-24.**
 
+```{r}
+brain_injuries_wide <- brain_injuries %>%
+  pivot_wider(names_from = age_group, values_from = number_est) %>%
+  mutate(
+    `15-17` = `0-17` - `0-4` - `5-14`,
+    `18-24` = `0-4` + `5-14` + `15-24` - `0-17`
+  ) %>%
+  select(type, injury_mechanism, `0-4`, `5-14`, `15-17`, `18-24`)
+```
 
 
 
 > d. (3 points) **This data is not tidy! Use an appropriate function we learned this week to make the data tidy.**
+
+
+```{r}
+brain_injuries_tidy <- brain_injuries_wide %>%
+  pivot_longer(cols = `0-4`: `18-24`, names_to = "age_group", values_to = "number_est")
+brain_injuries_tidy
 ```
 
 
@@ -388,7 +479,21 @@ brain_injuries
  
 > **Consider the file GPAs.csv. Import this data set, and carefully make it both clean and tidy. There will be several steps involved in this process. (the GPAs were randomly generated and do not reflect actual student grades).**
 
+```{r}
+gpa <- read_csv("GPAs.csv")
+gpa
+```
 
+```{r}
+gpa <- read_csv("GPAs.csv")
+gpa <- gpa %>%
+  rename(Data_Science_GPA = `Data Science_GPA`) %>%
+  mutate(Class = str_to_title(Class)) %>%
+  complete(College, Class, fill = list(Grade = NA)) %>%
+  pivot_longer(cols = Math_GPA:Other_GPA, names_to = "Type", values_to = "GPA") %>%
+  mutate(Type = str_replace(Type, "_GPA", ""))
+gpa
+```
 
 
 &nbsp;
@@ -399,11 +504,13 @@ brain_injuries
 > a. (2 points) **Reflect on how this class is going for you so far - What's working well for you? What are you finding challenging? What changes can you make that might help improve your learning?**
 
 
+I'm understanding the concepts of the course which is good. Doing the homework quickly is a challenge. I think it's more an issue of study habbits and time managment since I tend to procrastinate.
 
 
 > b. (2 points) **With the first test coming up, how do you plan to study? What methods of studying do you think will be most effective? Outline a study plan here.**
 
 
+I plan to study by systemattically reviewing the class notes and activities. I will also colaborate with my homework group to review key concepts and help each other understand the material.
 
 
 
