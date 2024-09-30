@@ -7,7 +7,7 @@ output:
   pdf_document: default
 ---
 
-**Classmates/other resources consulted:** [type answer here]
+**Classmates/other resources consulted:** N/A
 
 
 > **Be sure to load the tidyverse.**
@@ -25,12 +25,14 @@ library(tidyverse)
 
 ```{r}
 d_a <- "Sep. 25, (2024)"
+parse_datetime(d_a, "%b. %d, (%Y)")
 ```
 
 > b. 
 
 ```{r}
 d_b <- "2024-februar-12"
+parse_datetime(d_b, "%Y-%B-%d", locale = locale(date_names = "de"))
 ```
 
 (Hint: the language here is German; a list of the ISO 639-1 language abbreviations that R uses can be found at https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)
@@ -40,6 +42,7 @@ d_b <- "2024-februar-12"
 
 ```{r}
 dt_c <- "February 13, 2023 at 7:45 am"
+parse_datetime(dt_c, "%B %d, %Y at %I:%M %p")
 ```
 
 
@@ -49,6 +52,10 @@ dt_c <- "February 13, 2023 at 7:45 am"
 
 > **Consider the dates_times.csv file, in which the first column has a date and time, the second column has a date, and the third column has a time.  Import this file, then parse all three columns so that they have the correct data types.  You can either create new columns with the correct data types or replace the existing columns, it's up to you. Make sure the columns with the correct data types are the first three columns in your resulting tibble. **
 
+```{r }
+dates_times <- read_csv("dates_times.csv")
+dates_times
+```
 
 
 &nbsp;
