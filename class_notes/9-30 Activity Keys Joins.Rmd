@@ -1,0 +1,107 @@
+---
+title: '9-30 Activity: Keys, joins'
+author: "Sarah Cannon"
+date: "9/30/2024"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+```{r}
+library(tidyverse)
+library(nycflights13)
+```
+
+
+> 1. **Take a look at the tibble band_members. What variable or set of variables forms a key for this tibble? What variables do not form a key for this data set?**
+
+```{r}
+band_members
+```
+
+
+
+
+>2. **Now we'll try to join the band_members tibble with the band_instruments tibble. **
+
+```{r}
+band_instruments
+```
+
+```{r}
+band_members %>% inner_join(band_instruments)
+```
+
+> **What variable was used to join these two tibbles?** 
+
+name
+
+
+> 3. **In the command in the previous questions, why wasn't Mick included in the tibble that was produced? Why wasn't Keith included?** 
+
+Mick and Keith are not included because they need to be present in both tibbles to join.
+
+
+> 4. **Now, do a left join, right join, and full join for band_members and band_instruments. Explain the NA values you see in each.** 
+
+```{r}
+band_members %>% left_join(band_instruments)
+band_members %>% right_join(band_instruments)
+band_members %>% full_join(band_instruments)
+```
+
+The NAs are produced because Mick and Keith are not present in both tibbles to join. So when one is missing, the join cannot be made and NAs are produced.
+
+
+> 5. **Now try to do a join (any of the four we've learned) of band_members and band_instruments2.  What argument do you need to add/change to make this join work? Give the complete command. **
+
+```{r}
+# since band_instruments2 uses artist instead of name, we need to specify the variable to join on
+band_members %>% inner_join(band_instruments2, by = c("name" = "artist"))
+```
+
+
+
+
+> **BONUS: We're going to plot some of the flights data on a map to the United States! First, compute the average arrival delay for each destination in the dataset flights (you can restrict your attention only to those flights that arrived). **
+
+```{r}
+avg_arr_delay <- flights %>%
+  group_by(dest) %>%
+  summarize(avg_arr_delay = mean(arr_delay, na.rm = TRUE))
+avg_arr_delay
+```
+
+
+
+> **BONUS: Now, join the tibble produced in the previous question with the airports table, so that you get table with (at least) the four columns: destination; average departure delay; latitude; and longitude. For the next parts, it will be most helpful to do an inner join in this step. **
+
+```{r}
+avg_arr_delay <- avg_arr_delay %>%
+  inner_join(airports, by = c("dest" = "faa"))
+avg_arr_delay
+```
+
+
+> **BONUS: The following code draws a map of the continental United States. Modify this code chunk (for example, by adding additional layers to the ggplot) to visualize the average arrival delay at each destination. For clarity you may wish to restrict your attention to destinations in the continental United States (where the longitude is always > -140).**
+
+```{r}
+#install.packages("maps")
+library(maps)
+ggplot() + borders("state") + coord_quickmap()
+```
+
+```{r}
+# restrict to continental US
+avg_arr_delay <- avg_arr_delay %>%
+  filter(lon > -140)
+```
+
+```{r}
+ggplot() + 
+  borders("state") + 
+  coord_quickmap() +
+  geom_point(data = avg_arr_delay, aes(x = lon, y = lat, color = avg_arr_delay), size = 2, alpha = 0.8) +
+  scale_color_gradient(low = "blue", high = "red")
+```
