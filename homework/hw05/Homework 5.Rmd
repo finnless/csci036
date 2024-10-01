@@ -56,7 +56,7 @@ parse_datetime(dt_c, "%B %d, %Y at %I:%M %p")
 dates_times <- read_csv("dates_times.csv")
 dates_times <- dates_times %>%
   mutate(
-    Date_times_parsed = parse_datetime(Date_times, "%d-%m-%y: at %H:%M"),
+    Date_times_parsed = parse_datetime(Date_times, "%m-%d-%y: at %H:%M"),
     Dates_parsed = parse_date(Dates, "%d %B %Y", locale = locale(date_names = "fr")),
     Times_parsed = parse_time(Times, "%M minutes after %H %p")
   ) %>%
@@ -75,6 +75,7 @@ monthly_amounts <- read_csv("Monthly_Amounts.txt", skip = 1)
 mutate(monthly_amounts, Year_month_parsed = parse_date(Year_month, "%Y-%m"))
 ```
 The new column will have the first day of the month as the default day.
+Assuming we can ignore the warning coming from the extra column in one row.
 
 
 
@@ -457,6 +458,7 @@ brain_injuries_wide <- brain_injuries %>%
     `18-24` = `0-4` + `5-14` + `15-24` - `0-17`
   ) %>%
   select(type, injury_mechanism, `0-4`, `5-14`, `15-17`, `18-24`)
+brain_injuries_wide
 ```
 
 
