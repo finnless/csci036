@@ -1,0 +1,419 @@
+---
+title: "9-30 Class Notes -  Keys, Joins"
+author: "Sarah Cannon"
+date: "9/30/2024"
+output: html_document
+---
+
+
+## Announcements
+
+Today: New Material (not on Test 1, will be on first homework after Test 1) 
+
+Tomorrow 10/1: Homework 5 due
+
+Wednesday 10/2: Review for Test 1 in class (no preclass video)
+
+Test 1 covers: 
+
+- All material form the start of the semester through last Wednesday 9/25
+- Everything on Homeworks 1-5
+- Preclass videos, Activities, but not BONUS activities
+
+Monday 10/7: Test 1 
+
+(No Homework due Tuesday 10/8)
+
+**Notes on Homework Grading**: 
+-0.01 means there is a comment I want you to see, but it will not affect your overall grade. 
+Make sure you *correctly* assign questions to pages. We need to see *all* pages containing your answer, not necessarily the question. 
+Make sure your code is not cut off (especially if knitting to PDF).
+
+Upcoming Office Hours: 
+
+- Tuesday 10/1 10:30-11:30 and 2-3
+- Wednesday 10/2 1:15-2:15
+- Monday 10/7 *10:30-11:30am* and 1:15-2:15pm
+
+QCL one-on-one appointments and drop-in schedule: https://www.cmc.edu/qcl/mentoring
+
+Questions about upcoming schedule?
+
+Questions from preclass video? 
+
+
+## Relational Data
+
+When data is spread across multiple tables
+
+It is the relationships between these tables, not just the tables themselves, that are important.
+
+```{r, message = FALSE}
+library(tidyverse)
+library(nycflights13)
+flights
+weather
+planes
+```
+
+### Assumptions
+
+1. Data is tidy (if not tidy: tidy it first!)
+
+2. Order of rows does not matter.  If it does matter: Make a new column called order
+
+If the order of the rows is important, add it explicitly to the data set. 
+
+```{r}
+politicians <- tribble( ~ First_Name, ~Last_Name, ~Party, 
+                        "Tammy", "Baldwin", "Democrat", 
+                        "John", "Barrasso", "Republican", 
+                        "John", "Kerry", "Democrat",
+                        "Marsha", "Blackburn", "Republican"
+                        )
+politicians
+```
+
+```{r}
+politicians2 <- politicians %>% mutate(order = row_number())
+politicians2
+```
+
+Now, even if we reorder this tibble, we still know the original order. 
+
+Can put the tibble rows in any order, and still have the necessary information. 
+
+```{r}
+politicians2 %>% arrange(First_Name)
+```
+
+After this, order doesn't matter and Assumption 2 is met. 
+
+
+3. There are no identical rows. If there are identical rows: 
+
+```{r}
+names <- tibble(name = "Smith, John", age = c(47, 47))
+names
+```
+
+Do not know if there was a data entry error, or were actually two John Smiths. 
+
+This is where documentation of data collection and other data practices are really helpful! 
+
+When collecting data, helpful to create a unique ID for each observation/row
+
+(A) If there really should be two John Smiths: Create unique IDs to distinguish them.
+
+One way: use row_number()
+
+```{r}
+names %>% mutate( id = row_number()) %>% select(id, everything())
+```
+
+Here, id column is a key, more specifically, it's a *surrogate key*, a key you made up to distinguish the observations. 
+
+Now, there are no rows that are entirely identical, assumption 3 is met. 
+
+(B) If this data was unintentionally duplicated and there really shouldn't be two John Smiths: Use distinct()
+
+```{r}
+names
+distinct(names)
+```
+
+Now, there aren't duplicate rows. 
+
+Knowing which option you should use requires knowledge about your data! 
+
+
+
+## Keys, Foreign Keys
+
+In a data frame, a _key_ is a collection of columns/variables that uniquely identify each observation.  That is, it's a set of columns such that no two rows that have the same values in all of the columns in your key. (order of columns doesn't matter). 
+
+*Key: A precise definition, not an intuition*
+
+Key for flights: { month, day, hour, carrier, flight } (primary key)
+
+Key for planes: {tailnum}
+
+```{r}
+planes
+```
+
+Check that it is a valid key: 
+
+```{r}
+planes %>% count(tailnum) %>% filter(n > 1)
+```
+
+tailnum also appears in flights: it connects the two data sets. 
+
+tailnum is not a key (or a primary key) in flights: some tailnums appear multiple times in flights. 
+
+```{r}
+flights %>% count(tailnum)
+```
+
+A *foreign key* in a data table is a variable or collection of variables that form a key in a *different* table. 
+
+tailnum is a foreign key for flights, because it's a key in a different table, planes. 
+
+A variable can be both a primary and a foreign key: 
+
+carrier is part of the primary key for flights, and it's also a foreign key for flights because it's a key in a different table, namely the airlines table
+
+```{r}
+airlines
+```
+
+Another example: origin is part of the primary key for weather. (origin, month, day, hour)
+
+```{r}
+weather
+airports
+```
+
+Origins is also a foreign key for the weather table because it's a primary key in a different table, airports (where it has a different name, faa - that's fine!)
+
+
+## Mutating Joins
+
+Used to bring data from one table into another table.
+
+Called *mutating joins* because the end result is new columns being created, like mutate() does
+
+First, make a smaller data set for us to work with today: 
+
+```{r}
+flights2 <- flights %>% select(month:day, hour, origin, dest, tailnum, carrier)
+flights2
+```
+
+We have carrier using two-letter abbreviation. What if we want full name of carrier? That's in the airlines tibble
+
+```{r}
+airlines
+```
+
+Combine them using left_join: 
+
+```{r}
+left_join(flights2, airlines, by = "carrier" )
+```
+
+"left" because we include all data values that appear in the left table. 
+
+This is the most commonly used join, but there are others as well. 
+
+Will learn how joins work using small tibbles. 
+
+```{r}
+t1 <- tibble(letter = c('a', 'b', 'c'), color = c('red', 'green', 'blue'))
+t2 <- tibble(letter = c('a', 'b', 'd'), sound = c('low', 'medium', 'high'))
+t1
+t2
+```
+
+### Inner Joins
+
+Join type 1: Inner join: Creates observations for all values that appear in both tables. 
+
+```{r}
+inner_join(t1, t2, by = "letter")
+```
+
+Only keeps values for "letter" that appear in both tables. Other observations (c,d) are thron away.  Have attached both the color and sound tables. 
+
+
+### Outer Joins - Left, Right, Full
+
+Join type 2: Left Join: Keeps all values that appear in the first (left) tibble, inserts NA when that value doesn't appear in the second (right) tibble. 
+
+```{r}
+left_join(t1, t2, by = "letter")
+```
+
+Join Type 3: Right Join: Keeps all values from the second (right) table, inserts NA if that value doesn't appear in the first (left) table.  
+
+```{r}
+right_join(t1, t2, by = "letter")
+```
+
+Join type 4: Full join: Keeps all values from *both* tables, inserting NA as appropriate
+
+```{r}
+full_join(t1, t2, by = "letter")
+```
+
+- left_join, right_join, and full_join are all *outer joins*
+
+Can (and usually do) use pipes: 
+
+```{r}
+t1 %>% left_join(t2, by = "letter")
+```
+
+Note that the differences of the different types of joins depend on what different values are in the column(s) you're joining by, not how many times those values are there. 
+
+
+## Duplicate Values
+
+So far this assumed all the things we were joining by were keys, that is, they uniquely identified a row in _both_ tables.  This may not always be the case. 
+
+If there are duplicate values in one of your two tibbles: attached information is duplicated eachtime the value appears (in all types of joins - inner, left, right, full)
+
+```{r}
+t3 <- tribble(
+  ~class, ~val_x,
+     1, "x1",
+     2, "x2",
+     2, "x3",
+     1, "x4"
+)
+t4 <- tribble(
+  ~class, ~val_y,
+     1, "class1_info",
+     2, "class2_info"
+)
+t3
+t4
+left_join(t3, t4, by = "class")
+```
+
+In this case, class is not a key in t3, it is a key in t4. Because it's a key in t4, it's a foreign key in t3 (because it's a key in a different table)
+
+Flights example: tailnum is a primary key in planes, foreign key in flights.  
+
+```{r}
+flights2 %>% left_join(planes, by = "tailnum")
+```
+
+This has nothing to do with the fact that it's a left join: would be the same for an inner, right, or full join. 
+
+```{r}
+left_join(t3, t4, by = "class")
+right_join(t3, t4, by = "class")
+inner_join(t3, t4, by = "class")
+full_join(t3, t4, by = "class")
+```
+
+These all give the same table, because t3 and t4 have the same set of values in the class column (1 and 2).
+
+Note: In practice, the column(s) you're joining by should be a key in at least one of your two tables. 
+
+What happens if there are duplicate values in both tibbles? (This is often an error) 
+
+R doesn't know what data belongs with what; get all possible combinations
+
+```{r}
+t5 <- tibble(x = c('a', 'a'), y = c(1, 2))
+t6 <- tibble(x = c('a', 'a', 'a'), z = c(4, 5, 6))
+t5
+t6
+left_join(t5, t6, by = "x")
+```
+
+(a is a key in neither tibble) 
+
+(because the values for x appears in both tables, left_join, right_join, inner_join, and full_join all give the same table) 
+
+When do left, right, inner, and full joins give different answers? 
+- When there are values that appear in the joining column(s) in one table but not the other
+
+When does information get duplicated? 
+- Whenever a value in one table appears multiple times
+
+
+
+## More joining options
+
+When a key is not a single column: 
+
+```{r}
+flights2
+weather
+flights2 %>% left_join( weather, by = c("day", "month", "hour", "origin") )
+```
+
+Links rows that have the same values in all four columns in the two tibbles
+
+If don't specify by parameter, R will use all columns that appear in both tibbles
+
+```{r}
+flights2 %>% left_join(weather)
+```
+
+Look at message to see what it's joining by; always check that it's joining things in the way you want. 
+
+This is called a *natural join*.
+
+What if a column in one table has a different name in another table?
+
+Ex. origin/dest column in flights "lines up" with faa column in airports. 
+
+```{r}
+airports
+flights2 %>% left_join(airports, by = c("dest" = "faa"))
+```
+
+This does this join by comparing/lining up the dest column in flights2 with the faa column in airports
+
+Format: by = c("name of joining column in left tibble" = "name of joining column in right tibble")
+
+Can Specify multiple column names: 
+
+by = c("col1_left" = "col1_right", "col2_left" = "col2_right"), etc. 
+
+
+# Merge
+
+The base R function merge can accomplish the same tasks
+
+dplyr/tidyverse     Base R
+inner_join(x, y):   merge(x, y)
+left_join(x, y):    merge(x, y, all.x = TRUE)
+right_join(x, y):   merge(x, y, all.y = TRUE),
+full_join(x, y):    merge(x, y, all.x = TRUE, all.y = TRUE)
+
+Better to use tidyverse versions because: 
+- tend to be faster in practice
+- naming conventions similar to SQL, so this makes SQL easier to learn later
+
+
+# Summary 
+
+Assumptions: 
+
+1. Data is tidy 
+2. Order of rows does not matter  
+3. There are no identical rows
+
+Key = column(s) whose values uniquely identify each observation/row
+
+Foreign key = column(s) that are a key in a *different* table
+
+Mutating joins: 
+- inner_join: keep all observations where joining value(s) appear in *both* tibbles: in the left tibble *AND* the right tibble
+- left_join: keep all observations from *left* tibble
+- right_join: keep all observations from *right* tibble
+- full_join: keep all observations of joining value(s) from *either* tibble: in the left tibble *OR* the right tibble
+
+Duplicate values: joined data is duplicated each time! 
+
+Columns you're joining by should usually be a key in at least one of the data tables. 
+
+
+
+# Activity
+
+On Canvas
+
+If finish regular questions, move on to bonus questions.
+
+If finish bonus questions, check in with Prof. Cannon, then can leave. 
+
+Can work individually or with classmates. 
+
+
