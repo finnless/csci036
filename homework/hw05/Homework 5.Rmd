@@ -288,7 +288,7 @@ diamonds_counts
 
 This data is tidy because each row represents an observation (a diamond cut), and each column represents a variable.
 
-
+NOTES: This response is incorrect. The data is not tidy because the `cut` column contains multiple values for each diamond. Each column should contain only one value.
 
 
 &nbsp;
