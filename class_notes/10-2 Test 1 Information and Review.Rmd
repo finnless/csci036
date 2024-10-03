@@ -1,0 +1,167 @@
+---
+title: "Test 1 Information and Review"
+author: "CSCI 36, Fall 2024"
+date: "10/2/2024"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Test 1 Overview
+
+**Date**: Monday, October 7, 2024
+
+**Time**: You will have 75 minutes to take the exam. 
+
+**Rules**: Must take test in person at scheduled time
+(only exceptions: by prior arrangement, or unforeseeable extenuating circumstances make it impossible for you to take the test in person at the scheduled time; documentation required)
+
+**Materials**: Can bring one 8.5"x11" paper with notes, two-sided (or two pages, one-sided). Must be hand-written, and each student must make their own. Students may *not* write on tablet and print. Must be written large enough for me to read. Will turn in at end of exam, make sure your name is on it.
+
+No calculators
+
+Table of date/time abbreviations (%d, %m, etc.) will be on first page of test
+
+**Test Rules**:
+
+Do not write on backs of pages
+
+Write initials at the top of every page
+
+Nothing on desk except test, cheat sheet, writing implements, drink
+
+Sit every other seat in the classroom. 
+
+
+**Material**: Everything from the start of the semester through Wednesday, September 25. This includes everything on Homeworks 1-5, all pre-class videos, and all activities, but not the BONUS activities. Here's a high-level description of the topics: 
+
+- R basics
+- Data Ethics
+- Data visualization with ggplot
+- Data transformation with dplyr
+- Data import
+- Parsing
+- Strings
+- tidy data/pivoting
+
+Keys and joins, from class on 9/30, are not on the exam. 
+
+**Test Format**: On paper (not computers) 
+
+_True/False_
+
+Example: The geom_point function is used to make a scatterplot
+
+Answer: True
+
+Example: Select is used to add or remove rows from a data set
+
+Answer: False
+
+_Short Answer_
+
+What does sum(c(5,7,NA)) return? 
+
+Answer: NA
+
+In a CSV file, the values are separated by ____________
+
+Answer: Commas
+
+_Open-ended Questions_
+
+I will be clear about exactly what I'm looking for in an answer (number of sentences, tibble, etc.). In giving partial credit, I am looking to see how well you understand the concepts. 
+
+Things I might ask you do to:
+
+- Explain a concept/idea/function/etc. in your own words
+- Look at code and find/explain the mistake in it
+- Interpret/explain output of code
+- Given a sample tibble and some code, describe the output of that code (draw table, answer questions, draw out new tibble, etc.)
+- Describe how to solve a problem (e.g. what functions and arguments you would need)
+
+Things I will not ask you to do:
+
+- Write out exact R code in perfect syntax
+- Memorize the table of date/time parsers: %d, %M, %b, %H, etc. 
+
+Example: Given a tibble t, how would you pick out only those rows where the stopping_time is at least 5? Give any function(s) you would use and any argument(s) you would pass to those function(s).
+
+Acceptable answers: 
+
+filter, stopping time >= 5
+
+use filter, condition is that stopping time >= 5
+
+filter(stopping_time >= 5)
+
+t %>% filter(stopping_time >= 5)
+
+
+_Example questions_: 
+
+Consider the following code and the tibble it generates: 
+
+```{r}
+library(tidyverse)
+pets <- read_csv("Name,Age,Weight,Species,DateAdopted
+Sparky,10,38,Dog,3/4/2021
+Fluffy,4,15,Cat,5/16/2020
+Spot,3,35,Dog,11/23/2020
+Buddy,7,95,Dog,12/3/2015
+Fido,12,40,Dog,4/5/2016
+Patches,3,8,Cat,1/14/2019") 
+pets
+```
+
+(note: for this question I would include both the code and the tibble itself on the test; if I was asking different questions I might include only the code or only the tibble)
+
+a.  For the tibble pets, how would you add a column that has each pet's age in months?  
+
+
+b.  What would be the output of running the command arrange(pets, desc(Age))? Write out the tibble. 
+
+
+c.  Explain in 2-3 sentences why arrange(pets, desc(Age)) and pets %>% arrange(desc(Age)) produce the same output. Be sure to mention what the operator %>% is called, and what it does. 
+
+
+d. Sketch the plot that would be produced by the following code.  Be sure to label your axes and give enough detail that I can tell what any values involved are.
+
+ggplot(data = pets) + geom_bar(aes(x = Name, y = Weight), stat = "identity")
+
+
+
+
+Answers to practice questions: 
+
+a. mutate, age_months = Age * 12
+(for this question, as long as you mention the mutate function, you make a new variable, and give a formula for calculating that new variable as Age *12, you would get full credit; the formatting of your answer doesn't matter)
+
+b. On the test you would draw out this tibble's rows and columns by hand, but that's harder to do when typing, so here's the correct output: 
+```{r}
+arrange(pets, desc(Age))
+```
+
+c. The operator %>% is called the pipe operator.  The pipe operator takes the argument on its left, in our case the data set pets, and inserts it as the first argument in the function on its right, in this case the arrange function.  This results in exactly the same function call as arrange(pets, desc(Age)). 
+
+d. Of course your sketches would vary a bit, but here's the plot: 
+
+```{r}
+ggplot(data = pets) + geom_bar(aes(x = Name, y = Weight), stat = "identity")
+```
+
+For this question, I would not care about the order of the bars (i.e. you don't need to know that geom_bar puts columns in alphabetical order by default), I would just want to see that it is a bar chart with six bars, one for each animal, and the height of each bar is that animal's weight.
+
+
+
+# Class Review Notes
+
+I'll be typing the notes for our in-class review here, and will upload to Canvas an updated version of this file with these notes included after class. 
+
+
+
+
+
+
+
+
