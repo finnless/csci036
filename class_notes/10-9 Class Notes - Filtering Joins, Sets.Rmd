@@ -1,0 +1,327 @@
+---
+title: "10-9 Class Notes"
+author: "Sarah Cannon"
+date: "10/9/2024"
+output: html_document
+---
+```{r, results = FALSE, message = FALSE}
+library(tidyverse)
+```
+
+## Announcements
+
+Homework 6: Available tomorrow, due next THURSDAY (10/17), 11:59pm 
+(delayed two days because of fall break) 
+Based on class today and 9/30 
+
+No class Monday (Fall Break)
+
+Upcoming Office Hours: 
+(no regular office hours during fall break)
+- Tuesday 10/15 4-5pm
+- Wednesday 10/16 1:15pm-2:15pm 
+- Thursday 10/17 2-3pm
+
+Reminder: Thursday 10/17: Last day to drop course without record
+
+QCL one-on-one appointments and drop-in schedule: https://www.cmc.edu/qcl/mentoring
+
+Questions about upcoming schedule?
+
+Questions from Preclass Video?
+
+
+## Sets - From Preclass Video
+
+A _set_ is a collection of elements (order doesn't matter)
+
+Appear in lots of different ways in data science! 
+
+Example 1: The values that appear in a column
+
+Example 2: The rows of a tibble
+
+The _union_ of two sets is all elements that are in at least one of the two sets: A union B = all elements in A or in B
+
+(When set = values that appear in a column: union ~ full join)
+
+The _intersection_ of two sets is all elements that are in both sets: A intersect B = all elements in A and in B
+
+(When set = values that appear in a column: intersection ~ inner join)
+
+
+
+## Cartesian Product
+
+For sets A and B, the _Cartesian Product_ A x B is all possible pairs of an element from A and an element from B
+
+Example: A = {1,2}, B = {'a', 'b', 'c'}
+A x B = { (1, 'a'), (1, 'b'), (1,'c'), (2, 'a'), (2, 'b'), (2, 'c') }
+
+Number of elements in A x B = (number of elements in A) * (number of elements in set B)
+
+Data Science Example 1: complete(col1, col2)
+
+If A is all possible values in col1 and B is all possible values in col2, then A x B is is all possible pairs of values: the complete function looks at all possible pairs of values, and if some pair isn't in the tibble, it adds that pair to the tibble. 
+
+```{r}
+t1_5 <- table1 %>% slice(1:5)
+t1_5
+complete(t1_5, country, year)
+```
+
+This is A x B where A = {Afghanistan, Brazil, China} , B =  {1999, 2000}
+
+Also works for three or more sets: A x B x C = all triples involving an element from A, and element from B, and an element from C.
+
+
+Data Science Example 2: Joins with duplicate values
+
+```{r}
+t5 <- tibble(x = c('p', 'p'), y = c(1, 2))
+t6 <- tibble(x = c('p', 'p', 'p'), z = c(4, 5, 6))
+t5
+t6
+```
+
+```{r}
+inner_join(t5, t6, by = "x")
+```
+
+A = rows in t5 where x = p
+B = rows in t6 where x = p
+
+A x B = all combinations of a row from A and a row from B; these give the rows in the join. 
+
+
+
+## Filtering Joins
+
+```{r}
+library(nycflights13)
+```
+
+Airports has so many airports in it  - 1458
+
+```{r}
+airports
+```
+
+Flights has a lot fewer airports - only those reachable from NYC via a direct flight: 105 destinations
+
+```{r}
+flights %>% group_by(dest)
+```
+
+What if we wanted to trim down the airports data set and only keep the relevant airports that appear in flights? 
+
+Don't want to actually add any information/data to airports: just want to filter airports tibble based on whether or not destinations appear in flights. 
+
+Filtering joins: Don't add data from one table to another, instead just filter one table based on the values in another table. 
+
+
+### Semi-joins
+
+semi_join(tibble1, tibble2) keeps all observations (rows) in tibble1 that have a match in tibble2: filters tibble1 according to whether or not values appear in tibble2. 
+
+```{r}
+airports
+flights
+semi_join(airports, flights, by = c("faa" = "dest"))
+
+```
+
+Filtering the airport table, by looking at the faa column, and keeping entries that also appear in the dest column of flights. 
+
+Now we only have 101 airports in data set, the ones that are also destinations in flights. 
+
+Syntax is similar to joins from last class, but really is just filtering! 
+
+Is like an intersection: Takes the intersection of the values in the faa column in airports and the destination column in flights, only keeps those rows of airports that are in this intersection. 
+
+(UNLIKE inner_join because don't add any information from flights). 
+
+Note: 105 destinations in flights but 101 destinations here - will revisit! 
+
+Other examples of semi_joins: 
+
+Suppose you want to only keep flights to the top 10 destinations. 
+
+```{r}
+top_dest  <- flights %>% count(dest, sort = TRUE) %>% head(10)
+top_dest
+```
+
+count(): makes a new table that counts how many items each value appears
+sort = TRUE: puts them in order form largest to smallest
+
+How can we filter flights to only show flights to these destinations? 
+
+filter(dest %in% c("ORD", "ATL", "LAX",...))
+
+Easier way: use a semi_join!
+
+```{r}
+flights %>% semi_join(top_dest, by = "dest")
+```
+
+Works for multiple columns too:  what if you want to keep flights on 30 most popular days? 
+
+```{r}
+pop_days <- flights %>% count(month, day, sort = TRUE) %>% head(30)
+pop_days
+flights %>% semi_join(pop_days, b = c("month", "day"))
+```
+
+Common use of semi-join: Make a tibble of values/observations you want to keep (like top_dest or pop_days). Then, use a semi_join of your data set (flights) and this new tibble (top_dest or pop_days) to only keep the relevant observations. 
+
+
+### Anti-joins
+
+105 destinations in flights
+
+101 destinations in semi_join(airports, flights, by = c("faa" = "dest"))
+
+Must be four destinations that appear in flights but don't appear in airports
+
+How can we find them? 
+
+Let's filter flights to find destinations that don't appear in airports:
+
+anti_join(tibble1, tibble2): keeps all observations in tibble 1 that *don't* have a match in tibble2. Or, removes all observations in tibble1 that *do* have a match in tibble2
+
+```{r}
+anti_join(flights, airports, by = c("dest" = "faa")) %>% count(dest)
+```
+
+BQN, PSE, SJU: In Puerto Rico
+STT: US Virgin Islands
+
+Seems like for flights, domestic destinations include US territories, for airports, it doesn't include US territories.
+
+Anti-joins are useful for diagnosing mismatches. 
+
+Are there any tailnums that appear in flights but don't appear in planes? use anti-join! 
+
+```{r}
+planes
+flights %>% anti_join(planes, by = "tailnum")
+```
+
+
+
+## Another set concept: Set difference
+
+The _set difference_ of two sets, A - B or A \ B,  is everythign that is in A but not B
+
+Ex. A = {1,2}, B = {2,3},
+A - B = {1}
+B - A = {3}
+
+https://www.basic-mathematics.com/images/Difference-of-set.gif
+
+In Data Science: An anti_join is a set difference
+
+A = values in dest column in flights
+
+B = values in faa column of airports
+
+A - B = all values that are destinations in flihgts but don't appear in airports = rows kept by the anti_join(flights, airports)
+
+
+## R's built-in set functions
+
+R has built-in intersect(), union(), and setdiff() functions: operate on rows
+
+Be very careful to not confuse these built-in functions, which always assume the set you're dealing with is rows, with the more general concepts, which appear in many different settings. 
+
+**ONLY WORK FOR TIBBLES WITH EXACT SAME COLUMNS**
+
+union(t1, t2): all rows that are in at least one of the tibbles
+intersect(t1, t2): all rows that are in both of the tibbles
+setdiff(t1, t2): all rows that are in t1 but not t2
+setdiff(t2, t1): all rows that in t2 but not t1
+
+```{r}
+t1 <- tribble(
+  ~pet, ~species, 
+  "Gracie", "Cat", 
+  "Lassie", "Dog"
+)
+
+t2 <- tribble(
+  ~pet, ~species, 
+  "Spot", "Lizard", 
+  "Gracie", "Cat", 
+  "Tweety", "Bird"
+)
+t1
+t2
+```
+
+```{r}
+union(t1, t2)
+intersect(t1, t2)
+setdiff(t1, t2)
+setdiff(t2, t1)
+```
+
+
+Possible use for union:
+
+```{r}
+Jan_Obs <- tibble(Day = c(2,7,17,19,30), Bird = c("Sparrow", "Sparrow", "Pigeon", "Plover", "Hummingbird"))
+Feb_Obs <- tibble(Day = c(3,4,7,12, 27, 28), Bird = c("Hummingbird", "Crow", "Raven", "Hummingbird", "Hummingbird", "Pigeon"))
+Jan_Obs
+Feb_Obs
+```
+
+How to combine into one list? Attempt 1: 
+
+```{r}
+union(Jan_Obs, Feb_Obs)
+```
+
+Can't tell which birds are from which month! 
+
+Add month information to the tables first: 
+
+```{r}
+JanObs2 <- Jan_Obs %>% mutate(month = "Jan")
+JanObs2
+FebObs2 <- Feb_Obs %>% mutate(month = "Feb")
+FebObs2
+union(JanObs2, FebObs2)
+```
+
+
+## Summary
+
+A _set_ is a collection of elements (order doesn't matter)
+
+- The _union_ of two sets is all elements that are in at least one of the two sets: 
+      A union B = all elements in A OR in B
+- The _intersection_ of two sets is all elements that are in both sets: 
+      A intersect B = all elements in A AND in B
+- The _Cartesian Product_ A x B is all possible pairs of an element of A with an element of B
+- The _set difference_ of two sets, A - B or A \ B, is everything that is in A but is not in B
+
+Filtering joins: filter one tibble according to whether or not values appear in a second tibble
+- Idea same as filtering, syntax same as mutating joins from last class
+- semi_join(t1, t2, by = "name"):  Keep all rows of t1 where the value in the name column also appears in the name column of t2
+- anti_join(t1, t2, by = "name"):  Keep all rows of t1 where the value in the name column does not appear in the name column of t2
+
+R has built-in intersect(), union(), and setdiff() functions: operate on _rows_. 
+ONLY work on tibbles that have the exact same columns
+
+## Activity
+
+Available on Canvas
+
+If finish regular questions, move on to bonus questions.
+
+If finish bonus questions, check in with Prof. Cannon, then can leave. 
+
+Can work individually or with classmates. 
+
+
