@@ -1,0 +1,316 @@
+---
+title: "Homework 6"
+author: 'Prof. Sarah Cannon'
+date: "Due Thursday 10/17/2024"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+```{r, message = FALSE, echo = FALSE}
+library(tidyverse)
+library(nycflights13)
+```
+
+
+## Question 1 (4 points) 
+
+> **Read the ACM Code of Ethics at https://www.acm.org/code-of-ethics in its entirety.  In 1-2 paragraphs below, summarize which parts of the code of ethics are most relevant for a data scientist and how you plan to ensure you adhere to this code of ethics in any future data science (or data science-adjacent) work you do. **
+
+
+
+&nbsp;
+
+## Question 2 (4 points) 
+
+> **Consider the sets A = \{red, green, blue\} and B = \{purple, blue, pink, yellow\}.** 
+
+> a. **For these sets A and B, what is the union of A and B?** 
+
+
+
+> b. **For these sets A and B, what is the intersection of A and B?**
+
+
+
+> c. **For these sets A and B, what is set difference A - B?**
+
+
+
+> d. **For these sets A and B, what is the Cartesian Product A $\times$ B?**
+
+
+
+
+&nbsp;
+
+## Question 3 (8 points)
+
+> **This question deals with the Lahman package, which has several tables related to baseball. _MAKE SURE NO MORE THAN 10 ROWS OF ANY LIST OR TABLE PRINT IN YOUR KNITTED FILE_.**
+
+```{r, echo = FALSE}
+#install.packages("Lahman")
+library(Lahman)
+```
+
+> a. **What column makes a primary key in the People table? Explain how you know this is a valid key.**
+
+
+
+
+> b. **Explain why the pair of columns { nameFirst, nameLast } aren't a key for the People table. Give an example of specific entries in the table that support your explanation.** 
+
+
+
+> c. **Is the column you identified in part (a) a primary key in the Batting table? Explain why or why not.**
+
+
+
+> d. **Is the column you identified in part (a) a foreign key in the Batting table? Explain why or why not. ** 
+
+
+
+
+&nbsp;
+
+## Question 4 (6 points) 
+
+> **Consider the following table of bird sightings; more information about this data is available at https://github.com/rfordatascience/tidytuesday/blob/master/data/2023/2023-01-10/readme.md.**
+
+```{r, echo = FALSE}
+bird_observations <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-01-10/PFW_2021_public.csv")
+```
+
+> a. **Explain in your own words what the distinct() function does, and use it to explain how you know the bird_observations table doesn't have any duplicate rows.** 
+
+
+
+
+> b. **Because the bird_observations table doesn't have any duplicate rows, it must have at least one key. What do you think is the best set of columns to choose to serve as a primary key for this table?  Explain how you know it is a valid key. Hint: Think about what the observations are; you should not have more than 5 columns in your key. There is more than one correct answer.**
+
+
+
+
+
+&nbsp;
+
+## Question 5 (6 points)
+
+> a. **Explain why the diamonds data set doesn't meet the three assumptions we discussed in class on 9-30; be specific about which assumption(s) it violates.** 
+
+
+
+> b. **Suppose you have good documentation for the diamonds data set and know that: every row corresponds to a different diamond; there were no mistakes in collecting/entering this data; and the order of the diamonds doesn't matter. Modify the diamonds data set in an appropriate way to make sure it satisfies the three assumptions.**
+
+
+
+
+
+&nbsp;
+
+## Question 6 (21 points)
+
+> **Consider the following tibbles:**
+
+```{r, echo = FALSE}
+CityInfo <- tribble(
+  ~City, ~Country, ~Population, 
+  "Boston", "USA",  650706,
+  "San Jose", "Costa Rica",  339581, 
+  "Toronto", "Canada", 2930000,
+  "Rio de Janeiro", "Brazil", 6211000, 
+  "Cartago", "Costa Rica", 160457, 
+  "Vancouver", "Canada", 675218, 
+  "Buenos Aires", "Argentina", 3121000,
+  "Los Angeles", "USA", 3822000,
+)
+
+Regions <- tibble(
+  Region = c("Central America", "Central America", "North America", "North America", "North America", "South America", "South America"), 
+  Country = c("Panama", "Costa Rica", "Costa Rica", "Canada", "USA", "Brazil", "Chile"))
+```
+
+
+> a. **Suppose the order of the cities in CityInfo list matters. Modify your table in an appropriate way, and explain why this is a good thing to do.**
+
+
+
+> b. **Join these tibbles according to Country using an inner join. Which city/cities appear in two different rows, which city/cities appear only in one row, and which city/cities don't appear in this tibble? Explain why this is.** 
+
+
+
+> c. **Joining these tables with a left_join rather than an inner_join results in a tibble with one more row than in part (b).  Which additional row is present here and why? **
+
+
+
+> d. **Joining these tables with a right_join rather than an inner_join results in a tibble with two more rows than in part (b).  Which additional rows are present here and why? **
+
+
+
+> e. **Joining these tables with a full_join rather than an inner_join results in a tibble with three more rows than in part (b).  Which additional rows are present here and why? ** 
+
+
+
+> f. **Join these tibbles according to Country using a semi_join(). Which row(s) and column(s) appear in the resulting table? Explain why this is.**
+
+
+
+> g. **Join these tibbles according to Country using an anti_join(). Which row(s) and column(s) appear in the resulting table? Explain why this is.**
+
+
+
+
+&nbsp;
+
+## Question 7 (6 points)
+
+> **Consider the following two tibbles. **
+
+```{r, echo = FALSE}
+October_Pets <- tribble(
+  ~name, ~species, ~age_months, ~arrival_day, 
+  "Sparky", "Dog",  31, 3,
+  "Fido", "Dog",  29, 11,
+  "Fluffy", "Cat", 78, 4, 
+  "Lassie", "Dog", 98, 28,
+  "Patches", "Cat", 115, 14,
+  "Spot", "Dog", 7, 12,
+  "Socks", "Cat", 4, 17,
+  "Buddy", "Dog", 15, 15,
+  "Lizzie", "Lizard", 2,1,
+  "Tweety", "Bird", 6,2,
+)
+
+Pet_Average_Weights <- tribble(
+  ~species, ~sex, ~avg_weight_lbs, 
+  "Cat", "Female", 9.4, 
+  "Cat", "Male", 10.1,
+  "Dog", "Female", 45, 
+  "Dog", "Male", 50,
+  "Bird", "Female", 0.8, 
+  "Bird", "Male", 0.9,
+  "Lizard", "Female", 0.4, 
+  "Lizard", "Male", 0.3,
+)
+```
+
+> a. **Join these tibbles by the species column using a full_join. Explain why doing this join is probably a bad idea.  **
+
+
+
+
+> b. **Explain why you have the number of rows that you do in your join in the previous part.** 
+
+
+
+
+
+&nbsp;
+
+## Question 8 (9 points)
+
+>a. (6 points) **Add to the flights data set the altitude of the origin airports and the altitude of the destination airports. That is, each row should now have 2 more additional columns, which you should name origin_alt and dest_alt.  Move your columns for origin, destination, and their altitudes to the front of your data set, with the remaining columns displayed after them.**
+
+
+
+
+>b. (3 points) **The following command attaches plane information to the flights tibble, for all flights where the tail number appears in the planes tibble.  There's over 284,000 such flights: **
+
+```{r}
+inner_join(flights, planes, by = "tailnum")
+```
+
+> **When we remove the "by" argument, we get a tibble with fewer than 5000 rows. Explain what's happening here, and why these particular rows have been included in this tibble.**   
+
+```{r}
+inner_join(flights, planes)
+```
+
+
+
+&nbsp;
+
+## Question 9 (18 points)
+
+> **This question considers the following three data sets, from a sentiment analysis for African languages. More information about this data set can be found at https://github.com/rfordatascience/tidytuesday/blob/master/data/2023/2023-02-28/readme.md. **
+
+```{r}
+afrisenti <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-02-28/afrisenti.csv")
+languages <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-02-28/languages.csv")
+language_countries <- read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-02-28/language_countries.csv")
+```
+
+> a. **Are there any language iso codes that appear in the afrisenti table but not in the languages table, or vice versa? Explain how you know. **
+
+
+
+
+> b. **Explain why a left_join, right_join, inner_join, and full_join of the afrisenti and languages data tables will all produce the same result.**
+
+
+
+> c. **Make a barchart showing how frequently each language appears in the afrisenti table.  Your plot should use the full name of all the languages, not the iso abbreviations for the languages.**
+
+
+
+> d. **Join the afrisenti and language_countries data sets using any join type you'd like. Explain why, although the afrisenti table has 111,720 rows, the new joined table has 186,941 rows. *Note: Some systems may have trouble knitting the 'tweet' column due to the special characters present, so if this applies to you, feel free to add %>% select(-tweet) to your answer.*  **
+
+
+
+> e. **Make a table consisting only of the 8 languages appearing most frequently in the afrisenti table. You table should only have 8 rows, one for each of these languages. **
+
+
+
+> f. **Filter the afrisenti table, using a join we learned this week, to only keep rows corresponding to one of the 8 languages that appears most frequently in the table.  Hint: Use your table from the previous part. *Note: Some systems may have trouble knitting the 'tweet' column due to the special characters present, so feel free to add %>% select(-tweet) to your answer.***
+
+
+
+
+&nbsp;
+
+## Question 10 (6 points)
+
+> **Filter the flights data set to only contain flights along the 20 routes with the largest average arrival delays (of the flights that took off), where a route consists of both the origin airport and the destination airport. Hint: You may want to make an intermediate table to help you. **
+
+
+
+
+
+## Question 11 (6 points) 
+
+> a. **Explain what R's intersect() function is, explain how it is different from an inner_join, and give a real-world example of when you might want to use it. **
+
+
+
+
+> b. **Explain what R's setdiff() function is, explain how it is different from an anti_join, and give a real-world example of when you might want to use it. **
+
+
+
+
+&nbsp;
+
+## Question 12 (6 points) 
+
+> **Consider the following three data sets with more detailed information about three of the African languages considered above. More information about this data can be found at https://github.com/afrisenti-semeval/afrisent-semeval-2023/tree/main/data_with_annotators_labels#readme. **
+
+```{r}
+morrocan_arabic <- read_csv("https://raw.githubusercontent.com/afrisenti-semeval/afrisent-semeval-2023/main/data_with_annotators_labels/morrocan_arabic_individual_labels.csv")
+
+algerian_arabic <- read_csv("https://raw.githubusercontent.com/afrisenti-semeval/afrisent-semeval-2023/main/data_with_annotators_labels/algerian_arabic_individual_labels.csv")
+
+hausa <- read_csv("https://raw.githubusercontent.com/afrisenti-semeval/afrisent-semeval-2023/main/data_with_annotators_labels/hausa_individual_labels.csv")
+```
+
+> a. **Combine the morrocan_arabic and hausa data sets together into a single table in an appropriate way.  You should be sure your resulting table contains information about which rows are observations about Morroccan Arabic and which rows are observations about Hausa.**
+
+
+
+
+> b. **Explain why you can't combine the morrocan_arabic and algerian_arabic tables together in the same way you did in the previous part for morrocan_arabic and hausa.**
+
+
+
+
+

@@ -1,0 +1,121 @@
+---
+title: "10-16 Activity - Factors"
+author: "Sarah Cannon"
+date: "10/16/2024"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+> 1. **Turn the following list into a factor, with the days of the week as the levels.  Sort it, so that the days of the week are in order. ** 
+
+```{r}
+x1 <- c("Monday", "Tuesday", "Friday", "Saturday", "Sunday", "Friday", "Monday", "Thursday", "Sunday", "Tuesday", "Monday", "Monday")
+```
+
+
+
+
+> 2. **Use code to identify the data entry error in the following vector and correct it using code (not by directly editing the list below).** 
+
+```{r}
+x2 <- c("Monday", "Tuesday", "Friday", "Saturday", "Sunday", "Friday", "Monday", 
+        "Thursday", "Sunday", "Tuesday", "Monday", "Monday", "Friday", 
+        "Saturday", "Sunday", "Friday", "Monday", "Wednesday", "Thursday", 
+        "Sunday", "Tuesday", "Monday", "Monday", "Friday", "Saturday", "Sunday", 
+        "Friday", "Monday", "Thursday", "Sunday", "Tuesday", "Monday", "Monday",
+        "Monday", "Thurday", "Sunday", "Tuesday", "Monday", "Monday", "Friday", 
+        "Saturday", "Sunday", "Friday", "Monday", "Wednesday", "Monday", 
+        "Thursday", "Sunday", "Tuesday", "Monday", "Monday", "Friday", 
+        "Saturday", "Sunday", "Friday", "Monday", "Wednesday")
+```
+
+
+
+
+> 3. **Turn the entire column for day of the week in the following tibble into a factor. Arrange your tibble by the day of the week. **
+
+```{r}
+bird_observations <- tibble(
+  day_of_week = c("Thursday", "Wednesday", "Saturday", "Saturday", 
+                  "Monday", "Friday", "Wednesday", "Sunday", 
+                  "Friday", "Saturday","Sunday", "Sunday", 
+                  "Tuesday", "Friday", "Wednesday", "Saturday" ),
+  temperature = c(89,84,81,77,82,73,83,87,89,88,83,75,78,90, 45, 25), 
+  bird_type = c("Jay", "Jay", "Robin", "Finch", 
+                          "Robin", "Bluebird", "Finch", "Hummingbird", 
+                          "Sparrow", "Pigeon", "Sparrow", "Pigeon", 
+                          "Hummingbird", "Finch", "Jay", "Hummingbird"))
+```
+
+
+
+
+
+> 4. **For the same tibble bird_observations from Question 3, turn the day of the week column into a factor and reorder that factor to be ordered according to which day of the week appears most/least frequently among the observations.  Make a bar chart showing how many times each day of the week shows up; your bars should be ordered according to their height.  **
+
+
+
+
+> 5. **Make a summary tibble that shows, for each day of the week, what the average temperature is across these observations.** 
+
+
+
+
+
+> 6. **Beginning with your summary tibble from Question 5, turn the day of the week column into a factor, and reorder it according to average temperature. Make a bar chart showing the average temperature for each day of the week; your bars should be ordered according to their height. **
+
+
+
+
+
+> **BONUS: The bonus activity looks at the functions fct_reorder2() and weekdays().  First, fct_reorder2() reorders the levels of a factor according to where data falls in a two-dimensional plot. For example, consider the following plot, which shows the relationship between age and marital status: **
+
+```{r}
+by_age <- gss_cat %>%
+  filter(!is.na(age)) %>%
+  count(age, marital) %>%
+  group_by(age) %>%
+  mutate(prop = n / sum(n))
+by_age
+
+ggplot(data = by_age, mapping = aes(x = age, y = prop, color = marital)) +
+  geom_line(na.rm = TRUE)
+```
+
+> **It would be convenient if the order in the legend matched the order in which the differently-colored lines appeared on the left side of the plot, e.g. first widowed, then married, etc.  This is exactly what fct_reorder2 does! Here's an example: **
+
+```{r}
+ggplot(data = by_age, mapping = aes(x = age, 
+                                    y = prop, 
+                                    color = fct_reorder2(marital, age, prop))) +
+  geom_line(na.rm = TRUE) + 
+  labs(color = "marital status")
+```
+
+> **Next, the weekdays() function takes in a date, list of dates, or column of dates and returns the day of the week that date is.  For example: **
+
+```{r}
+weekdays(parse_date("2024-10-16"))
+```
+
+
+> **BONUS A: Read in the covid vaccination data at https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/cdph-vaccination-county-totals.csv, filter to keep only the Los Angeles county data from 2022, and keep only the date and new_doses_administered columns. Then make a new column that has the day of the week that corresponds to each date given. ** 
+
+
+
+
+> **BONUS B: Make a line plot, like the above example for marital status, where each colored line is the day of the week.  (There is no need to do proportions like the above example did).**
+
+
+
+
+> **BONUS C: Reorder the legend of your line plot so that the days of the week are in the order in which the different lines appear on the right side of the plot. **
+
+
+
+
+
