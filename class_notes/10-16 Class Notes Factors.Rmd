@@ -1,0 +1,415 @@
+---
+title: "Class Notes 10-16: Factors"
+author: "Sarah Cannon"
+date: "10/16/2024"
+output: html_document
+---
+
+
+# Announcements
+
+Homework 6: Due tomorrow THURSDAY 10/17, 11:59pm 
+(delayed two days because of fall break)
+Based on class 9/30 and 10/9: Joins
+
+Homework 7: Due next Tuesday 10/22
+Half the length of a typical assignment
+Based on material from class today
+
+Test 1: If have questions about grading, can submit regrade requests on Gradescope. 
+
+Upcoming Office Hours:
+- Thursday 10/17 2-3pm
+- Monday 10/21 1:15pm-2:15pm 
+- Tuesday 10/22 10:30-11:30am and 2-3pm
+- Wednesday 10/23 1:15pm-2:15pm 
+
+Reminder: Thursday 10/17: Last day to drop course without record
+
+QCL one-on-one appointments and drop-in schedule: https://www.cmc.edu/qcl/mentoring
+
+Questions about upcoming schedule?
+
+Questions from Preclass Video?
+
+```{r, message = FALSE}
+library(tidyverse)
+```
+
+# Factors
+
+A specific data type for categorical variables 
+
+Specify levels = possible values the variable can take on (e.g. months)
+
+Can help you find entries that don't fit the predefined list (e.g. misspelling, different capitalization, etc.)
+
+Useful when want to sort in non-alphabetical order. 
+
+Preclass Video: turning *lists* into factors using factor() or parse_factor()
+
+Now: Turning *columns of tibbles* into factors. Use mutate! 
+
+
+```{r}
+daily_visitors <- tibble(Day_Of_Week = c("Sunday", "Monday", "Tuesday", 
+                                         "Wednesday", "Thursday", "Friday", 
+                                         "Saturday"), 
+                         Num_visitors = c(13, 16, 17, 30, 20, 31, 14))
+daily_visitors
+
+ggplot(daily_visitors) + geom_bar(aes(x = Day_Of_Week, y = Num_visitors), stat = "identity")
+```
+
+Alphabetical order is not useful!  Week order much better. 
+
+Use parse_factor (or factor) inside mutate
+
+First, make a list of the levels, in the order you want them displayed in: 
+
+```{r}
+day_of_week_levels <- c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+
+daily_visitors2 <- daily_visitors %>% mutate(Day_fctr = parse_factor(Day_Of_Week, levels = day_of_week_levels))
+daily_visitors2
+```
+
+New data type: <fctr> factor
+
+Even though these columns Day_Of_Week and Day_fctr look the same, they have different information attached to them: When you sort, will get different results
+
+```{r}
+daily_visitors2 %>% arrange(Day_Of_Week)
+daily_visitors2 %>% arrange(Day_fctr)
+```
+
+When plotting: 
+
+```{r}
+# Bars in alphabetical order (wrong) 
+ggplot(daily_visitors2) + 
+  geom_bar(aes(x = Day_Of_Week, y = Num_visitors), stat = "identity")
+
+# Bars in week order (correct)
+ggplot(daily_visitors2) + 
+  geom_bar(aes(x = Day_fctr, y = Num_visitors), stat = "identity")
+```
+
+Can just overwrite column: be careful doing this!  Make sure your code is orrect; if it's not, this will erase the underlying data. 
+
+```{r}
+daily_visitors3 <- daily_visitors %>% 
+  mutate(Day_Of_Week = parse_factor(Day_Of_Week, levels = day_of_week_levels))
+daily_visitors3
+```
+
+In general, as you're learning, better to make a new column rather than overwriting an old column: lets you find mistakes! 
+
+
+## Working With Factors: General Social Survey
+
+Above: turning columns into factors
+
+Now: working with columns that have already been turned into factors
+
+Long-running US survey conducted by the independent research organization NORC at the University of Chicago:
+
+```{r}
+gss_cat
+```
+
+One way to see levels:
+
+```{r}
+count(gss_cat, relig)
+```
+
+Like using group_by, then summarize with n()
+
+
+
+## Ordering the levels in a different way
+
+```{r}
+levels(gss_cat$relig)
+```
+
+This order is not particularly useful! But neither is alphabetical order. Sometimes desired order depends on what questions you're asking. 
+
+Suppose we're interested in tv viewing hours per week across the religions. 
+
+```{r}
+relig_sum<- gss_cat %>% 
+  group_by(relig) %>% 
+  summarize(tvhours = mean(tvhours, na.rm = TRUE), 
+            count = n())
+
+relig_sum %>% arrange(tvhours)
+
+relig_sum %>% arrange(tvhours) %>% ggplot() + geom_bar(mapping = aes(x = relig, y = tvhours), stat = "identity") + coord_flip()
+```
+
+This order is not particularly helpful. Let's put the bars in order based on tvhours! 
+
+
+### fct_reorder
+
+For tibbles, should be used within another function, usually mutate
+
+1st argument = column to reorder (a categorical variable)
+
+2nd argument = column to use to determine the order (usually a numerical column, default order is ascending)
+
+```{r}
+relig_sum %>% mutate(relig_new = fct_reorder(relig, tvhours))
+```
+
+relig and relig_new look exactly the same, but perform differently when sorting or plotting. 
+
+```{r}
+relig_sum %>% 
+  mutate(relig_new = fct_reorder(relig, tvhours)) %>% 
+  ggplot() + 
+  geom_bar(mapping = aes(x = relig_new, y = tvhours), stat= "identity") + 
+  coord_flip()
+```
+
+Could just do this within ggplot: 
+
+```{r}
+relig_sum %>% 
+  ggplot() + 
+  geom_bar(mapping = aes(x = fct_reorder(relig, tvhours), y = tvhours), stat= "identity") + 
+  coord_flip()
+```
+
+Need to change y-axis label to be more readable
+
+The more complicated transformations you do, the better it is to move them out of your ggplots and into separate mutate steps - makes code more readable. 
+
+
+### fct_relevel
+
+Note some of these answers are not like the others: Don't Know, No Answer. Can move a level to the front to the list using fct_relevel
+
+```{r}
+relig_sum %>%
+  mutate(relig_bytv = fct_reorder(relig, tvhours)) %>% 
+  mutate(relig_bytv2 = fct_relevel(relig_bytv, "No answer", "Don't know")) %>%
+  ggplot() + 
+  geom_bar(mapping = aes(x = relig_bytv2, y = tvhours), stat = 'identity') + coord_flip()
+```
+
+Note: because of coord_flip, bottom is actually the first levels, and levels go upward. 
+
+Format of fct_relevel: 
+
+- 1st argument = factor you're reordering
+- remaining arguments are the levels you want to move to the front of the order (remaining levels stay in their preivous order) 
+
+For tibbles, has to be used within another function, usually mutate, sometimes within a ggplot
+
+
+### fct_infreq, fct_rev
+
+Order levels by frequency, doesn't require any extra variables.  
+
+```{r}
+gss_cat %>% 
+  mutate(marital2 = fct_infreq(marital)) %>%
+  ggplot() + geom_bar(aes(marital2))
+```
+
+Default order is largest/most frequent to smallest/least frequent
+
+May want to combine it with fct_rev(): reverses the order of the levels
+
+```{r}
+gss_cat %>% 
+  mutate(marital2 = fct_rev(fct_infreq(marital))) %>%
+  ggplot() + geom_bar(aes(marital2))
+```
+
+Note: can use pipes within pipes! (Not required, but may make things easier)
+
+```{r}
+gss_cat %>% 
+  mutate(marital2 = marital %>% fct_infreq() %>% fct_rev() )  %>%
+  ggplot() + geom_bar(aes(marital2))
+```
+
+Functions for putting the existing levels in different orders:
+
+-fct_reorder: reorder levels based on a different variable, like tvhours
+-fct_relevel: reorder manually by moving specified levels to the front of the order
+-fct_infreq: reorder levels based on the frequency with which each appears, from largest to smallest
+-fct_rev: reverse order of levels
+
+
+## Changing the Levels
+
+### fct_recode
+
+Might want to change the actual names of the levels for clarity or for a particular graphic. 
+
+```{r}
+gss_cat %>% count(partyid)
+```
+
+Are 3 parties here, hard to see. Rename them using fct_recode. 
+
+```{r}
+gss_cat %>% 
+  mutate(partyid2 = fct_recode( partyid, 
+         "Republican, strong" = "Strong Republican",
+        "Republican, weak"      = "Not str republican", 
+        "Independent, near rep" = "Ind,near rep",
+        "Independent, near dem" = "Ind,near dem",
+        "Democrat, weak"        = "Not str democrat",
+        "Democrat, strong"      = "Strong democrat" )) %>% count(partyid2)
+```
+
+Format for fct_recode: 
+
+- 1st argument = column/factor to rename 
+- remaining arguments: "New Level Name" = "Old Level Name"
+
+For tibbles, should be used within another function, usually mutate
+
+Levels not explicitly mentioned stay the same. 
+
+Can also be used to combine multiple levels into one. [be careful changing your underlying data - are losing information when you do this!]
+
+```{r}
+gss_cat %>% 
+  mutate(partyid = fct_recode(partyid,
+          "Republican" = "Strong republican", 
+          "Republican" = "Not str republican", 
+          "Independent" = "Ind,near rep",
+          "Independent" = "Ind,near dem",
+          "Democrat"        = "Not str democrat",
+          "Democrat"      = "Strong democrat" )) %>% count(partyid)
+```
+
+
+## fct_collapse
+
+Shortcut for combining multiple levels into one; can't do anything fct_recode can't also do; syntax is more convenient. 
+
+Give each new level a vector of old levels: 
+
+```{r}
+gss_cat %>%
+  mutate(partyid = fct_collapse( partyid, 
+                Other = c("No answer", "Don't know", "Other party"),
+                Rep = c("Strong republican", "Not str republican"),
+                Ind = c("Ind,near rep", "Independent", "Ind,near dem"),
+                Dem = c("Not str democrat", "Strong democrat")
+  )) %>%
+  count(partyid)
+```
+
+[When making new levels, don't have to put new names in quotation marks if they're one word, no special characters, etc. But, better practice to explicitly make your new levels strings!] 
+
+
+### fct_lump
+
+Can group together levels that occur less frequently into a new level called "Other".
+
+There are variants of how you can do this. 
+
+```{r}
+?fct_lump
+```
+
+fct_lump_min(): lumps levels that appear fewer than min times.
+
+fct_lump_prop(): lumps levels that appear in fewer than (or equal to) prop * n times.
+
+fct_lump_n(): lumps all levels except for the n most frequent (or least frequent if n < 0)
+
+fct_lump_lowfreq(): lumps together the least frequent levels, ensuring that "other" is still the smallest level.
+
+```{r}
+library(nycflights13)
+flights %>% mutate(lumped_dest = fct_lump_n(dest, 8)) %>% count(lumped_dest)
+```
+
+fct_lump_n(dest, 8) lumps together all but the most frequent 8 destinations
+
+```{r} 
+flights %>% mutate(lumped_dest = fct_lump_min(dest, 100)) %>% 
+  count(lumped_dest)
+```
+
+fct_lump_min(dest, 100) groups together all destinations that appear fewer than 100 times. 
+
+All produce a new level called "Other", or you can specify with other_level = "Your New Level Name" 
+
+```{r} 
+flights %>% mutate(lumped_dest = fct_lump_n(dest, 8, other_level = "Other Destinations")) %>% 
+  ggplot() + geom_bar(aes(lumped_dest)) + coord_flip()
+```
+
+Other lumping functions work similarly.
+
+All these lumping functions work with how frequently different levels appear (frequency). Won't work on a table like this:
+
+```{r}
+months <- tibble(month = c("Jan", "Feb", "Mar", "Apr", "May", "Jun"), num = c(56,33,45,43,72,15))
+months
+```
+Lumping (or fct_infreq) won't work here, because all months appear once in the month column
+
+
+## Troubleshooting
+
+Note: fct_ functions sometimes work with string columns that aren't explicitly factors already, but sometimes don't.
+
+```{r}
+flights
+```
+
+
+```{r}
+?fct_relevel
+```
+
+When in doubt, turn a column into a factor before using any fct_ functions.
+
+
+
+## Summary
+
+Factors attach **extra** information to a categorical variable so that, when the values are sorted (or plotted), they appear in a certain order (like group_by, doesn't change table, just attaches extra information to be used in future operations)
+
+Creating Factors:
+
+- factor(): create a factor
+- parse_factor(): create a factor from strings, and get warnings 
+
+Reordering Levels: 
+
+- fct_reorder: reorder levels based on a different variable, like tvhours
+- fct_relevel: reorder manually by moving specified levels to the front of the order
+- fct_infreq: reorder levels based on the frequency with which each appears, from largest to smallest
+- fct_rev: reverse order of levels
+
+Changing Levels: 
+
+- fct_recode: Change the names of the levels
+- fct_collapse: Combine multiple levels together
+- fct_lump_n, fct_lump_min, etc.: are several variants, groups the least frequent levels together into one "Other" category
+
+
+## Activity
+
+On Canvas
+
+If finish regular questions, move on to bonus questions.
+
+If finish bonus questions, check in with Prof. Cannon, then can leave. 
+
+Can work individually or with classmates. 
+
+
