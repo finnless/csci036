@@ -18,6 +18,7 @@ library(nycflights13)
 
 > **Read the ACM Code of Ethics at https://www.acm.org/code-of-ethics in its entirety.  In 1-2 paragraphs below, summarize which parts of the code of ethics are most relevant for a data scientist and how you plan to ensure you adhere to this code of ethics in any future data science (or data science-adjacent) work you do. **
 
+The ACM Code of Ethics is important for data scientists as it emphasizes principles like contributing to society, avoiding harm, and respecting privacy. For data scientists, these principles translate into ensuring that data collection and analysis benefit society, do not cause harm, and protect individuals' privacy. I plan to implement robust data privacy measures, ensure transparency in data usage, and prioritize ethical considerations in all data-driven decisions. Additionally, I will engage in continuous learning to stay updated on best practices and ethical standards in data science.
 
 
 &nbsp;
@@ -28,19 +29,23 @@ library(nycflights13)
 
 > a. **For these sets A and B, what is the union of A and B?** 
 
+{red, green, blue, purple, pink, yellow}
 
 
 > b. **For these sets A and B, what is the intersection of A and B?**
 
+{blue}
 
 
 > c. **For these sets A and B, what is set difference A - B?**
 
+{red, green}
 
 
 > d. **For these sets A and B, what is the Cartesian Product A $\times$ B?**
 
 
+{(red, purple), (red, blue), (red, pink), (red, yellow), (green, purple), (green, blue), (green, pink), (green, yellow), (blue, purple), (blue, pink), (blue, yellow)}
 
 
 &nbsp;
@@ -57,18 +62,35 @@ library(Lahman)
 > a. **What column makes a primary key in the People table? Explain how you know this is a valid key.**
 
 
+```{r}
+head(People, 10)
+```
+
+The primary key in the People table is the playerID column, as it uniquely identifies each row.
 
 
 > b. **Explain why the pair of columns { nameFirst, nameLast } aren't a key for the People table. Give an example of specific entries in the table that support your explanation.** 
 
 
+The pair of columns { nameFirst, nameLast } are not a primary key for the People table because multiple people can have the same first and last name.
+
+```{r}
+# find all people with the same first and last name
+People %>% group_by(nameFirst, nameLast) %>% summarize(n = n()) %>% filter(n > 1)
+```
 
 > c. **Is the column you identified in part (a) a primary key in the Batting table? Explain why or why not.**
 
+```{r}
+head(Batting, 10)
+```
 
+
+No, the playerID column is not a primary key in the Batting table because players have multiple rows in the Batting table, with each row representing a different season or year of the player's career.
 
 > d. **Is the column you identified in part (a) a foreign key in the Batting table? Explain why or why not. ** 
 
+Yes, the playerID column is a foreign key in the Batting table because it is a primary key in the People table and it is used to link the Batting table to the People table.
 
 
 
@@ -84,11 +106,38 @@ bird_observations <- read_csv("https://raw.githubusercontent.com/rfordatascience
 
 > a. **Explain in your own words what the distinct() function does, and use it to explain how you know the bird_observations table doesn't have any duplicate rows.** 
 
+The distinct() function is used to return a tibble with duplicate rows removed. It is used to find the unique rows in a tibble.
 
+```{r}
+original_row_count <- nrow(bird_observations)
+distinct_row_count <- nrow(distinct(bird_observations))
+original_row_count
+distinct_row_count
+original_row_count == distinct_row_count
+```
+
+Since the original row count is equal to the distinct row count, the bird_observations table doesn't have any duplicate rows.
 
 
 > b. **Because the bird_observations table doesn't have any duplicate rows, it must have at least one key. What do you think is the best set of columns to choose to serve as a primary key for this table?  Explain how you know it is a valid key. Hint: Think about what the observations are; you should not have more than 5 columns in your key. There is more than one correct answer.**
 
+These columns together can form a composite key because:
+loc_id ensures the uniqueness of the location.
+sub_id and obs_id ensure the uniqueness of the checklist and observation within that location.
+species_code specifies the species being observed.
+proj_period_id provides the temporal context of the observation.
+
+We can check if the primary key is unique by using the nrow() and n_distinct() functions.
+
+```{r}
+# Create a primary key
+bird_observations <- bird_observations %>%
+  mutate(primary_key = paste(loc_id, sub_id, obs_id, species_code, PROJ_PERIOD_ID, sep = "_"))
+
+# Check if the primary key is unique
+is_unique <- nrow(bird_observations) == n_distinct(bird_observations$primary_key)
+is_unique
+```
 
 
 
@@ -99,11 +148,53 @@ bird_observations <- read_csv("https://raw.githubusercontent.com/rfordatascience
 
 > a. **Explain why the diamonds data set doesn't meet the three assumptions we discussed in class on 9-30; be specific about which assumption(s) it violates.** 
 
+The assumptions are:
+
+1. Data is tidy 
+2. Order of rows does not matter  
+3. There are no identical rows
+
+Lets examine the diamonds data set:
+
+```{r}
+head(diamonds, 10)
+```
+
+```{r}
+# Check if the order of rows matters
+order_column_exists <- any(names(diamonds) %in% "order")
+order_column_exists
+```
+
+```{r}
+# Check for duplicate rows
+duplicate_rows_exist <- nrow(diamonds) != nrow(distinct(diamonds))
+duplicate_rows_exist
+```
+
+```{r}
+# Identify duplicate rows
+duplicate_rows <- diamonds %>%
+  group_by(across(everything())) %>%
+  filter(n() > 1) %>%
+  ungroup()
+
+# Display the duplicate rows
+duplicate_rows
+```
+
+The diamonds data set violates the third assumption because there are duplicate rows.
 
 
 > b. **Suppose you have good documentation for the diamonds data set and know that: every row corresponds to a different diamond; there were no mistakes in collecting/entering this data; and the order of the diamonds doesn't matter. Modify the diamonds data set in an appropriate way to make sure it satisfies the three assumptions.**
 
 
+I will add a primary key to the diamonds data set.
+
+```{r}
+diamonds <- diamonds %>%
+  mutate(primary_key = row_number())
+```
 
 
 
@@ -134,32 +225,69 @@ Regions <- tibble(
 
 > a. **Suppose the order of the cities in CityInfo list matters. Modify your table in an appropriate way, and explain why this is a good thing to do.**
 
+I will add a primary key to the CityInfo table. This is a good thing to do because it ensures that the order of the cities in the CityInfo table is preserved.
+
+```{r}
+CityInfo <- CityInfo %>%
+  mutate(primary_key = row_number())
+
+head(CityInfo, 10)
+```
 
 
 > b. **Join these tibbles according to Country using an inner join. Which city/cities appear in two different rows, which city/cities appear only in one row, and which city/cities don't appear in this tibble? Explain why this is.** 
 
 
+```{r}
+inner_join(CityInfo, Regions, by = "Country")
+```
+
+Costa Rica appears in two different rows because it is a country that is both in Central America and North America. The cities that appear in two different rows are San Jose and Cartago. The cities that appear only in one row are Boston, Toronto, Rio de Janeiro, Vancouver, and Los Angeles. The cities that don't appear in this tibble are Panama City and Santiago. This is because Panama and Chile are not listed in the Regions tibble.
+
 
 > c. **Joining these tables with a left_join rather than an inner_join results in a tibble with one more row than in part (b).  Which additional row is present here and why? **
 
 
+```{r}
+left_join(CityInfo, Regions, by = "Country")
+```
+
+The additional row is Argentina. This is because Argentina is a country that is only in the CityInfo table.
 
 > d. **Joining these tables with a right_join rather than an inner_join results in a tibble with two more rows than in part (b).  Which additional rows are present here and why? **
 
 
+```{r}
+right_join(CityInfo, Regions, by = "Country")
+```
+
+The additional rows are Panama and Chile. This is because Panama and Chile are countries that are only in the Regions tibble.
 
 > e. **Joining these tables with a full_join rather than an inner_join results in a tibble with three more rows than in part (b).  Which additional rows are present here and why? ** 
 
+```{r}
+full_join(CityInfo, Regions, by = "Country")
+```
+
+The additional rows are Panama, Chile, and Argentina. This is because Panama and Chile are countries that are only in the Regions tibble, and Argentina is a country that is only in the CityInfo table.
 
 
 > f. **Join these tibbles according to Country using a semi_join(). Which row(s) and column(s) appear in the resulting table? Explain why this is.**
 
+```{r}
+semi_join(CityInfo, Regions, by = "Country")
+```
 
+The rows that appear in the resulting table are those from CityInfo where the Country also appears in the Regions table. The columns in the resulting table are the same as those in the CityInfo table. This is because semi_join() filters CityInfo to only include rows with a Country that is present in Regions.
 
 > g. **Join these tibbles according to Country using an anti_join(). Which row(s) and column(s) appear in the resulting table? Explain why this is.**
 
 
+```{r}
+anti_join(CityInfo, Regions, by = "Country")
+```
 
+The rows that appear in the resulting table are those from CityInfo where the Country does not appear in the Regions table. The columns in the resulting table are the same as those in the CityInfo table. This is because anti_join() filters CityInfo to exclude rows with a Country that is present in Regions.
 
 &nbsp;
 
@@ -198,11 +326,17 @@ Pet_Average_Weights <- tribble(
 > a. **Join these tibbles by the species column using a full_join. Explain why doing this join is probably a bad idea.  **
 
 
+```{r}
+full_join(October_Pets, Pet_Average_Weights, by = "species")
+```
+
+This join is probably a bad idea because it is a many-to-many relationship. This is because there are multiple species in the October_Pets table that have the same species in the Pet_Average_Weights table.
 
 
 > b. **Explain why you have the number of rows that you do in your join in the previous part.** 
 
 
+The number of rows in the join is 20 because each row in the October_Pets table is matched with each corresponding row in the Pet_Average_Weights table based on the species column. This results in a many-to-many relationship due to the gender differences, leading to multiple rows for each species and gender combination.
 
 
 
@@ -212,6 +346,16 @@ Pet_Average_Weights <- tribble(
 
 >a. (6 points) **Add to the flights data set the altitude of the origin airports and the altitude of the destination airports. That is, each row should now have 2 more additional columns, which you should name origin_alt and dest_alt.  Move your columns for origin, destination, and their altitudes to the front of your data set, with the remaining columns displayed after them.**
 
+```{r}
+flights <- flights %>%
+  left_join(select(airports, faa, alt), by = c("origin" = "faa")) %>%
+  left_join(select(airports, faa, alt), by = c("dest" = "faa"), suffix = c("_origin", "_dest"))
+
+flights <- flights %>%
+  select(origin, dest, alt_origin, alt_dest, everything())
+
+head(flights, 10)
+```
 
 
 
@@ -227,6 +371,7 @@ inner_join(flights, planes, by = "tailnum")
 inner_join(flights, planes)
 ```
 
+When we remove the "by" argument, we get a tibble with fewer than 5000 rows because the join is performed using all columns that have the same names in both tibbles. The rows that are included in this tibble are the ones where all corresponding columns in both tibbles match.
 
 
 &nbsp;
@@ -243,28 +388,83 @@ language_countries <- read_csv("https://raw.githubusercontent.com/rfordatascienc
 
 > a. **Are there any language iso codes that appear in the afrisenti table but not in the languages table, or vice versa? Explain how you know. **
 
+```{r}
+missing_in_languages <- afrisenti %>%
+  anti_join(languages, by = "language_iso_code")
+missing_in_languages
 
+missing_in_afrisenti <- languages %>%
+  anti_join(afrisenti, by = "language_iso_code")
+missing_in_afrisenti
+```
 
+No, there are no language iso codes that appear in the afrisenti table but not in the languages table, or vice versa because the anti_join() function returns an empty tibble.
 
 > b. **Explain why a left_join, right_join, inner_join, and full_join of the afrisenti and languages data tables will all produce the same result.**
 
+A left_join, right_join, inner_join, and full_join of the afrisenti and languages tables will all produce the same result because the language iso codes match in both tables.
 
 
 > c. **Make a barchart showing how frequently each language appears in the afrisenti table.  Your plot should use the full name of all the languages, not the iso abbreviations for the languages.**
 
+```{r}
+afrisenti_full <- afrisenti %>%
+  left_join(languages, by = "language_iso_code")
+
+language_counts <- afrisenti_full %>%
+  count(language)
+
+ggplot(language_counts, aes(x = reorder(language, n), y = n)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(
+    title = "Frequency of Each Language in Afrisenti Table",
+    x = "lang",
+    y = "freq"
+  ) +
+  theme_minimal()
+```
 
 
 > d. **Join the afrisenti and language_countries data sets using any join type you'd like. Explain why, although the afrisenti table has 111,720 rows, the new joined table has 186,941 rows. *Note: Some systems may have trouble knitting the 'tweet' column due to the special characters present, so if this applies to you, feel free to add %>% select(-tweet) to your answer.*  **
 
+```{r}
+inner_join(afrisenti %>% select(-tweet), language_countries)
+```
+
+The increase in the number of rows from 111,720 to 186,941 is due to the many-to-many relationship between the afrisenti and language_countries datasets. Each language in afrisenti can be associated with multiple countries in language_countries, leading to multiple rows in the joined dataset for each original row in afrisenti.
 
 
 > e. **Make a table consisting only of the 8 languages appearing most frequently in the afrisenti table. You table should only have 8 rows, one for each of these languages. **
 
+```{r}
+afrisenti_full <- afrisenti %>%
+  left_join(languages, by = "language_iso_code")
 
+language_counts <- afrisenti_full %>%
+  count(language)
+
+language_counts %>%
+  arrange(desc(n)) %>%
+  head(8)
+```
 
 > f. **Filter the afrisenti table, using a join we learned this week, to only keep rows corresponding to one of the 8 languages that appears most frequently in the table.  Hint: Use your table from the previous part. *Note: Some systems may have trouble knitting the 'tweet' column due to the special characters present, so feel free to add %>% select(-tweet) to your answer.***
 
+```{r}
+language_counts <- afrisenti %>%
+  count(language_iso_code, sort = TRUE)
 
+top_languages <- language_counts %>%
+  top_n(8, n) %>%
+  select(language_iso_code)
+
+filtered_afrisenti <- afrisenti %>%
+  semi_join(top_languages, by = "language_iso_code") %>%
+  select(-tweet)
+
+filtered_afrisenti
+```
 
 
 &nbsp;
@@ -274,6 +474,22 @@ language_countries <- read_csv("https://raw.githubusercontent.com/rfordatascienc
 > **Filter the flights data set to only contain flights along the 20 routes with the largest average arrival delays (of the flights that took off), where a route consists of both the origin airport and the destination airport. Hint: You may want to make an intermediate table to help you. **
 
 
+```{r}
+flights_with_avg_delay <- flights %>%
+  group_by(origin, dest) %>%
+  summarise(avg_arr_delay = mean(arr_delay, na.rm = TRUE)) %>%
+  ungroup()
+
+top_routes <- flights_with_avg_delay %>%
+  arrange(desc(avg_arr_delay)) %>%
+  slice_max(order_by = avg_arr_delay, n = 20)
+
+filtered_flights <- flights %>%
+  semi_join(top_routes, by = c("origin", "dest"))
+
+head(filtered_flights)
+```
+
 
 
 
@@ -282,11 +498,13 @@ language_countries <- read_csv("https://raw.githubusercontent.com/rfordatascienc
 > a. **Explain what R's intersect() function is, explain how it is different from an inner_join, and give a real-world example of when you might want to use it. **
 
 
+The intersect() function returns common rows between two tables, unlike inner_join which merges columns. An example of when you might want to use it is when you have two tables of voters and you want to find the voters that are present in both tables.
 
 
 > b. **Explain what R's setdiff() function is, explain how it is different from an anti_join, and give a real-world example of when you might want to use it. **
 
 
+The setdiff() function returns rows in one table that are not present in another table, unlike anti_join which filters rows. An example of when it would be useful is when you have two tables of trinkets and you want to find the trinkets that are present in one table but not in the other.
 
 
 &nbsp;
@@ -306,11 +524,20 @@ hausa <- read_csv("https://raw.githubusercontent.com/afrisenti-semeval/afrisent-
 > a. **Combine the morrocan_arabic and hausa data sets together into a single table in an appropriate way.  You should be sure your resulting table contains information about which rows are observations about Morroccan Arabic and which rows are observations about Hausa.**
 
 
+```{r}
+combined_data <- bind_rows(
+  morrocan_arabic %>% mutate(language = "Morrocan Arabic"),
+  hausa %>% mutate(language = "Hausa")
+)
+
+combined_data
+```
 
 
 > b. **Explain why you can't combine the morrocan_arabic and algerian_arabic tables together in the same way you did in the previous part for morrocan_arabic and hausa.**
 
 
+You can't combine the morrocan_arabic and algerian_arabic tables together in the same way you did in the previous part for morrocan_arabic and hausa because the columns in the two tables are different.
 
 
 
