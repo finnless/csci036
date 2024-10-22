@@ -1,0 +1,449 @@
+---
+title: "10-21 Class Notes Regular Expressions"
+author: "Sarah Cannon"
+date: "10/21/2024"
+output: html_document
+---
+
+
+## Announcements
+
+Homework 7: Due tomorrow, 11:59pm (unless using extension hours)
+Based on class on 10/16 (factors), half the length of a normal assignment
+
+Upcoming office hours: 
+
+- Tuesday 10:30-11:30 and 2-3pm
+- Wednesday 1:15-2:15pm
+
+QCL one-on-one appointments and drop-in schedule: https://www.cmc.edu/qcl/mentoring
+
+Questions about upcoming schedule?
+
+Questions from preclass video? 
+
+
+## Assessing your choices
+
+Make good choices! 
+
+Think: what is best for your learning? Do you learn better in person? 
+
+Activity: Meant to help you practice what we've just learned, prepare you for homework. Take advantage of this time to work on the material while I'm here to answer any questions that come up. 
+
+
+## Final Project
+
+Description on Canvas (Files)
+
+For now: Begin thinking of topics, finding data sets, brainstorming questions to ask about your data
+
+Later: What makes a good question; Rubric; Project Proposal with detailed plan due November 19th (alongside Homework 10) 
+
+
+## Regular Expressions
+
+Motivating Question: How to obtain meaningful information from strings?
+
+More Specifically: How to find/use patterns in strings
+
+Will use the stringr package, part of tidyverse
+
+```{r}
+library(tidyverse)
+```
+
+So far: finding patterns, viewing them using str_view. 
+
+```{r}
+str_view("Cat", "C")
+```
+
+Format of using str_view: 
+- 1st argument is a string, a list of strings, or a string column of a tibble
+- 2nd argument: pattern that you're looking for
+
+Later: Using patterns to do operations on data
+
+Summary of examples so far:
+
+**Exact substrings**: "ta"
+
+**Wildcard character**: "."
+
+**Period**: "\\."
+
+**Start of string**: "^a"
+
+**End of string**: "a$"
+
+**Digits**: "\\d"
+
+```{r}
+str_view("He has 17 cats and 19 dogs", "\\d")
+```
+
+**Character class** such as e or a: "[ea]"
+
+```{r}
+colors <- c("grey", "red", "purple", "gray", "blue")
+str_view(colors, "gr[ae]y")
+```
+
+**Not in a character class**:[^ ]
+
+To find a letter that isn't a vowel: When ^ is used at the start of a character class, it means NOT. Applies to everything in the character class. 
+
+
+```{r}
+str_view("My 17 cats", "[^aeiou]")
+```
+
+Another common use: find all non-spaces (helpful for pulling out words)
+
+```{r}
+str_view( "My 17 cats",     "[^ ]"  )
+```
+
+**Special characters**: What if you want to find a dollar sign in a string? 
+We know $ already has a special meaning, anchoring at the end of a string, so can't just do "$"
+
+Instead: Use escape characters
+
+The regular expression to find a dollar sign is: \$
+
+To make a single backslash show up in a string: \\ 
+
+```{r}
+str_view("That cost $14", "$") #Find end of string
+str_view("That cost $14", "\\$") # Find dollar sign
+```
+
+This works for any special characters: \., \^, etc. 
+
+Alternate way to find a period: Put it in a character class [.] (not a wildcard when within brackets)
+
+```{r}
+str_view("This is one sentence.  This is another sentence.", "\\.")
+str_view("This is one sentence.  This is another sentence.", "[.]")
+```
+
+Putting a special character in a character class in order to find it: 
+
+Works for: $ . | ? * + ( ) [ {
+
+Doesn't work for: ] \ ^ - (still need to use escape characters \\)
+
+
+### Alternation (ORs)
+
+If want to match one of several characters: Use [aeiou]
+
+If want to match one of two regular expressions: Use | like an 'or', called *alternation*
+
+```{r}
+colors <- c("grey", "red", "purple", "gray", "blue")
+str_view(colors, "gr(e|a)y")
+str_view(colors, "^bl|e$") #starts with bl or ends with e
+```
+
+| matches entire expressions on either side of it: abc|def is the same as (abc)|(def)
+
+Is different from ab(c|d)ef - this is why we needed parentheses in gr(e|a)y 
+
+On either side of | can be _any_ regular expressions! 
+
+This is where the power of regular expressions comes from. 
+
+str_view option: match
+
+```{r}
+?str_view
+```
+
+match = NA: shows all strings, regardless of whether pattern appears or not
+
+```{r}
+str_view(colors, "gre|ay", match = NA)
+```
+
+
+### Quantifiers (Repetitions)
+
+How many times does a pattern match?
+
+?: 0 or 1
+
++: 1 or more
+
+*: 0 or more
+
+Applies to whatever is directly before it
+
+Examples of ?: Can be useful if a letter may or may not appear
+
+```{r, results = FALSE}
+sample_words <- c("color", "colour", "blonde", "blond")
+str_view(sample_words, "color")
+str_view(sample_words, "color|colour")
+str_view(sample_words, "colou?r")
+str_view(sample_words, "blonde?")
+```
+
+```{r}
+x <- "1888 is the longest year in Roman numberals D: MDCCCLXXXVIII"
+str_view(x, "CC?")
+str_view(x, "CC+")
+str_view(x, "C[LX]+")
+str_view(x, "C*") # finds C repeated 0 times everywhere
+    # should only use * as part of a longer pattern
+str_view(x, "DC*")
+```
+
+Another example
+
+```{r}
+binary_string <- "10100100001011100110"
+str_view(binary_string, "10+1")
+```
+
+Note: Can't have overlapping patterns: once there's one match, it's like those characters are removed from the string, look for more matches in what's left. 
+
+* has a special name: Kleene star
+
+Can specify number of repeats: 
+
+{n}: Exactly n times
+
+{n,}: n or more times
+
+{,m}: m or fewer times
+
+{n,m}: at least n and at most m times
+
+```{r, results = FALSE}
+fruit
+str_view(fruit, "(an){1,8}")
+str_view(fruit, "(an){1}")
+```
+
+When looking for repeated expression, default behavior is greedy - for same starting location, tries to match as long a string as possible. 
+
+Can alter this behavior to make it lazy (match as short a string as possible) by putting a ? after the expressions
+
+```{r}
+str_view(x, "C+")
+str_view(x, "C+?")
+```
+
+### Order of Operations
+
+PEMDAS gives the order in which you do operations for arithmetic
+
+There's similar order of operation rules for regular expressions
+
+Quantifiers (?,+,*) have high precedence; alternation has lower precedence
+
+ab+ is equivalent to a(b+)
+
+^a|b$ is the same as (^a)|(b$)
+
+When in doubt, use parentheses to override usual order and make things clearer
+
+
+
+### Other helpful regular expressions
+
+\s matches white space, such as a space, a tab, or a new line ( " ", "\t", or "\n")
+
+\S matches anything that isn’t white space.
+
+\w matches any “word” character, i.e. letters and numbers;
+
+\W matches any “non-word” character.
+
+\D matches anything that isn’t a digit.
+
+\b: word boundary: matches the start or end of a word (including at the start or end of a string!)
+
+(The regular expression has one backslash; to pass it to a string, need two backslashes)
+
+```{r}
+str_view("The cat in the hat", "\\b")
+```
+
+## Putting it all together
+
+How to find the first word of a sentence? 
+
+```{r}
+sentences %>% head(5) # Don't print whole sentences list in your knitted file! 
+```
+
+Option 1: First word is at the start of the string: Use ^
+Now want repeated characters that are not spaces: 
+ - Not a space: [^ ] , \S
+    - If your strings have no tabs or newlines, these are the same
+    - If your strings does have tabs or new lines, these are different, think carefully
+ - repeated some number of times, but at least once: + 
+ - To know when a word ends: space or \s
+ 
+```{r}
+sentences %>% head(5) %>% str_view("^[^ ]+ ")
+sentences %>% head(5) %>% str_view("^\\S+\\s")
+```
+
+Could have use {1,} instead of + to find words or one or more letters
+
+Note: Because the space is part of the regular expression, technically this finds the first word plus the first space
+
+Technically, don't need the space at the end of our regular expression because of the greedy behavior of +: find as many non-space characters as it can
+
+```{r}
+sentences %>% head(5) %>% str_view("^[^ ]+")
+sentences %>% head(5) %>% str_view("^\\S+")
+```
+
+This finds just the first word and not the first space! 
+
+There are sometimes multiple ways to find the same patterns
+
+What if we want to try to use \b, the word boundary regular expression? 
+
+```{r}
+# First attempt: Doesn't work because of the greedy nature of +
+sentences %>% head(5) %>% str_view("^.+\\b")
+
+# To find all characters until the first word boundary: Make + behave lazily
+sentences %>% head(5) %>% str_view("^.+?\\b")
+```
+
+Note because \b denotes the end of the word, the space (after the first word) isn't included in the match. 
+
+Note that \b found "It", not "It's" in sentence 3 - it considers the apostrophe to be a word boundary! 
+
+Be careful about this; \b is widely used, but it doesn't treat apostrophes in the way you might expect. 
+
+In explanations/when knitting: Use \\b! 
+
+
+## Other types of patterns
+
+Hidden behind the scenes of str_ functions using regular expressions is a function regex, which turns yours strings, like "^a", into a regular expression.
+
+The regular call: 
+
+```{r}
+str_view(fruit, "berry")
+```
+
+is shorthand for: 
+
+```{r}
+str_view(fruit, regex("berry"))
+```
+
+By explicitly putting regex function, you can modify how it transforms the string (such as "berry" or "^a") into a regular expression. Works in all str_ functions (including those we'll learn in the next class)
+
+ignore_case = TRUE: 
+
+```{r}
+str_view(c("Apple", "Banana"), regex("a", ignore_case = TRUE))
+```
+
+multiline = TRUE: allows ^ and $ to match the begining or end of a line rather than the entire string
+
+```{r, results = FALSE}
+x <- "Test 1\nTest 2\nTest3"
+x
+str_view(x,"^Test")
+str_view(x, regex("^Test", multiline = TRUE))
+```
+
+comments = TRUE: Can add comments to string, to help explain it
+
+```{r, results = FALSE}
+phone <- regex("
+  \\(?     # optional opening parens
+  (\\d{3}) # area code
+  [) -]?   # optional closing parens, space, or dash
+  (\\d{3}) # another three numbers
+  [ -]?    # optional space or dash
+  (\\d{4}) # four more numbers
+  ", comments = TRUE)
+
+str_view(c("909-607-1064", "9093-3994-4958"), phone)
+```
+
+## fixed
+
+Another way to match exact patterns, using bytes, bypasses regular expressions. 
+
+```{r, results = FALSE}
+fruit %>% head(10) %>% str_view(fixed("a"))
+```
+
+Can be much faster! This is helpful with very large data. 
+
+Be careful with non-English data, may be multiple ways of representing the same character.
+
+```{r, results = FALSE}
+a1 <- "\u00e1"
+a2 <- "a\u0301"
+a1
+a2
+```
+
+fixed() would find one of these, but not both. Be careful! 
+
+
+
+## Using ChatGPT, AI
+
+Regular expressions are very nuanced, and you want to be very careful! 
+
+ChatGPT can give you regular expressions for finding patterns
+
+However, they're not always correct in all circumstances
+
+You need to understand how regular expressions work, how to build them, how to understand them, and how to tell whether they're doing what you want. (For the test, for the final project, in the future)
+
+All homework questions can be answered using what's in these notes.
+You should only use regular expressions we've learned in answering homework questions.
+
+Suggestion: Don't use ChatGPT for homework unless you're stuck; try everything yourself first. 
+
+*Reminder of homework AI policy from syllabus*: 
+
+> Use of AI/ChatGPT: Students may ask AI to help them figure out how to do something, but then must do that thing themselves. They should think about using AI in the same ways they might use another person as a resource (see the previous paragraph). Acceptable uses of AI include asking for explanations of concepts, asking for more examples, or asking for help finding bugs in code. Unacceptable uses of AI include using it for homework questions that ask you to explain something “in your own words” or similar questions; asking for solutions to specific homework questions; and copying and pasting AI solutions and presenting them as your own.
+
+> Homework questions should be completed using what we’ve used in this class, not other concepts/tools. If you have used R in a previous class and may want to use that material in your assignments, talk to Prof. Cannon.
+
+> At the start of every homework submission, students must list any students they worked with or any outside resources they consulted, including AI. Note that while discussing the material with others or using AI can be a good way to solidify your own understanding of the concepts, it’s important you develop the ability to solve problems and write code independently as well (both for tests and for your future beyond this course).
+
+
+## Summary
+
+str_view: only shows strings in which there is a match, with all possible matches highlighted
+
+Regular expressions: specific pattern to look for in string
+- See above for commands from preclass video
+- escape character: \\, as in \\$ or \\.
+- character class: [], as in [aeiou]. ^ means "NOT" within character class, as in [^aeiou]
+- Alternation: | means "or"
+- Repetitions: ? = 0 or 1, + = 1 or more, * = 0 or more, {3,7} = at least 3 and at most 7 repetitions
+- Other options: \s, \S, \w, \W, \D, \b
+- regex: specify additional options for your regular expression, like regex("a", ignore_case = TRUE)   
+- fixed: Look for exact patterns, can be faster but be careful. 
+
+Suggestion: Make yourself a regular expressions cheat sheet!
+
+## Activity
+
+On Canvas
+
+If finish regular questions, move on to bonus questions.
+
+If finish bonus questions, check in with Prof. Cannon, then can leave. 
+
+Can work individually or with classmates. 

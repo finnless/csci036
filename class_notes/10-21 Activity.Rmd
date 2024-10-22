@@ -1,0 +1,87 @@
+---
+title: "10-21 Activity - Regular Expressions"
+author: "Sarah Cannon"
+date: "10/21/2024"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+library(tidyverse)
+eqn1 <- "(2+(8+x))*3-y"
+```
+
+In all questions below, use str_view to identify the desired patterns. 
+
+
+> 1. **Identify all the digits in eqn1. The 2, 8, and 3 should _all_ be highlighted, but the numbers 2, 3, and 8 should not appear anywhere in your command. **
+
+
+
+
+> 2. **Identify all the open parentheses in eqn1. (Hint: there are two different ways to do this)**
+
+
+
+
+> 3. **In the first 80 sentences in the sentences list, identify the sentences that contain the word "and", but not when it is a subset of another word, that is, it should not find a match in the word "sand" or "grand". You should get 11 sentences.** 
+
+```{r}
+# The first 80 sentences 
+sentences %>% head(80)
+```
+
+
+
+
+> 4. **The object words contains 980 common English words. You want to find all words in this list that end in "ed" or "ing", and write the following regular expression, but it finds no words! Figure out what's wrong with this regular expression, and fix to find all words ending in "ed" or "ing".**
+
+```{r}
+words %>% str_view("ed$ | ing$")
+```
+
+
+
+
+
+> 5. **Because it's a list, not a tibble, the words list will print all 980 words when we output it or knit the file, so here I'll make a sublist containing 20 words from it to work with for this question:**
+
+```{r}
+words_ex <- words[seq(2, length(words), 50)]
+words_ex
+```
+
+> **In this words_ex list, identify any vowels (a, e, i, o, or u) that appear either as the first character or the last character of the word. **
+
+
+
+
+> 6. **In the words list (not words_ex from the previous question), identify all words with (at least) two t's in them. There can be any number of characters between the t's, so for example, both the words "attend" and "authority" should be identified because both have two t's.**
+
+
+
+
+
+> **BONUS: Often, you might want to look for files or file names in a particular directory that fit a certain pattern.  Filenames have their own pattern matching methods that are different from regular expressions.First, note you can get a list of all files in your current directory using dir(). (This list will be different for everyone!).**
+
+```{r}
+dir()
+```
+
+> **A *glob* is a pattern matching system often used to match filenames in a directory.  Commonly used wildcards are * to match multiple unknown characters, and ? to match a single character. The function glob2rx converts a glob pattern to a regular expression. So, for example, the following code will find any csv files in your current directory, if there are any: **
+
+```{r}
+dir(pattern = glob2rx("*.csv"))
+```
+> **BONUS A: How would you find all RMarkdown files in your current directory? **
+
+
+
+
+> **BONUS B: How would you find all RMarkdown files in your current directory whose filename begins with today's date, 10-21?**
+
+
+
+
+
