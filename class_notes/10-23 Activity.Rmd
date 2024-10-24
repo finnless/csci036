@@ -11,9 +11,10 @@ library(tidyverse)
 
 > 1.  **In the sentences data set, how many sentences contain the word "the"? Be sure to account for the fact that the T may or may not be capitalized and it should not appear as a subset of another word. Hint: The correct answer is between 500 and 510.**
 
-
-
-
+```{r}
+the_count <- sum(str_detect(sentences, "\\b[Tt]he\\b"))
+the_count
+```
 
 > **2. Consider the following list of colors: **
 
@@ -23,29 +24,40 @@ color_list <- c("red", "orange", "yellow", "green", "blue", "indigo", "violet")
 
 > **Use code to make a regular expression that will look for any of these colors, like we did for the animals in class. You should only find these colors if they don't appear as a substring of a longer word. You won't need to find these colors if they're capitalized. **
 
-
-
+```{r}
+colors_regex <- str_c("\\b(", str_c(color_list, collapse = "|"), ")\\b")
+colors_regex
+```
 
 > 3. **Use code to locate which sentences contain one of these colors. You should only find these colors if they don't appear as a substring of a longer word. You won't need to find these colors if they're capitalized. You can use any of the methods we learned. If you did the previous part right, there should be 28 sentences. **
 
+```{r}
+sentences_with_colors <- sentences[str_detect(sentences, colors_regex)]
+length(sentences_with_colors)
+```
 
+> 4. **For each sentence you found in the previous question, extract which color of the seven in color_list appears; if more than one color appears in a sentence, you only have to find the first one.**
 
-
- > 4. **For each sentence you found in the previous question, extract which color of the seven in color_list appears; if more than one color appears in a sentence, you only have to find the first one.**
-
-
-
-
+```{r}
+# Answer for Question 4
+first_color_in_sentence <- str_extract(sentences_with_colors, colors_regex)
+first_color_in_sentence
+```
 
 > 5. **Using str_view, find all fruits in the fruits list that contain a four-letter palindrome of the form "abba", that is, two characters immediately followed by those same two characters but in reverse order. There should be two such fruits.**
 
-
-
+```{r}
+# Answer for Question 5
+str_view(fruit, "(\\w)(\\w)\\2\\1")
+```
 
 > 6. **For all sentences, find every word that appears after the word "the" (or "The").  The new column or list you make should *only* have the word after the and should not also contain "the" or "The". If a sentence contains "the" multiple times, you only have to find the first one. For example, for the first sentences you should extract "birch".**
 
-
-
+```{r}
+# Answer for Question 6
+word_after_the <- str_extract(sentences, "(?<=\\b[Tt]he\\b\\s)\\w+")
+word_after_the
+```
 
 > **BONUS: You can also use regular expressions on in select() or in pivot_longer() to pick out column names that fit certain patterns. You just need to put the regular expression inside the matches() function. For example, to select all column names that start with d:** 
 
@@ -56,8 +68,9 @@ flights %>% select(matches("^d"))
 
 > **BONUS A: In table4a, pivot_longer all columns that contain only digits in their name. Select which columns to pivot using a regular expression.**
 
-
-
+```{r}
+table4a %>% pivot_longer(cols = matches("^\\d+$"), names_to = "year", values_to = "cases")
+```
 
 > **BONUS B: Consider the who dataset of tuberculosis cases from an earlier activity:**
 
@@ -67,6 +80,6 @@ who
 
 > **Pivot longer all columns that begin with the string "new" and end with a number. Select which columns to pivot using a regular expression. **
 
-
-
-
+```{r}
+who %>% pivot_longer(cols = matches("^new.*\\d$"), names_to = "key", values_to = "cases")
+```
