@@ -22,24 +22,46 @@ library(nycflights13)
 temperature_measurements <- c("Cold", "Cold", "Very Cold", "Hot", "Warm", "Cool", "Medium", "Hot", "Very Hot", "Medium", "Warm", "Warm", "Cold", "Cold", "Hot")
 ```
 
+```{r}
+temperature_levels <- c("Very Cold", "Cold", "Cool", "Medium", "Warm", "Hot", "Very Hot")
+temperature_factor <- factor(temperature_measurements, levels = temperature_levels, ordered = TRUE)
+sorted_temperatures <- sort(temperature_factor)
+sorted_temperatures
+```
 
 
 > b. **Import the temps_cat.csv data set as a tibble.  Identify the rows where there are strings that do not fall into one of the seven categories from the previous part.  What rows do these values fall on? **
 
 
+```{r}
+temps_cat <- read_csv("temps_cat.csv")
+invalid_rows <- temps_cat %>% filter(!Temp %in% temperature_levels)
+invalid_rows
+```
 
 > c. **Use code to correct the mistakes/typos you found in the previous part.  (Since it's been a while, I'll remind you that, for example, to set the seventh value in col1 of tibble t to be 11, you could do: t$col1[7] <- 11 )**
 
 
 
+```{r}
+# Correct the typos in the Temp column
+temps_cat$Temp[temps_cat$Index == 28] <- "Hot"
+temps_cat$Temp[temps_cat$Index == 29] <- "Medium"
+temps_cat$Temp[temps_cat$Index == 65] <- "Cold"
+temps_cat$Temp[temps_cat$Index == 67] <- "Cool"
+temps_cat$Temp[temps_cat$Index == 74] <- "Very Cold"
+temps_cat$Temp[temps_cat$Index == 83] <- "Medium"
+```
 
 > d.  **Now that you've fixed the mistakes/typos, make the Temp column into a factor with a logical ordering, and sort your tibble according to the Temp column.**
 
-
-
-
-
 &nbsp;
+```{r}
+temps_cat <- temps_cat %>% 
+  mutate(Temp = factor(Temp, levels = temperature_levels, ordered = TRUE)) %>%
+  arrange(Temp)
+temps_cat
+```
 
 ## Question 2 (21 points)
 
@@ -47,33 +69,69 @@ temperature_measurements <- c("Cold", "Cold", "Very Cold", "Hot", "Warm", "Cool"
 
 
 
+```{r}
+games_cat <- read_csv("games_cat.csv", skip = 5)
+games_cat <- games_cat %>% mutate(Category = parse_factor(Category))
+games_cat
+```
 
 > b. (3 points) **Make a bar chart showing the number of games in each of the categories. Make sure you are using the new factor column you made in the previous part.  Explain why you see the order of the bars that you do. ** 
 
 
 
+```{r}
+ggplot(games_cat) + 
+  geom_bar(aes(x = Category)) +
+  labs(title = "Number of Games in Each Category")
+```
 
 > c. (3 points) **The "Other" Category is different from the remaining categories. Write code to produce the same bar chart as the previous part showing the number of games in each of the categories, but the Other category should be either the first bar or the last bar rather than mixed in with the other categories.**
 
 
+```{r}
+games_cat <- games_cat %>% 
+  mutate(Category = fct_relevel(Category, "Other", after = Inf))
+ggplot(games_cat) + 
+  geom_bar(aes(x = Category)) +
+  labs(title = "Number of Games in Each Category")
+```
 
 > d. (3 points) **Make a new bar chart showing how many games are in each of the different categories where the bars appear in order from smallest to largest. **
 
 
 
+```{r}
+games_cat <- games_cat %>% 
+  mutate(Category = fct_infreq(Category))
+ggplot(games_cat) + 
+  geom_bar(aes(x = fct_rev(Category))) +
+  labs(title = "Games in Each Category (Smallest to Largest)")
+```
 
 > e. (3 points) **Make a new bar chart showing how many games are in each of the different categories where the bars appear in order from largest to smallest (the opposite order from the previous part).**
 
 
 
+```{r}
+ggplot(games_cat) + 
+  geom_bar(aes(x = Category)) +
+  labs(title = "Games in Each Category (Largest to Smallest)")
+```
 
 > f. (6 points) **Make a bar chart showing the average rating for games in each category. Your bars should be in order from largest to smallest. **
 
-
-
-
-
 &nbsp;
+
+```{r}
+games_avg_rating <- games_cat %>% 
+  group_by(Category) %>% 
+  summarize(avg_rating = mean(AvgRating, na.rm = TRUE)) %>%
+  mutate(Category = fct_reorder(Category, avg_rating, .desc = TRUE))
+
+ggplot(games_avg_rating) + 
+  geom_bar(aes(x = Category, y = avg_rating), stat = "identity") +
+  labs(title = "Average Rating for Games in Each Category")
+```
 
 ## Question 3 (8 points) 
 
@@ -88,17 +146,37 @@ gss_cat %>%
 
 > a. (2 points) **First, explain in your own words what the two functions fct_recode and fct_collapse do, and what the difference is between them. **
 
+fct_recode allows you to rename levels of a factor, and can also combine multiple levels into one.
+fct_collapse is specifically for combining multiple levels into one, and is more convenient for this purpose.
 
 
 
 > b. (3 points) **Rename the level "Lt $1000" to "Less Than $1000", and reproduce the plot at the start of this question with this correction.**
 
+```{r}
+gss_cat <- gss_cat %>% 
+  mutate(rincome = fct_recode(rincome, "Less Than $1000" = "Lt $1000"))
 
+gss_cat %>%
+  ggplot() + 
+  geom_bar(mapping = aes(x = rincome)) + 
+  coord_flip()
+```
 
 
 > c. (3 points) **Combine the four categories that are not numeric ranges (Not applicable, Refused, Don't know, No answer) into a single level called "Other", and remake the plot with this change.**
 
 
+```{r}
+gss_cat <- gss_cat %>% 
+  mutate(rincome = fct_collapse(rincome, 
+                                Other = c("Not applicable", "Refused", "Don't know", "No answer")))
+
+gss_cat %>%
+  ggplot() + 
+  geom_bar(mapping = aes(x = rincome)) + 
+  coord_flip()
+```
 
 
 
@@ -110,6 +188,11 @@ gss_cat %>%
 
 
 
+```{r}
+flights <- flights %>% 
+  group_by(carrier) %>% 
+  mutate(carrier = fct_lump_min(carrier, 40000, other_level = "Other Airline"))
+```
 
 > b. (3 points) **Explain, in your own words, why the following two lines of code result in 8 rows in one case and 9 rows in the other. (Hint: It has nothing do do with the fact that the data type of dest is <chr> and the data type of relig is <fctr>).**
 
@@ -120,6 +203,7 @@ gss_cat %>% mutate(relig2 = fct_lump_n(relig, 8)) %>% count(relig2)
 
 
 
+The difference in the number of rows is due to the number of unique levels in the 'dest' and 'relig' columns. 'fct_lump_n' keeps the most frequent n levels and lumps the rest into "Other". The number of unique levels in 'dest' and 'relig' after lumping determines the number of rows.
 
 
 > c. (3 points) **Consider the following summary table that describes how many times different categories appear in a larger data set:**
@@ -146,6 +230,9 @@ c %>% mutate(Category2 = fct_infreq(Category)) %>%
 > **Explain, in your own words, why this didn't work, and how you should make the Category2 column differently so that, if you sort by Category2, the Categories end up in order from smallest count to largest count. (Note: Your solution should not be to do %>%arrange(count); instead, you should modify how Category2 is made so that %>%arrange(Category2) gives the correct order).**
 
 
+The fct_infreq function orders levels by their frequency in the data, not by the 'count' column. To sort by the 'count' column, you should use fct_reorder with the 'count' column as the second argument.
 
-
-
+```{r}
+c <- c %>% mutate(Category2 = fct_reorder(Category, count))
+c %>% arrange(Category2)
+```
