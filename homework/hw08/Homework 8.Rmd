@@ -1,0 +1,360 @@
+---
+title: "Homework 8"
+author: "Sarah Cannon"
+date: 'Due: 10/29/24'
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r, message = FALSE, echo = FALSE, warning = FALSE}
+library(tidyverse)
+```
+
+
+## Question 1 (4 points)
+
+> **Consider the following list of example words, which are a subset of the entire words list.**  
+
+```{r}
+words_example <- words[seq(19, length(words), 50)]
+words_example
+```
+
+> **For each part below, give a regular expression that will find the described patterns, and display these patterns using str_view.**
+
+> **(Be sure the regular expressions you give are general enough to work on the whole words data set, even though I'm not asking you to do that here.  For example, If I ask for words containing the letter c, you should not simple match the strings "colour" and "include" and "picture", instead your command should be general enough to find any word containing the letter "c", even though there are no other such strings in the words_example list.)**
+
+> a. **Words that start with the letter b.**
+
+
+
+> b. **Words containing the letter d before one of the six most popular letters in the English language, which are e, a, r, i, o, and t.**
+
+
+
+> c. **Words containing the letter d after a character that is not one of the six most popular letters in the English language (e, a, r, i, o, t).** 
+
+
+
+> d. **Words that end with the letter "d" but not with the string "nd"**
+
+
+
+
+&nbsp;
+
+## Question 2 (6 points) 
+
+> **The question refers to the follow string**
+
+```{r}
+price_info <- "Apple: $51; Banana: $3; Coconut: $123 (all fruits are ripe!)"
+```
+
+> a. **Use an appropriate str_ function to find/highlight/emphasize the dollar signs that appear in the price_info string. **
+
+
+
+
+> b. **Use an appropriate str_ function to find/highlight/emphasize the dollar signs and the digits that follow them in the price_info string, that is, it should highlight $51, $3, and $123. It should not highlight any of the semicolons in the sentence.**
+
+
+
+
+> c. **Use an appropriate str_function to highlight the phrase appearing inside the parentheses in the price_info string (it is fine if the parentheses are also highlighted)**
+
+
+
+
+&nbsp;
+
+## Question 3 (8 points)
+
+> **In each of the examples below, explain in your own words in 1-2 sentences what pattern(s) the regular expression will match.**
+
+> **While you are welcome to try out these regular expressions on some examples to help you figure out the answers, I'd suggest first trying, as this is better practice for the test, where you won't be able to run code. **
+
+
+> a. 
+
+```{r}
+regex_string <- "\\b[Dd]ogs?\\b"
+```
+
+
+
+
+> b. 
+
+```{r}
+regex_string <- "\\s\\w+\\s"
+```
+
+
+
+
+> c.
+
+```{r}
+regex_string <- " .+? "
+```
+
+
+
+
+> d. 
+
+```{r}
+regex_string <- "(.)\\1"
+```
+
+
+
+
+
+
+&nbsp;
+
+## Question 4 (8 points)
+
+> **Genomic data can be specified as a string of the characters A, C, G, and T. **
+
+> a. **Restriction enzymes are used to cut DNA strands at locations when specific sequences are identified. The BsaWI enzyme recognizes sequences that look like WCCGGW, where W could stand for A or T ( a _weak_ enzyme).  Would the BsaWI enzyme find such a sequence in the following DNA example? Use regular expressions to find out. Your answer should include the example DNA sequence with the sequence WCCGGW colored/emphasized/highlighted, if it appears. **
+
+```{r}
+DNAex1 <- "ACCGCTAGCTCGGCTAGATAGCTTCCGGAATCGTCGTCTATCGCTAGATCGATCGGCGGGCTCTAGATCGA"
+```
+
+
+
+
+
+> b. **In fact, this enzyme can recognize this sequence when it appears either forwards or backwards, that is, it also recognizes the sequence WGGCCW.  How many times would the BsaWI enzyme find such a sequence in the following DNA example? Use regular expressions to find out. Your answer should include the example DNA sequence with the sequence(s) WCCGGW and WGGCCW colored/emphasized/highlighted, if they appear.**
+
+```{r}
+DNAex2 <- "ACCGCTAGTCGCTCGCAGGCCATGGGCAGCTTCCGGAATCGTCGTCTACTTCGTAGA"
+```
+
+
+
+
+
+> c. **Fragile X Syndrome can be characterized by having the three nucleotide sequence CGG repeating 200 or more times in a row in a particular gene (see https://www.cdc.gov/ncbddd/fxs/inherited.html, for example). Write a command to check whether the following DNA sequence meets this criteria:** 
+
+```{r}
+DNAex3 <- "ACGTCAGCCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGGCTAGCTCGCTCCCCCAGCAGCAGCAGCAGCAGCCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGAGCGCGGACGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGTACTCTCTCACGCTAGCTCGATCGATCGCTCGATCGCCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGACTGCTCGTAGTCGATGCTAGCTAGTGCTAGTACGCCGGCGGCGGCGGCGGCGGCGGCGGCGGACGTACGTAGCCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGACGTACGTGCATGCACGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGACGATCGATCGTAGCTAGCTACG"
+```
+
+
+
+
+> d. **Consider the (artificially generated) genomic patient data in the attached patient_genetic_data.csv file. Import this data, and determine which of the patients have the genetic marker for Fragile X Syndrome, which is CGG repeated more than 200 times in a row. **
+
+
+
+
+&nbsp;
+
+## Question 5 (6 points)
+
+> a. **Suppose you have a vector l1 of length 10 and a vector tf1 of 10 True/False values. How would you find the elements of the list l1 that are at the same positions as the TRUE values in the vector tf1?  Here is an example you can practice on; a correct command should output the words lizard, bear, and fish. Your command should be extremely simple; no if/else statements are needed.**
+
+```{r}
+l1 <- c("cat", "dog", "bird", "lizard", "snake", "ferret", "bear", "turtle", "fish", "hamster")
+tf1 <- c(FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE, FALSE, TRUE, FALSE)
+```
+
+
+
+
+
+> b. **Suppose you have a vector l1 of length 10, a vector tf1 of 10 True/False values describing which words meet some Condition 1, and a vector tf2 of 10 True/False values describing which words meet some Condition 2.  How would you find all the words that meet Condition 1 and Condition 2? Hint: First make a list of TRUE/FALSE values describing whether or not the words meet both conditions. ** 
+
+```{r}
+l1 <- c("cat", "dog", "bird", "lizard", "snake", "ferret", "bear", "turtle", "fish", "hamster")
+tf1 <- c(FALSE, FALSE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, TRUE, FALSE)
+tf2 <- c(FALSE, FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE)
+```
+
+
+
+> c. **In the same setting as the previous part, how would you output all the words that meet Condition 1 or condition 2 (or both)?  **
+
+
+
+
+&nbsp;
+
+## Question 6 (6 points)
+
+> **Consider the following list of example words. For some parts, you may want to use the concepts in the previous question.** 
+
+```{r}
+words_example <- words[seq(19, length(words), 50)]
+words_example
+```
+
+> **(Be sure any code you give is general enough to work on the whole words data set, even though I'm not asking you to do that here)**
+
+>a. **Output all words that don't have the letter o in them. (Do not use str_view; instead, create an object with these words in them and output this object).**
+
+
+
+>b. **Output all words that have the letter o in them but do not have the letter f in them. (Do not use str_view; instead, create an object with these words in them and output this object)**
+
+
+
+
+&nbsp;
+
+## Question 7 (8 points)
+
+> **Consider the words object in R, which has 980 common English words in it.  At no point in this question (or ever) should you output a list of length 980, or anything longer than 10. **
+
+> a. **Find the total number of consonants across all words in the words list, where a consonant is any letter other than a,e,i,o,u. (For the purposes of all parts in this question, you should consider y to be a consonant)**
+
+
+
+> b. **Find the average number of consonants per word across all words in the words list.**
+
+
+
+
+> c. **Find the proportion of words in the words list that have two consecutive consonants in them.** 
+
+
+
+
+> d. **Count the number of words in the words list that have two consecutive consonants in them. **
+
+
+
+&nbsp;
+
+## Question 8 (9 points)
+
+> **Suppose you want to find all sentences that mention one of the fruits in the fruit list.**
+
+```{r}
+fruit
+```
+
+> a. (3 points) **First, use code to make a second list of fruits that makes all the fruits plural.  If a fruit ends in y, you make it plural by replacing the y with "ies"; if a fruit is "physalis" or "peach", you make it plural by adding "es"; and all other fruits are made plural by adding "s".**
+
+
+
+
+> b. (4 points) **Use code to make a regular expression that will find any fruits, singular or plural, that don't appear as a substring of a longer word.  For this part, you should only look for the fruits when they appear lowercase. Test your regular expression on the sentences list using str_view(); you should find 11 sentences, and 13 total fruits. **
+
+
+
+
+> c. (2 points) **What if you want to also find fruits if they appear capitalized in a sentence?  In addition to str_view(), use a new function we learned this week to change how you find patterns, so that when looking for a match for your fruits regular expression in the sentences list, the case of a letter (upper case vs. lowercase) doesn't matter. You should find one additional sentence compared to the previous part.**
+
+
+
+&nbsp;
+
+## Question 9 (18 points) 
+
+> **This question looks for colors that appear in sentences from the sentences list. Consider the following variable, which contains a list of the colors recognized by R (DO NOT print this entire color list in your knitted file).**  
+
+```{r}
+color_list <- colors()
+```
+
+> a. (2 points) **First, make a new list of colors that removes all digits that appear in a color's name. Print only the first five entries in your new list.**
+
+
+
+
+> b. (2 points) **Use code to make a regular expression that will recognize any color from the list you made in part (a). These colors should not appear as substrings of longer words. You do not need to (and should not) print this regular expression in your knitted file. (You can test your regex on the sentences list if you'd like, but this isn't required)** 
+
+
+
+> c. (2 points) **Make the sentences list into a tibble with a single column and a row for each sentence. The make the remaining parts easier, make every sentence entirely lowercase.**
+
+
+
+> d. (3 points) **Make a summary tibble with two columns, one displaying how many sentences contain one of the colors in the colors list (not as part of a longer word) and one displaying how many times a color from the colors list appears in a sentence. **
+
+
+
+> e. (3 points) **Make a table that only contains sentences a color from the colors list mentioned. Use str_extract to put which of these color(s) appear in a sentence in a new column.  Explain in your own words why this new column contains things like < chr [1] >  and  < chr [2] >. **
+
+
+
+> f. (2 points) **Use an appropriate function to modify your outcome in the previous part so that there is a column displaying the first color found in each sentence and another column displaying the second color  that is found in each sentences (if there is one).**
+
+
+
+
+> g. (2 points) **Use an appropriate function to modify your outcome from part (c) so that when there are multiple colors in a sentence, each ends up in its own row.**
+
+
+
+
+> h. (2 points) **Make a summary table with two columns: one has all the colors from the colors list that appear in at least one sentence, and another that counts how many times that colors appears.  Hint: Use the table you made in the previous part. **
+
+
+
+
+&nbsp;
+
+## Question 10 (15 points) 
+
+> **For this question, use the sentences tibble you created in 9(c), which should have all sentences in a single column, entirely in lowercase. **
+
+> a. **For all sentences that include the word "and", swap the word that appears after "and" and the word that appears before "and". For example, now the 8th sentence should read "the hogs were fed chopped garbage and corn." Make sure the column with these swapped words is displayed in your knitted file. **
+
+
+
+> b. **Filter your sentences tibble to find all sentences with a repeated word.**
+
+
+
+> c. **Add a new column to this tibble that says what the repeated word is. Each entry in this new column should only be a single word. Make sure this new column is visible in your knitted file. **
+
+
+
+> d. **Add another new column to your tibble that includes all text between the two instances of the repeated word.  For example, for the first sentence, this new column should include " birch canoe slid on ". Make sure this new column is visible in your knitted file. **
+
+
+
+> e. **Consider the sentence "the cat and the dog slept and played together." This sentence contains two repeated words, "the" and "and".  Explain in your own words why your regular expression (or any correct regular expression finding pairs of repeated words) will only find one match in this sentence. **
+
+
+
+
+&nbsp;
+
+## Question 11 (6 points)
+
+>  a. (3 points) **Which words appear most frequently in the sentences list? Beginning with the tibble you made in 9(c), use the boundary() function with an appropriate argument and other functions we've learned to answer this question.**
+
+> **Hint: First make a single column that contains all the words, and then use function(s) from previous weeks.**
+
+
+
+
+> b. (3 points) **Which characters appear most frequently in the sentences list?**
+
+
+
+
+
+## Question 12 (6 points) 
+
+> **As we get farther into this semester, rather than providing you with specific ethics resources, I'm going to start asking you to do some of your own research!  This more closely mimics what you might need to do in the future, where you won't have a professor guiding your exploration and learning. **
+
+> a. (3 points) **Using any resources you'd like, research what the field of *natural language processing* entails, give some examples of tasks that natural language processing tools can accomplish, and explain how natural language processing is different from what we've been learning this week, which is looking for and working with patterns in strings using regular expressions. Your answer should be written in your own words. Include a list of the sources you consulted (urls are fine). **
+
+
+
+
+> b. (3 points) **Again using any resources you'd like, give some examples of ethical issues and concerns that may arise in natural language processing. Some places you may want to get started are https://github.com/uclanlp/awesome-fairness-papers or https://aclweb.org/aclwiki/Ethics_in_NLP.  Be specific about some ethical benefits and ethical harms that could result from natural language processing.**
+
+
+
+
