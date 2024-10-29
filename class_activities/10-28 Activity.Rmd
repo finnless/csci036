@@ -1,0 +1,65 @@
+---
+title: "10-28 Activity Solutions"
+author: "Sarah Cannon"
+date: "10/28/2023"
+output: html_document
+---
+
+```{r}
+library(DBI)
+library(RSQLite)
+```
+
+> 1. **Connect to the database Northwind_small.sqlite, which is on canvas. What tables are in this database?** 
+
+
+
+
+>2. **Change the start of this code chunk so that this SQL command runs correctly. How many employees does this company have? **
+
+```{r}
+SELECT * FROM Employee
+```
+
+> 3. **Make a smaller table containing only Employee ID, First and Last Name, and City**
+
+
+
+> 4. **How many different values are there in the TitleOfCourtesy column? Use code to find out; your command should still work even if the Employee table were to have many more rows than it currently does.**
+
+
+
+> 5. **Filter the entire Employees table to only keep those Employees where the word "degree" appears in the Notes column. Note: there should be four.** 
+
+
+
+
+> 6. **Arrange the employees in the Employee table by LastName.  Which employee comes first?**
+
+
+
+
+> 7. **Disconnect from the database.**
+
+
+
+
+> BONUS A: **There's a second way to use RStudio to access remote databases, using the dbSendQuery and dbFetch commands. Here's an example of the same code from Question 2:**
+
+```{r}
+df7 <- dbSendQuery(db_con, "SELECT * FROM Employee")
+dbFetch(df7)
+```
+
+>**Produce the same output as in Question 4, but using an R code block rather than an SQL code block.**
+
+
+
+
+
+> BONUS B: **In the tidyverse, we used the functions unite or mutate & str_c to combine two columns.  In SQL, this is done by a single keyword, CONCAT, which takes as arguments the things to combine, such as CONCAT(Col1, Col2, "!"), which combines columns 1 and 2, followed by an exclamation mark. Combine the FirstName and LastName for all the Employees into a single column called Name; you'll have to use other keyword(s) in addition to just CONCAT.**
+
+
+
+
+

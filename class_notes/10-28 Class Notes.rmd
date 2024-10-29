@@ -1,0 +1,428 @@
+---
+title: "10-28 Class Notes SQL"
+author: "Sarah Cannon"
+date: "10/28/2024"
+output: html_document
+---
+
+
+## Announcements
+
+Homework 8 due tomorrow, 11:59pm (unless using some extension hours) 
+Based on class 10/21, 10/23 (Regular Expressions) 
+
+Upcoming Office Hours: 
+Tuesday 10:30-11:30, 2-3pm
+Wednesday 1:15-2:15pm
+
+QCL one-on-one appointments and drop-in schedule: https://www.cmc.edu/qcl/mentoring
+
+MAth Tea: Thursday 10/31, 3:30-4:30pm
+Chat with faculty and other students about spring courses and more! 
+Athenaeum Courtyard
+
+Spring Class: CSCI 148: Graph Algorithms
+Prerequisites: CSCI 46 (Data Structures and Algorithms) and Math 55 (Discrete Math)
+Monday/Wednesday, 4:15-5:30pm
+
+Questions about upcoming schedule?
+
+
+## Final Project
+
+Description on Canvas (Files)
+
+For now: Begin thinking of topics, finding data sets, brainstorming questions
+
+Proposal Due November 19th
+
+_What makes a good question?_ 
+
+- Specific
+- Can be answered by looking at your data
+- Gives an interesting insight
+- Answering it gives you an opportunity to demonstrate your data science skills
+
+For diamonds data set: 
+
+**Good Questions: **
+
+- What is the relationship between cut and clarity for all diamonds in the data set? 
+- What does the distribution of prices look like?
+- Does the distribution of prices change for different cuts and clarities? 
+- Can you predict (model) the price of a diamond knowing its dimensions, cut, and clarity? 
+
+**Bad Questions: **
+Are diamonds more likely to be "Fair" or "Good" cut? 
+- Bad because: not an interesting insight. 
+- How to improve: Use this as a first question to dive more deeply into the differences between "Fair" and "Good" cut diamonds
+
+What clarity level of diamond should you buy? 
+- Bad because: Can't be answered by looking at the data, not specific
+- How to improve: Be more specific about what you want - what clarity level has the best prices? The largest diamonds? The best cuts? etc.
+
+**In-between Question: **
+Are "Fair" diamonds more expensive that "Good" diamonds? 
+- Bad if you simply compute the average price of "Fair" diamonds, the average price of "Good" diamonds, and look at what's larger. Not that interesting, and doesn't show off your data skills. 
+- Good if you compare the price distributions as a whole (for example, with boxplots or histograms), look at what other factors might influence price (cut? size?), etc. 
+
+**Your answer to a question should always be more than a single computation or a single plot.** 
+
+Questions?
+
+
+
+# SQL (Structured Query Language)
+
+A different programming language, but can use within RStudio/RMarkdown
+
+Used to connect with/work with remote databases
+
+Works with Big Data: Data that is too big to be stored on a single machine
+
+```{r, results = 'hide', message = FALSE, warning = FALSE}
+# install these libraries if you haven't yet
+library(DBI) # To connect to database management systems
+library(RSQLite) #To use SQLite
+```
+
+Questions from preclass video? 
+
+
+Do not import data; instead, set up a connection to talk to the database
+
+To start: will work with a 'remote' database that is on our computer (fewer problems with connecting). 
+
+Put file animals.sqlite in same folder as this RMarkdown file. 
+
+Is information from https://data.austintexas.gov/Health-and-Community-Services/Austin-Animal-Center-Outcomes/9t4d-g238/about_data 
+
+First set up connection to database: 
+
+```{r}
+database_connection <- dbConnect(
+  SQLite(), ## Dialect of SQL we will be using
+  dbname = "animal.sqlite" ## Name of database and wehre to find it
+)
+database_connection
+```
+
+Have opened a pathway to the data. 
+
+Get information about the tables included in this database: 
+
+```{r}
+dbListTables(database_connection)
+```
+
+Caution: If database not there, will create an empty one! 
+
+Make sure any database you're using is not empty (look at file size). 
+
+Before deleting database (and in general, when done with a database): Disconnect
+
+```{r}
+dbDisconnect(database_connection)
+```
+
+Reconnect to the correct database: 
+
+```{r}
+db <- dbConnect(
+          SQLite(), ## Dialect of SQL we will be using
+          dbname = "animals.sqlite" ## Name of database and where to find it
+)
+db
+```
+
+
+# SQL Commands
+
+Are similar to tidyverse equivalents.
+
+## SELECT, FROM
+
+Most similar: SELECT: choose variable(s) from a table. 
+
+Most SQL queries start with SELECT
+
+Run SQL code chunks, called queries: 
+
+Note: must change the start of code chunk. 
+
+```{sql, connection = db}
+SELECT name, intake_type 
+  FROM austin_animal_center_intakes
+```
+
+Case-insensitive, but convention is to capitalize keywords, makes code more readable
+
+Convention to use multiple lines for different parts of the query (white space doesn't matter)
+
+* is a wildcard: to select all columns
+
+
+(Be careful: only do if you think there's a reasonable number of columns)
+
+```{sql, connection = db}
+SELECT * 
+  FROM austin_animal_center_intakes
+```
+
+(only displays first 1000 rows, even though there are more - looks like a tibble, is not)
+
+
+### COUNT
+
+To see how many animals, use COUNT: count how many rows are not NULL
+
+```{sql, connection = db}
+SELECT COUNT(*)  FROM austin_animal_center_intakes
+```
+There are 75947 rows in this table
+
+Count how many animal ids are not null: 
+
+```{sql, connection = db}
+SELECT COUNT(animal_id) 
+  FROM austin_animal_center_intakes
+```
+
+Note: COUNT gives *total* number of animal_id's, not how many times each animal_id appears or how many distinct animal ids there are! Different from tidyverse.
+
+
+### AS
+
+rename variables: use AS keyword
+
+```{sql, connection = db}
+SELECT name AS Name, intake_type AS 'Intake Type' 
+  FROM austin_animal_center_intakes
+```
+
+Format: oldname AS newname - opposite of tidyverse
+
+For mutate:  use AS within select
+
+```{sql, connection = db}
+SELECT monthyear, animal_type, outcome_type, (age_in_days/365) AS 'Age In Years'
+  FROM austin_animal_center_age_at_outcome
+```
+
+Format: formula AS NewColName (opposite from tidyverse)
+
+
+### DISTINCT
+
+Suppose we want to know what different types of animals are in our table. Add keyword DISTINCT to SELECT.
+
+(somewhat similar to group_by)
+
+```{sql, connection = db}
+SELECT DISTINCT animal_type
+  FROM austin_animal_center_intakes
+```
+
+DISTINCT applies to all columns listed in SELECT
+
+```{sql, connection = db}
+SELECT DISTINCT animal_type, sex_upon_intake, age_upon_intake 
+  FROM austin_animal_center_intakes
+```
+
+Are 539 combination of these there variables in the data set.  Looks at all rows of data, not just the first 1000 what were displayed. 
+
+Can combine COUNT with DISTINCT to get the number of different categories 
+
+For example, number of distinct animal IDs: 
+
+```{sql, connection = db}
+SELECT COUNT(DISTINCT animal_id) AS "Number of Distinct Animal IDs"
+  FROM austin_animal_center_intakes
+```
+
+## WHERE (filter)
+
+For R, we used filter; in SQL, we use WHERE
+
+Must go after FROM
+
+To find all cats in the monthly intakes data set: 
+
+```{sql, connection = db}
+SELECT year, month, count, animal_type
+  FROM austin_animal_center_intakes_by_month
+  WHERE animal_type = "Cat"
+```
+
+Logical operator is =, not ==
+
+Can reference columns that aren't displayed in your table/part of your SELECT: 
+
+```{sql, connection = db}
+SELECT year, month, count
+  FROM austin_animal_center_intakes_by_month
+  WHERE animal_type = "Cat"
+```
+
+
+### Logical operators and NULL values
+
+Logical operators: 
+& - AND
+| - OR
+! - NOT
+
+Cats and Dogs where intake condition was not normal:
+
+```{sql, connection = db}
+SELECT animal_type, intake_type, 
+  Intake_condition, age_upon_intake
+  FROM austin_animal_center_intakes
+  WHERE (animal_type = "Cat" OR animal_type = "Dog") AND (NOT Intake_condition = "Normal")
+
+```
+
+The equivalent of NA in R is NULL. 
+
+To check if data value is NULL: use IS NULL (or IS NOT NULL)
+
+```{sql, connection = db}
+SELECT * FROM austin_animal_center_intakes
+WHERE name IS NULL
+```
+
+(Still displays as NA, but be sure to use keyword NULL in SQL queries)
+
+
+### LIKE and NOT LIKE
+
+Suppose want to find all data where the breed includes "wolfhound"
+
+use LIKE or NOT LIKE as part of the WHERE expression
+
+Regular expressions: look for a pattern appearing as a *substring*
+
+LIKE and NOT LIKE: look for a pattern that matches the *entire string*
+
+Have different shortcuts/abbreviations
+
+% stands for any number of characters (like .* in regular expressions)
+
+_ matches a single character (like . in regular expressions)
+
+"%test" matches "unfair test" "fairtest" or "test", but not "test case" 
+
+"t_st" matches "test" or "tkst" but not "tests" 
+
+Not case sensitive
+
+```{sql, connection = db}
+SELECT sex_upon_outcome, outcome_type, animal_type, breed
+  FROM austin_animal_center_outcomes
+  WHERE animal_type = "Dog" AND breed LIKE "%wolfhound%" 
+```
+
+Or, could NOT LIKE to do the opposite
+
+
+## ORDER BY (arrange)
+
+In R, we used arrange; in SQL, we use ORDER BY
+
+To order by year, with ties broken by month: 
+
+```{sql, connection = db}
+SELECT year, month, count, animal_type
+  FROM austin_animal_center_intakes_by_month
+  WHERE animal_type = "Cat"
+  ORDER BY year, month
+```
+
+ORDER BY must come after WHERE 
+
+To put more recent data first: use DESC: goes ate the variable name
+
+```{sql, connection = db}
+SELECT year, month, count, animal_type
+  FROM austin_animal_center_intakes_by_month
+  WHERE animal_type = "Cat"
+  ORDER BY year DESC, month DESC
+
+```
+
+Or, order by count in descending order: 
+
+```{sql, connection = db}
+SELECT year, month, count, animal_type
+  FROM austin_animal_center_intakes_by_month
+  WHERE animal_type = "Cat"
+ ORDER BY count DESC
+```
+
+Don't need to specify tiebreaker columns if you don't want to. 
+
+
+### OFFSET
+
+Can select different parts of the data to look at
+
+LIMIT = How many rows to display (can't be more than 1000)
+
+OFFSET = How many rows at the beginning to skip
+
+```{sql, connection = db}
+SELECT found_location, intake_type 
+FROM austin_animal_center_intakes
+LIMIT 100
+OFFSET 20000
+```
+
+
+## Disconnecting
+
+Call dbDisconnect when finished working with a database (in an R code chunk) 
+
+```{r}
+dbDisconnect(db)
+```
+
+
+## Summary
+
+SQL = language used to talk to remote databases
+
+First, set up connection using dbConnect
+
+Similar ideas to tidyverse, different format/syntax 
+
+Some small nuances are different:
+- formula AS newcol vs. mutate(newcol = formula)
+- LIKE matches entire string, not looking for pattern appearing as a substring
+
+Keywords we learned: 
+SELECT
+FROM
+COUNT
+AS
+DISTINCT
+WHERE 
+AND, OR, NOT
+IS NULL, IS NOT NULL
+LIKE, NOT LIKE
+ORDER BY
+DESC
+LIMIT 
+OFFSET
+
+
+# Activity
+
+On Canvas
+
+If finish regular questions, move on to bonus questions.
+
+If finish bonus questions, check in with Prof. Cannon, then can leave. 
+
+Can work individually or with classmates. 
+
