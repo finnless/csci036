@@ -27,19 +27,31 @@ words_example
 
 > a. **Words that start with the letter b.**
 
+```{r}
+str_view(words_example, "^b")
+```
 
 
 > b. **Words containing the letter d before one of the six most popular letters in the English language, which are e, a, r, i, o, and t.**
 
+```{r}
+str_view(words_example, "d[eariot]")
+```
 
 
 > c. **Words containing the letter d after a character that is not one of the six most popular letters in the English language (e, a, r, i, o, t).** 
 
+```{r}
+str_view(words_example, "[^eariot]d")
+```
 
 
 > d. **Words that end with the letter "d" but not with the string "nd"**
 
 
+```{r}
+str_view(words_example, "(?<!n)d$")
+```
 
 
 &nbsp;
@@ -59,11 +71,17 @@ price_info <- "Apple: $51; Banana: $3; Coconut: $123 (all fruits are ripe!)"
 
 > b. **Use an appropriate str_ function to find/highlight/emphasize the dollar signs and the digits that follow them in the price_info string, that is, it should highlight $51, $3, and $123. It should not highlight any of the semicolons in the sentence.**
 
+```{r}
+str_extract_all(price_info, "\\$\\d+")
+```
 
 
 
 > c. **Use an appropriate str_function to highlight the phrase appearing inside the parentheses in the price_info string (it is fine if the parentheses are also highlighted)**
 
+```{r}
+str_extract(price_info, "\\(.*?\\)")
+```
 
 
 
@@ -82,6 +100,7 @@ price_info <- "Apple: $51; Banana: $3; Coconut: $123 (all fruits are ripe!)"
 regex_string <- "\\b[Dd]ogs?\\b"
 ```
 
+`\\b[Dd]ogs?\\b` matches whole words that are either "Dog" or "dog", optionally followed by an "s" to account for the plural form "Dogs" or "dogs". The `\\b` at both ends ensures that the match is a complete word, not a substring of a longer word.
 
 
 
@@ -91,6 +110,7 @@ regex_string <- "\\b[Dd]ogs?\\b"
 regex_string <- "\\s\\w+\\s"
 ```
 
+`\\s\\w+\\s` matches a sequence of one or more word characters that are surrounded by whitespace on both sides. This effectively captures whole words that are preceded and followed by spaces.
 
 
 
@@ -102,6 +122,7 @@ regex_string <- " .+? "
 
 
 
+` .+? ` matches the shortest sequence of characters surrounded by spaces.
 
 > d. 
 
@@ -111,6 +132,7 @@ regex_string <- "(.)\\1"
 
 
 
+`(.)\\1` matches any character that is immediately followed by the same character.
 
 
 
@@ -127,6 +149,9 @@ DNAex1 <- "ACCGCTAGCTCGGCTAGATAGCTTCCGGAATCGTCGTCTATCGCTAGATCGATCGGCGGGCTCTAGATC
 ```
 
 
+```{r}
+str_view_all(DNAex1, "[AT]CCGG[AT]")
+```
 
 
 
@@ -137,6 +162,9 @@ DNAex2 <- "ACCGCTAGTCGCTCGCAGGCCATGGGCAGCTTCCGGAATCGTCGTCTACTTCGTAGA"
 ```
 
 
+```{r}
+str_view_all(DNAex2, "[AT]CCGG[AT]|[AT]GGCC[AT]")
+```
 
 
 
@@ -147,11 +175,30 @@ DNAex3 <- "ACGTCAGCCGGCGGCGGCGGCGGCGGCGGCGGCGGCGGGCTAGCTCGCTCCCCCAGCAGCAGCAGCAGC
 ```
 
 
+```{r}
+str_detect(DNAex3, "(CGG){200,}")
+```
 
+No it does not.
 
 > d. **Consider the (artificially generated) genomic patient data in the attached patient_genetic_data.csv file. Import this data, and determine which of the patients have the genetic marker for Fragile X Syndrome, which is CGG repeated more than 200 times in a row. **
 
 
+```{r}
+patient_data <- read_csv("patient_genetic_data.csv")
+
+# Check for the Fragile X Syndrome marker
+patient_data <- patient_data %>%
+  mutate(has_fxs_marker = str_detect(PatientDNA, "(CGG){200,}"))
+
+patients_with_marker <- patient_data %>%
+  filter(has_fxs_marker)
+
+# Print the patient
+patients_with_marker
+```
+
+Patient 3 has the marker.
 
 
 &nbsp;
@@ -166,6 +213,9 @@ tf1 <- c(FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, TRUE, FALSE, TRUE, FALSE)
 ```
 
 
+```{r}
+l1[tf1]
+```
 
 
 
@@ -178,9 +228,15 @@ tf2 <- c(FALSE, FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE)
 ```
 
 
+```{r}
+l1[tf1 & tf2]
+```
 
 > c. **In the same setting as the previous part, how would you output all the words that meet Condition 1 or condition 2 (or both)?  **
 
+```{r}
+l1[tf1 | tf2]
+```
 
 
 
@@ -200,10 +256,16 @@ words_example
 >a. **Output all words that don't have the letter o in them. (Do not use str_view; instead, create an object with these words in them and output this object).**
 
 
+```{r}
+words_example[!str_detect(words_example, "o")]
+```
 
 >b. **Output all words that have the letter o in them but do not have the letter f in them. (Do not use str_view; instead, create an object with these words in them and output this object)**
 
 
+```{r}
+words_example[str_detect(words_example, "o") & !str_detect(words_example, "f")]
+```
 
 
 &nbsp;
@@ -214,20 +276,32 @@ words_example
 
 > a. **Find the total number of consonants across all words in the words list, where a consonant is any letter other than a,e,i,o,u. (For the purposes of all parts in this question, you should consider y to be a consonant)**
 
+```{r}
+sum(str_count(words, "[^aeiouAEIOU]"))
+```
 
 
 > b. **Find the average number of consonants per word across all words in the words list.**
 
 
+```{r}
+mean(str_count(words, "[^aeiouAEIOU]"))
+```
 
 
 > c. **Find the proportion of words in the words list that have two consecutive consonants in them.** 
 
 
+```{r}
+mean(str_detect(words, "[^aeiouAEIOU]{2}"))
+```
 
 
 > d. **Count the number of words in the words list that have two consecutive consonants in them. **
 
+```{r}
+sum(str_detect(words, "[^aeiouAEIOU]{2}"))
+```
 
 
 &nbsp;
@@ -243,15 +317,39 @@ fruit
 > a. (3 points) **First, use code to make a second list of fruits that makes all the fruits plural.  If a fruit ends in y, you make it plural by replacing the y with "ies"; if a fruit is "physalis" or "peach", you make it plural by adding "es"; and all other fruits are made plural by adding "s".**
 
 
+```{r}
+pluralize_fruit <- function(fruit_name) {
+  if (fruit_name %in% c("physalis", "peach")) {
+    return(paste0(fruit_name, "es"))
+  } else if (grepl("y$", fruit_name)) {
+    return(sub("y$", "ies", fruit_name))
+  } else {
+    return(paste0(fruit_name, "s"))
+  }
+}
+
+plural_fruits <- sapply(fruit, pluralize_fruit)
+head(plural_fruits)
+```
 
 
 > b. (4 points) **Use code to make a regular expression that will find any fruits, singular or plural, that don't appear as a substring of a longer word.  For this part, you should only look for the fruits when they appear lowercase. Test your regular expression on the sentences list using str_view(); you should find 11 sentences, and 13 total fruits. **
 
+```{r}
+fruit_regex <- str_c("\\b(", str_c(fruit, collapse = "|"), "|", str_c(plural_fruits, collapse = "|"), ")\\b")
+
+str_view(sentences, fruit_regex)
+```
 
 
 
 > c. (2 points) **What if you want to also find fruits if they appear capitalized in a sentence?  In addition to str_view(), use a new function we learned this week to change how you find patterns, so that when looking for a match for your fruits regular expression in the sentences list, the case of a letter (upper case vs. lowercase) doesn't matter. You should find one additional sentence compared to the previous part.**
 
+```{r}
+fruit_regex_case_insensitive <- regex(fruit_regex, ignore_case = TRUE)
+
+str_view(sentences, fruit_regex_case_insensitive)
+```
 
 
 &nbsp;
@@ -267,36 +365,80 @@ color_list <- colors()
 > a. (2 points) **First, make a new list of colors that removes all digits that appear in a color's name. Print only the first five entries in your new list.**
 
 
+```{r}
+color_list_no_digits <- str_remove_all(color_list, "\\d")
+
+head(color_list_no_digits, 5)
+```
 
 
 > b. (2 points) **Use code to make a regular expression that will recognize any color from the list you made in part (a). These colors should not appear as substrings of longer words. You do not need to (and should not) print this regular expression in your knitted file. (You can test your regex on the sentences list if you'd like, but this isn't required)** 
 
+```{r}
+color_regex <- str_c("\\b(", str_c(color_list_no_digits, collapse = "|"), ")\\b")
+```
 
 
 > c. (2 points) **Make the sentences list into a tibble with a single column and a row for each sentence. The make the remaining parts easier, make every sentence entirely lowercase.**
 
+```{r}
+sentences_tibble <- tibble(sentence = tolower(sentences))
+```
 
 
 > d. (3 points) **Make a summary tibble with two columns, one displaying how many sentences contain one of the colors in the colors list (not as part of a longer word) and one displaying how many times a color from the colors list appears in a sentence. **
 
+```{r}
+summary_tibble <- sentences_tibble %>%
+  mutate(has_color = str_detect(sentence, color_regex),
+         color_count = str_count(sentence, color_regex)) %>%
+  summarize(sentences_with_color = sum(has_color),
+            total_color_appearances = sum(color_count))
+summary_tibble
+```
 
 
 > e. (3 points) **Make a table that only contains sentences a color from the colors list mentioned. Use str_extract to put which of these color(s) appear in a sentence in a new column.  Explain in your own words why this new column contains things like < chr [1] >  and  < chr [2] >. **
 
+```{r}
+color_sentences <- sentences_tibble %>%
+  filter(str_detect(sentence, color_regex)) %>%
+  mutate(colors_found = str_extract_all(sentence, color_regex))
+
+color_sentences
+```
+
+<chr [n]> indicates that the column contains a list of character vectors, where each vector can have multiple elements (colors found in a sentence).
 
 
 > f. (2 points) **Use an appropriate function to modify your outcome in the previous part so that there is a column displaying the first color found in each sentence and another column displaying the second color  that is found in each sentences (if there is one).**
 
+```{r}
+color_sentences <- color_sentences %>%
+  mutate(first_color = map_chr(colors_found, ~ .x[1]),
+         second_color = map_chr(colors_found, ~ .x[2], .default = NA))
+color_sentences
+```
 
 
 
 > g. (2 points) **Use an appropriate function to modify your outcome from part (c) so that when there are multiple colors in a sentence, each ends up in its own row.**
 
+```{r}
+color_sentences_long <- color_sentences %>%
+  unnest_longer(colors_found)
+color_sentences_long
+```
 
 
 
 > h. (2 points) **Make a summary table with two columns: one has all the colors from the colors list that appear in at least one sentence, and another that counts how many times that colors appears.  Hint: Use the table you made in the previous part. **
 
+```{r}
+color_summary <- color_sentences_long %>%
+  count(colors_found, name = "appearance_count")
+color_summary
+```
 
 
 
@@ -308,22 +450,45 @@ color_list <- colors()
 
 > a. **For all sentences that include the word "and", swap the word that appears after "and" and the word that appears before "and". For example, now the 8th sentence should read "the hogs were fed chopped garbage and corn." Make sure the column with these swapped words is displayed in your knitted file. **
 
+```{r}
+sentences_tibble %>%
+  mutate(swapped_sentence = str_replace_all(sentence, "(\\b\\w+\\b)\\s+and\\s+(\\b\\w+\\b)", "\\2 and \\1"))
+```
 
 
 > b. **Filter your sentences tibble to find all sentences with a repeated word.**
 
+```{r}
+repeated_word_sentences <- sentences_tibble %>%
+  filter(str_detect(sentence, "\\b(\\w+)\\b.*\\b\\1\\b"))
+
+repeated_word_sentences
+```
 
 
 > c. **Add a new column to this tibble that says what the repeated word is. Each entry in this new column should only be a single word. Make sure this new column is visible in your knitted file. **
 
+```{r}
+repeated_word_sentences <- repeated_word_sentences %>%
+  mutate(repeated_word = str_extract(sentence, "\\b(\\w+)\\b(?=.*\\b\\1\\b)"))
+
+repeated_word_sentences
+```
 
 
 > d. **Add another new column to your tibble that includes all text between the two instances of the repeated word.  For example, for the first sentence, this new column should include " birch canoe slid on ". Make sure this new column is visible in your knitted file. **
 
+```{r}
+repeated_word_sentences <- repeated_word_sentences %>%
+  mutate(text_between = str_extract(sentence, "\\b(\\w+)\\b.*\\b\\1\\b"))
+
+repeated_word_sentences
+```
 
 
 > e. **Consider the sentence "the cat and the dog slept and played together." This sentence contains two repeated words, "the" and "and".  Explain in your own words why your regular expression (or any correct regular expression finding pairs of repeated words) will only find one match in this sentence. **
 
+A regular expression for repeated words will usually find only the first pair. Regular expressions match the first occurrence of a pattern and stop, unless designed to find multiple matches. So, it will match "the" first and stop, not finding "and" as a repeated word.
 
 
 
@@ -336,10 +501,26 @@ color_list <- colors()
 > **Hint: First make a single column that contains all the words, and then use function(s) from previous weeks.**
 
 
+```{r}
+word_frequencies <- sentences_tibble %>%
+  mutate(words = str_split(sentence, boundary("word"))) %>%
+  unnest_longer(words) %>%
+  count(words, sort = TRUE)
+
+word_frequencies
+```
 
 
 > b. (3 points) **Which characters appear most frequently in the sentences list?**
 
+```{r}
+character_frequencies <- sentences_tibble %>%
+  mutate(characters = str_split(sentence, boundary("character"))) %>%
+  unnest_longer(characters) %>%
+  count(characters, sort = TRUE)
+
+character_frequencies
+```
 
 
 
@@ -351,10 +532,33 @@ color_list <- colors()
 > a. (3 points) **Using any resources you'd like, research what the field of *natural language processing* entails, give some examples of tasks that natural language processing tools can accomplish, and explain how natural language processing is different from what we've been learning this week, which is looking for and working with patterns in strings using regular expressions. Your answer should be written in your own words. Include a list of the sources you consulted (urls are fine). **
 
 
+NLP is a field of AI focused on enabling computers to understand and process human language.
+
+Examples of NLP Tasks:
+- Sentiment Analysis: Identifying emotions in text.
+- Machine Translation: Translating text between languages.
+- Named Entity Recognition (NER): Detecting names of people, places, etc.
+- Speech Recognition: Converting speech to text.
+- Text Summarization: Creating summaries of documents.
+
+Difference from Regular Expressions:
+- NLP handles complex language understanding, while regular expressions are for simple pattern matching.
+- NLP understands context and semantics. regular expressions do not do that but could be used to help with that.
+
+Sources:
+- [Wikipedia - NLP](https://en.wikipedia.org/wiki/Natural_language_processing)
+- [Book Genome Project](https://bookgenomeproject.org/)
 
 
 > b. (3 points) **Again using any resources you'd like, give some examples of ethical issues and concerns that may arise in natural language processing. Some places you may want to get started are https://github.com/uclanlp/awesome-fairness-papers or https://aclweb.org/aclwiki/Ethics_in_NLP.  Be specific about some ethical benefits and ethical harms that could result from natural language processing.**
 
 
+NLP presents several ethical issues and concerns. One major concern is bias in NLP models, which can arise from biased training data, leading to unfair or discriminatory outcomes. For example, language models might perpetuate stereotypes or exhibit gender and racial biases, impacting decisions in hiring or law enforcement. Another issue is privacy, as NLP systems often process sensitive personal data, raising concerns about data security and consent.
 
+NLP can also enhance accessibility, such as through speech-to-text services for individuals with disabilities, and improve efficiency in information retrieval and customer service. However, ethical harms include the potential for misuse in surveillance or spreading misinformation. Its important to remember that "language is also a political instrument, though, and an instrument of power." (Hovy, Dirk and Spruit, Shannon L., 2016)
 
+The ACM Code of Ethics emphasizes the importance of fairness, transparency, and accountability in technology development, which are crucial in addressing these ethical challenges in NLP.
+
+Sources:
+- ["The Social Impact of Natural Language Processing", Hovy, Dirk and Spruit, Shannon L., 2016](https://aclanthology.org/P16-2096/)
+- [ACM Code of Ethics](https://www.acm.org/code-of-ethics)
