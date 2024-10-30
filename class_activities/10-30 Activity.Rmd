@@ -1,0 +1,67 @@
+---
+title: "10-30 Activity"
+author: "Sarah Cannon"
+date: "10/30/2024"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+library(DBI)
+library(RSQLite)
+library(RMariaDB)
+```
+
+> 1. **Connect to the same Northwind_small.sqlite database from the previous activity, and check that your connection is working using dbListTables:** 
+
+
+
+> 2. **How many rows are there in the "Order" table? Note: Because ORDER BY is a keyword in SQL, you'll need to reference this table as `Order` or "Order" or 'Order', with quotes.**
+
+
+
+
+> 3. **What is the smallest value in the freight column, the largest value in the freight column, and the average value in the freight column? **
+
+
+
+> 4. **Find the same values as in #3, but for each different ShipRegion. Hint: You should only have to add one line to your code in the previous part.**
+
+
+
+
+> 5. **Information about employee names and IDs is in the Employee table: ** 
+
+```{sql, connection = db_northwind}
+SELECT * FROM Employee
+```
+
+> **Join the Order and Employee tables by Employee ID (be careful about column names). Your resulting table should have columns for Employee ID, Employee First Name, Employee Last Name, Order ID, and Order Date. **
+
+
+
+
+> 6. **If you haven't already, modify your code in the previous question to use abbreviated names for the tables, for example perhaps o and e in place of Order and Employee. The end result should be the same as the previous question, I'm just asking you to rewrite your code to be more abbreviated.**
+
+
+
+> 7. **Disconnect from the Northwind_small database.**
+
+
+
+
+> BONUS: **Sometimes you want to add information to one table that is already there, in the same table, just in a different place! This is called a _self-join_. The employees table of the sales.sqlite database from class has columns for Name, emp_id (Employee ID), and mgr_id(Manager ID).  What if you wanted to add the name of the manager for each employee?  That information is already in the table! Anna Snelling's manager ID is 10036, and if we look further down in the table, we see that Employee 10036 is Dustin Brinkman, so Dustin Brinkman in Anna Snelling's manager: **
+
+
+```{sql, connection = db_sales}
+SELECT * 
+  FROM Employees
+```
+
+> **To do the self-join, we join a table with itself, but give each copy of the table a different alias (such as "employees AS employee_table" and "employees AS manager_table").  Use a self-join to make a single table with columns for Employee ID, Employee Name, Manager ID, and Manager Name.** 
+
+
+
+
+
