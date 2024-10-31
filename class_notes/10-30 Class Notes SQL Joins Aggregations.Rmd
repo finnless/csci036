@@ -1,0 +1,410 @@
+---
+title: "10-30 Class Notes - SQL, Aggregations, Joins"
+author: "Sarah Cannon"
+date: "10/30/2024"
+output: html_document
+---
+
+## Announcements
+
+Homework 8: If using extension time, Final Deadline tomorrow, 11:59pm
+Based on class 10/21, 10/23 (Regular Expressions) 
+
+Homework 9: Available tomorrow, due Tuesday, 11/5, 11:59pm 
+(can use up to 48 hours extension time) 
+
+QCL one-on-one appointments and drop-in schedule: https://www.cmc.edu/qcl/mentoring
+
+MAth Tea: Thursday 10/31, 3:30-4:30pm
+Chat with faculty and other students about spring courses and more! 
+Athenaeum Courtyard
+
+Today is the last day of material for Test 2
+
+Monday, 11/4: Modelling (not on test; on first homework after test)
+
+Wednesday, 11/6: Review for test
+
+Monday, 11/11: Test 2 (Homeworks 6-9)
+
+Questions about upcoming schedule?
+
+
+
+## Final Project Rubric
+
+Available on Canvas
+
+Is there anything here that's not clear? 
+
+Overall Guiding Principle: "Does the student demonstrate that they have learned how to work with data this semester?"
+
+
+## SQL
+
+Questions from preclass video? 
+
+Set up connection to database - for class, sales.sqlite (on Canvas)
+
+```{r}
+library(DBI) # to connect to database management systems
+library(RSQLite) # To use SQLite in RMarkdown
+
+db_sales <- dbConnect(
+          SQLite(), ## Dialect of SQL we will be using
+          dbname = "sales.sqlite" ## Name of database and where to find it
+)
+
+db_sales
+```
+
+```{r}
+dbListTables(db_sales)
+```
+
+## Joins
+
+Method 1: Use WHERE
+
+Code from Preclass Video:
+
+```{sql, connection = db_sales}
+SELECT sales_agent, manager 
+  FROM sales_teams
+```
+
+```{sql, connection = db_sales}
+SELECT Sales_Agent, Account, Deal_Stage
+  FROM sales_pipeline
+```
+
+
+```{sql, connection = db_sales}
+SELECT pipeline.sales_agent AS "Agent", 
+       teams.manager, 
+       pipeline.account, 
+       pipeline.Deal_Stage
+  FROM sales_teams AS teams, sales_pipeline AS pipeline
+  WHERE (pipeline.sales_agent = teams.sales_agent) AND 
+    pipeline.deal_stage = "Won"
+```
+
+Is an inner join
+
+
+Method 2: Use JOIN keyword
+
+More code, but will conceptually separate the joining and the filtering. 
+
+Now, joining is part of FROM
+
+When joining column(s) have the same name in both tables: Can use USING
+
+```{sql, connection = db_sales}
+SELECT pipeline.sales_agent AS Agent, 
+       teams.manager, 
+       pipeline.account, 
+       pipeline.Deal_Stage 
+   FROM sales_teams AS teams 
+    JOIN sales_pipeline AS pipeline USING(sales_agent)
+```
+
+Must have parentheses after USING. 
+
+If the columns we're joining by have different names: Use ON instead of USING
+
+```{sql, connection = db_sales}
+SELECT teams.sales_agent AS Agent, 
+       teams.manager, 
+       pipeline.account, 
+       pipeline.deal_stage
+   FROM sales_teams AS teams 
+      JOIN sales_pipeline AS pipeline 
+      ON pipeline.sales_agent = teams.sales_agent
+      WHERE Agent = "Carol Thompson"
+```
+
+These are both still inner joins, only keep sales agents that appear in both tables. 
+
+
+### Outer Joins
+
+Right joins, left joins, and full joins are all examples of outer joins.
+
+Use: 
+LEFT OUTER JOIN
+RIGHT OUTER JOIN (might not always be supported by SQLite)
+FULL OUTER JOIN (might not always be supported by SQLite)
+
+Same concept as tidyverse, different syntax!
+
+Example of LEFT OUTER JOIN: 
+
+```{sql, connection = db_sales}
+SELECT sales_teams.sales_agent AS Agent, 
+  sales_pipeline.deal_stage
+  FROM sales_teams LEFT OUTER JOIN sales_pipeline USING (sales_agent) 
+```
+
+Is agent Carol Thompson included? 
+
+```{sql, connection = db_sales}
+SELECT sales_teams.sales_agent AS Agent, 
+    sales_pipeline.deal_stage
+ FROM sales_teams 
+    LEFT OUTER JOIN sales_pipeline USING (sales_agent)
+WHERE Agent = "Carol Thompson"
+```
+
+Carol Thompson appears in sales_teams but not in sales_pipeline: she has no deals in the pipeline.  But, she's included here because we did a left join rather than an inner join
+
+This is because it's a left join
+
+To do a right join: 
+- If using a robust dialect of SQL: RIGHT OUTER JOIN
+- In SQLite: May need to switch the order of your tables
+
+```{sql, connection = db_sales}
+SELECT sales_teams.sales_agent AS agent, 
+    sales_pipeline.deal_stage
+ FROM sales_pipeline 
+  LEFT OUTER JOIN sales_teams USING (sales_agent)
+ WHERE agent = "Carol Thompson"
+```
+
+Doing a right join is the same as doing a left join with the order of your tables swapped. 
+
+To do a Full join: 
+- If using a robust dialect of SQL: FULL OUTER JOIN
+- In SQLite: May need to do the union of a left join and a right join. 
+
+
+
+## Aggregations
+
+Can accomplish the same things as a summarize()
+
+SUM, COUNT, AVG, MIN, MAX. Goes within SELECT, because it's a new column you're making.
+
+```{sql, connection = db_sales}
+SELECT SUM(Revenue)
+  FROM Accounts
+```
+
+To count the number of rows: COUNT(*)
+
+```{sql, connection = db_sales}
+SELECT COUNT(*) AS "Number of Deals" 
+FROM sales_pipeline
+```
+
+Can also be combined with WHERE: 
+
+```{sql, connection = db_sales}
+SELECT COUNT(*) AS "Number of Deals Won" 
+FROM sales_pipeline
+WHERE deal_stage = "Won"
+```
+
+Find mean closing value of each deal:
+
+```{sql, connection = db_sales}
+SELECT COUNT(*) AS Num_deals_won,
+  AVG(close_value) AS Average_Value
+  FROM sales_pipeline
+  WHERE deal_stage = "Won"
+```
+
+### Group By
+
+Same as group_by() from tidyverse. Now summary statistics are computed for each group.
+
+```{sql, connection = db_sales}
+SELECT  sales_agent,
+    COUNT(*) AS Num_deals_won, 
+    AVG(close_value) AS Average_value
+  FROM sales_pipeline
+  WHERE deal_stage = "Won"
+  GROUP BY sales_agent
+  ORDER BY Average_value DESC
+```
+
+GROUP BY must be after WHERE, before ORDER BY
+
+Works with joins: To group by manager: 
+
+```{sql, connection = db_sales}
+SELECT sales_teams.manager, 
+    COUNT(*) AS "Number Deals Won",
+    AVG(sales_pipeline.close_value) AS "Average Closing Value"
+  FROM sales_teams JOIN sales_pipeline USING (sales_agent) 
+  WHERE sales_pipeline.deal_stage = "Won"
+  GROUP BY sales_teams.manager
+```
+
+
+### FILTER keyword
+
+**DIFFERENT THAN FILTER IN TIDYVERSE!!!!!!!**
+
+For filtering observations *as part of an aggregation*, use FILTER(WHERE(...)) after it (within the SELECT)
+
+e.g., to only count deals with a closing value over 1000
+
+```{sql, connection = db_sales}
+SELECT sales_agent,
+    COUNT(*) AS "Total Deals Won",
+    COUNT(*) FILTER(WHERE( sales_pipeline.close_value > 1000)) AS "Number of deals won over $1000"
+  FROM sales_pipeline
+  WHERE deal_stage = "Won"
+  GROUP BY sales_agent
+```
+
+This filtering *only* applies to whatever aggregation function appears immediately before it. 
+
+If you want to do filtering before all aggregation functions: 
+
+To filter rows _before_ aggregations occur: Use WHERE (for all aggregations) or FILTER(WHERE()) for just one aggregation
+
+To filter rows _after_ an aggregation occurs: Use HAVING (use formulas, not a new name you've made) 
+
+```{sql, connection = db_sales}
+SELECT sales_agent,
+  COUNT(*) AS 'number won'
+  FROM sales_pipeline
+WHERE deal_stage = "Won"
+GROUP BY sales_agent
+HAVING COUNT(*) > 200
+```
+
+Can so this with the column we made with FILTER(WHERE ) as well. 
+
+```{sql, connection = db_sales}
+SELECT sales_agent,
+  COUNT(*) AS 'number won', 
+  COUNT(*) FILTER(WHERE( sales_pipeline.close_value > 1000)) AS "Number of deals won over $1000"
+FROM sales_pipeline
+WHERE deal_stage = "Won"
+GROUP BY sales_agent
+HAVING COUNT(*) FILTER(WHERE( sales_pipeline.close_value > 1000)) > 200
+```
+
+
+### Set Operations
+
+UNION, INTERSECT, MINUS/EXCEPT
+
+To find all accounts, including international
+
+International accounts:
+
+```{sql, connection = db_sales}
+SELECT account, office_location AS location
+  FROM intl_accounts
+```
+
+Domestic Accounts:  (set location manually to USA) 
+
+```{sql, connection = db_sales}
+SELECT account, 
+    "USA" AS Location
+  FROM accounts
+```
+
+Combine them with a union: 
+
+```{sql, connection = db_sales}
+SELECT account, office_location AS location
+  FROM intl_accounts
+  
+UNION
+
+SELECT account, 
+    "USA" AS Location
+  FROM accounts
+```
+
+Like in R: the two table must have the same columns for this to work! 
+
+To do a full join: do a left join, do a right join (by swapping the order of the tables in your join), and then:  take their union
+
+INTERSECT works extremely similarly to UNION (again, tables must have the same columns), only keeps rows that appear in both tables. 
+
+
+To find agents in the sales_teams table but not the sales_pipeline table: Use EXCEPT
+
+```{sql, connection = db_sales}
+SELECT sales_agent FROM sales_teams
+```
+
+```{sql, connection = db_sales}
+SELECT sales_agent FROM sales_pipeline
+```
+
+
+```{sql, connection = db_sales}
+SELECT sales_agent FROM sales_teams
+
+EXCEPT  
+
+SELECT sales_agent FROM sales_pipeline
+```
+
+Is like a set difference (or an anti_join) 
+
+Sometimes, the keyword is MINUS instead (in other dialects of SQL)
+
+
+
+## Disconnecting
+
+Good practice: When done, disconnect from the database 
+
+```{r}
+dbDisconnect(db_sales)
+```
+
+## Order of Keywords
+
+Keywords must appear in the following order (not all of these have to be present)
+1. SELECT
+2. FROM 
+3. WHERE 
+4. GROUP BY 
+5. HAVING 
+6. ORDER BY
+
+## Summary
+
+Inner joins (three options): 
+- Use WHERE
+- Use FROM ... JOIN ... USING (...) [if joining columns have same name]
+- Use FROM ... JOIN ... ON ...
+
+Outer Joins: 
+- Use FROM ... LEFT OUTER JOIN ... USING (...) [if joining columns have same name]
+- Use FROM ... LEFT OUTER JOIN ... ON ...
+
+Aggregations: 
+- Use SUM, MIN, MAX, AVG, COUNT, etc. in SELECT
+- Can also use GROUP BY
+
+Different types of filtering:
+- Before Aggregation: WHERE ...
+- Within one aggregation, but not for all aggregations: FILTER(WHERE ...) within SELECT
+- After aggregation: HAVING ...
+
+Set operations: 
+- UNION, INTERSECT, EXCEPT/MINUS
+
+
+## Activity
+
+On Canvas
+
+If finish regular questions, move on to bonus questions.
+
+If finish bonus questions, check in with Prof. Cannon, then can leave. 
+
+Can work individually or with classmates. 
+
