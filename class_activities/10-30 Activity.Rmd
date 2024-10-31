@@ -15,53 +15,148 @@ library(RMariaDB)
 
 > 1. **Connect to the same Northwind_small.sqlite database from the previous activity, and check that your connection is working using dbListTables:** 
 
+```{r}
+db <- dbConnect(
+          SQLite(), ## Dialect of SQL we will be using
+          dbname = "Northwind_small.sqlite" ## Name of database and where to find it
+)
+db
+``` 
 
 
 > 2. **How many rows are there in the "Order" table? Note: Because ORDER BY is a keyword in SQL, you'll need to reference this table as `Order` or "Order" or 'Order', with quotes.**
 
 
+```{r}
+# set query as string
+query <- "
+SELECT COUNT(*) 
+FROM 'Order'
+"
+
+# run query
+dbGetQuery(db, query)
+```
 
 
 > 3. **What is the smallest value in the freight column, the largest value in the freight column, and the average value in the freight column? **
 
 
+```{r}
+query <- "
+SELECT MIN(Freight), MAX(Freight), AVG(Freight)
+FROM 'Order'
+"
+dbGetQuery(db, query)
+```
 
 > 4. **Find the same values as in #3, but for each different ShipRegion. Hint: You should only have to add one line to your code in the previous part.**
 
 
+```{r}
+query <- "
+SELECT ShipRegion, MIN(Freight), MAX(Freight), AVG(Freight)
+FROM 'Order'
+GROUP BY ShipRegion
+"
+dbGetQuery(db, query)
+```
 
 
 > 5. **Information about employee names and IDs is in the Employee table: ** 
 
-```{sql, connection = db_northwind}
+```{r}
+query <- "
 SELECT * FROM Employee
+LIMIT 10
+"
+dbGetQuery(db, query)
 ```
 
 > **Join the Order and Employee tables by Employee ID (be careful about column names). Your resulting table should have columns for Employee ID, Employee First Name, Employee Last Name, Order ID, and Order Date. **
 
+```{r}
+query <- "
+SELECT * FROM 'Order'
+LIMIT 10
+"
+dbGetQuery(db, query)
+```
 
+EmployeeId in 'Order'
 
+Id in Employee
+
+# Answer question
+
+```{r}
+query <- "
+SELECT 'Order'.EmployeeId, 'Employee'.FirstName, 'Employee'.LastName, 'Order'.Id as OrderId, 'Order'.OrderDate
+FROM 'Order'
+JOIN 'Employee' ON 'Order'.EmployeeId = 'Employee'.Id
+LIMIT 10
+"
+dbGetQuery(db, query)
+```
 
 > 6. **If you haven't already, modify your code in the previous question to use abbreviated names for the tables, for example perhaps o and e in place of Order and Employee. The end result should be the same as the previous question, I'm just asking you to rewrite your code to be more abbreviated.**
 
 
+```{r}
+query <- "
+SELECT o.EmployeeId, e.FirstName, e.LastName, o.Id as OrderId, o.OrderDate
+FROM 'Order' o
+JOIN 'Employee' e ON o.EmployeeId = e.Id
+LIMIT 10
+"
+dbGetQuery(db, query)
+```
 
 > 7. **Disconnect from the Northwind_small database.**
 
+```{r}
+dbDisconnect(db)
+```
 
 
 
 > BONUS: **Sometimes you want to add information to one table that is already there, in the same table, just in a different place! This is called a _self-join_. The employees table of the sales.sqlite database from class has columns for Name, emp_id (Employee ID), and mgr_id(Manager ID).  What if you wanted to add the name of the manager for each employee?  That information is already in the table! Anna Snelling's manager ID is 10036, and if we look further down in the table, we see that Employee 10036 is Dustin Brinkman, so Dustin Brinkman in Anna Snelling's manager: **
 
+```{r}
+db <- dbConnect(
+          SQLite(),
+          dbname = "sales.sqlite"
+)
+db
+```
 
-```{sql, connection = db_sales}
+```{r}
+query <- "
 SELECT * 
   FROM Employees
+LIMIT 10
+"
+dbGetQuery(db, query)
+```
+
+```
+   emp_id               name mgr_id Regional_Office  Status
+1   10001      Anna Snelling  10036         Central Current
+2   10002     Cecily Lampkin  10036         Central Current
+3   10003  Versie Hillebrand  10036         Central Current
 ```
 
 > **To do the self-join, we join a table with itself, but give each copy of the table a different alias (such as "employees AS employee_table" and "employees AS manager_table").  Use a self-join to make a single table with columns for Employee ID, Employee Name, Manager ID, and Manager Name.** 
 
 
-
+```{r}
+query <- "
+SELECT e.emp_id, e.name, e.mgr_id, m.name as mgr_name
+FROM Employees e
+JOIN Employees m ON e.mgr_id = m.emp_id
+LIMIT 10
+"
+dbGetQuery(db, query)
+```
 
 
