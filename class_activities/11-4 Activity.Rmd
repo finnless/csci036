@@ -1,0 +1,90 @@
+---
+title: "11-4 Activity"
+author: "Sarah Cannon"
+date: "11/4/2024"
+output: html_document
+---
+
+```{r, message = FALSE}
+library(modelr)
+options(na.action = na.warn) 
+library(tidyverse)
+```
+
+
+> 1. **Import the Ukraine_Refugee_Data_First50days.csv file, which has information about the total number of refugees from Ukraine from days 19-50 of the war in Ukraine from 2022 (Earlier days during the conflict are omitted because the data is inconsistent/messy/missing).**
+
+
+
+
+> 2.  **Suppose the model $total = 2,150,000 + 61,000 * days_since_start$ is suggested.  Add a column to your table from (a) that has the predicted number of refugees from Ukraine each day, based on this model.**
+
+
+
+> 3.  **Make a scatterplot with days_since_start on the x-axis and total number of refugees on the y-axis. Add a line to your plot for the model total = 2,150,000 + 61,000 * days_since_start. Does this seem like a good model? **
+
+
+
+> 4. **Add to your table a column for the residuals of the model total = 2,150,000 + 61,000 * days_since_start. **
+
+
+
+
+> 5. **Make a scatterplot showing the days_since_start on the x-axis and the residuals on the y-axis.  Are there any patterns in these residuals? **
+
+
+
+
+> 6. **Now, use the lm() function to come up with a different model for this data set that minimizes the sum of the squares of the residuals. What is the equation of this model? **
+
+
+
+
+> 7. **Plot the residuals of this model, in both a scatterplot and a density plot.  What do they tell you about this model? **
+
+
+
+
+> BONUS **Suppose you wanted to find a model for this data that minimizes the sum of the absolute values of the residuals. Consider the following function, which takes in a model mod (as a length two vector, where the first entry is the intercept and the second entry is the slope) and a data set d with an x column and a y column, and outputs the sum of the absolute values of the residuals of this model: **
+
+```{r}
+sum_abs_resid_xy <- function(mod, d){
+  # mod is a length 2 vector with intercept and slope values
+  # mod[1] is the intercept, mod[2] is the slope
+  # d is any data set with a column called "x" and a column called "y"
+  resids <- d$y - (mod[1] + mod[2] * d$x)
+  return( resids %>% abs() %>% sum())
+}
+```
+
+> **Using this function (and renaming columns as necessary), compute the sum of the absolute values of the residuals for the model $total = 2,150,000 + 61,000 * days_since_start$ for the Ukraine data set. **
+
+
+
+
+
+> **The optim() function finds an input to a function that gives the smallest possible output. So, it can be used to find the input (mod) to the function  sum_abs_resid_xy that gives the smallest possible output (the smallest possible sum of the absolute values of the residuals). Here's an example of this for the sim1 data set, a built-in data set that has an x column and a y column: **
+
+```{r}
+sim1
+abs_opt <- optim(
+  fn = sum_abs_resid_xy, # function whose value we're trying to optimize
+  par = c(2.1, 2.6), # initial guess for the model; should be reasonably close to truth
+  d =  sim1 # other arguments that the function needs in order to run
+)
+abs_opt
+```
+> **This tells us that for the sim1 data set, the model that minimizes the sum of the absolute values of the residuals is $y = 4.364846 + 2.048918 * x$. **
+
+> **BONUS: Use the optim() function to find the model for the Ukraine data set that minimizes the sum of the absolute values of the residuals.**
+
+
+
+
+
+> **BONUS: Use what you've just learned to find the model for the Ukraine data set that minimizes the sum of the fourth powers of the residuals. **
+
+
+
+
+

@@ -1,0 +1,468 @@
+---
+title: "Modelling Day 1 - Complete Notes"
+author: "Sarah Cannon"
+date: "2024-11-4"
+output: html_document
+---
+
+
+```{r}
+# Make figures smaller when knitting
+knitr::opts_chunk$set(fig.width=3, fig.height=1.4)
+```
+
+
+# Upcoming Schedule
+
+Homework 9: Due tomorrow, 11/5, 11:59pm 
+(can use up to 48 hours extension time) 
+
+Last Wednesday/Homework 9 is the last material for Test 2
+
+Today: Modelling (not on test; on first homework after test)
+
+Wednesday, 11/6: Review for test
+
+Monday, 11/11: Test 2 (Homeworks 6-9)
+
+Wednesday, 11/13: More Modelling
+
+Due Tuesday, 11/19: Homework 10 (modelling, based on classes 11/4 and 11/13) **AND Final Project Proposal**
+
+Questions about upcoming schedule?
+
+
+# Modelling
+
+A _model_ is a simplification of the real world that helps us make decisions and predictions. 
+
+For example: a map is a useful model. It does not incorporate every building, tree, or bush. But, it has enough information to be useful when planning a route. 
+
+"All models are wrong, but some models are useful." - George Box 
+
+We'll use the modelr package
+
+```{r, results = FALSE, message = FALSE}
+# install.packages("modelr")
+library(modelr)  
+options(na.action = na.warn) # Make sure missing values aren't silently dropped
+
+library(tidyverse)
+```
+
+
+## Linear Models
+
+Childcare costs data set:
+
+```{r, results = FALSE, message = FALSE}
+# Import Childcare Costs
+# Data Dictionary (what names of columns mean): https://github.com/rfordatascience/tidytuesday/blob/master/data/2023/2023-05-09/readme.md
+childcare_costs <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-05-09/childcare_costs.csv')
+
+# Import data set of counties and their fips codes
+counties <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-05-09/counties.csv')
+
+# Merge and filter to only consider California's 58 counties
+childcare_costs_ca <- childcare_costs %>% 
+  left_join(counties) %>% 
+  filter(state_abbreviation == "CA") %>% 
+  filter(study_year == 2018) %>% 
+  select(county_name, flfpr_20to64, mc_infant)
+childcare_costs_ca
+```
+
+- *mc_infant*: Aggregated weekly, full-time median price charged for Center-based Care for infants (i.e. aged 0 through 23 months).
+- *flfpr_20to64*: Labor force participation rate of the female population aged 20 to 64 years old.
+
+**Linear Model: y = c1 + c2 * x  **
+
+First guess: mc_infant = -400 + 10 * flfpr_20to64
+
+```{r, results = FALSE}
+childcare_costs_ca %>% 
+  ggplot() + 
+  geom_point(aes(x = flfpr_20to64, y = mc_infant)) + 
+  geom_abline(aes(intercept = -400, slope = 10))
+```
+
+
+### Assessing Models: Residuals
+
+Residual: Actual data value - predicted data value
+
+Positive Residual: model *underpredicts* - actual value is higher than predicted value
+
+Negative Residual: model *overpredicts* - actual value is lower than predicted value
+This is the case for Napa County
+
+```{r, results = FALSE}
+childcare_costs_ca %>% filter(county_name == "Napa County")
+```
+
+Using code to calculate all residuals: 
+
+```{r, results = FALSE}
+childcare_costs_ca %>% 
+  mutate(prediction = -400 + 10 *flfpr_20to64 ) %>%
+  mutate(residual = mc_infant - prediction)
+```
+
+(can do with only one mutate if you want)
+
+Some residuals are close to 0 (best); some are large and positive (Alpine County); some are large and negative (Mono County)
+
+Note: For this data, a residual of 5 is pretty good. For other data, a residual of 5 might be terrible! 
+
+Depends on the scale of your data. 
+
+If all your y-values are between 0 and 1: a residual of 5 is terrible!   
+If your y-values range from 10,000 to 80,000: a residual of 5 is great!
+
+Residuals for different data are not comparable. 
+
+
+### Comparing Models
+
+Compared to other models for this same data, are these residuals good or bad? 
+Need to somehow combine/aggregate all these residuals
+
+Sum/average: positives and negatives cancel out! 
+It's really the absolute value of the residuals that matters (how far they are from 0)
+
+Option 1: SUm the absolute values of the residuals
+
+```{r, results = FALSE}
+childcare_costs_ca %>% 
+  mutate(prediction = -400 + 10 *flfpr_20to64 ) %>%
+  mutate(residual = mc_infant - prediction) %>% 
+  summarize(sum(abs(residual)))
+```
+
+On its own, this tell us nothing! 
+
+What about a different model? 
+
+```{r, results = FALSE}
+childcare_costs_ca %>% 
+  mutate(prediction = -365 + 9.5 * flfpr_20to64 ) %>%
+  mutate(residual = mc_infant - prediction)  %>% 
+  summarize(sum(abs(residual)))
+
+```
+
+This model has a slightly larger value for the sum of the absolute values of the residuals; according to this metric, it's worse. 
+
+(only compare this number to other models for the same data, aggregating the residuals in the same way)
+
+
+Option 2: Sum the squares of the the residuals
+```{r, results = FALSE}
+childcare_costs_ca %>% 
+  mutate(prediction = -400 + 10 *flfpr_20to64 ) %>%
+  mutate(residual = mc_infant - prediction) %>%
+  summarize(sum(residual^2))
+```
+
+Note: Don't compare to sum(abs(residaul)): is a completely different calculation! 
+
+Compared to our other model: 
+
+```{r, results = FALSE}
+childcare_costs_ca %>%
+  mutate(prediction = -365 + 9.5 *flfpr_20to64 ) %>%
+  mutate(residual = mc_infant - prediction) %>%
+  summarize(sum(residual^2))
+```
+
+According to this metric - sum(residual^2) - this second model is actually better! 
+
+What the best model is depends on your criteria/how you're assessing it. 
+
+Most of the time: Use sum(residuals^2): but this isn't always the best choice
+
+(Homework: An example where sum(abs(residuals)) may be a better criteria to use)
+
+
+### Finding the *best* model according to some criteria - lm()
+
+For sum(abs(residuals)): see textbook; bonus activity (write a function, use optim)
+
+For sum(residuals^2): Use lm() function 
+(part of why this is the default is that it's easy to calculate)
+
+Format: lm(y_col ~ x_col, data = dataset_name_here)
+
+```{r, results = FALSE}
+lm(mc_infant~ flfpr_20to64, data = childcare_costs_ca)
+```
+
+Best model (according to sum of squares of residuals, rounded to three decimal places): 
+
+mc_infant = -365.199 + 9.466 * flfpr_20to64
+
+If want to reference model: store it in an object 
+
+```{r, results = FALSE}
+childcare_model <- lm(mc_infant ~ flfpr_20to64, data = childcare_costs_ca)
+childcare_model
+```
+
+To get coefficients of model: 
+
+```{r, results = FALSE}
+childcare_model$coefficients
+childcare_model$coefficients[1]
+childcare_model$coefficients[2]
+```
+
+For example, can use this and geom_abline() to plot the model: 
+
+```{r, results = FALSE}
+childcare_costs_ca %>% 
+  ggplot() + 
+  geom_point(aes(x = flfpr_20to64, y = mc_infant)) + 
+  geom_abline(aes(intercept = childcare_model$coefficients[1], 
+                  slope = childcare_model$coefficients[2]))
+```
+
+It's better to reference the coefficients exactly rather than typing them - get more digits of precision
+e.g., don't type "intercept = -365.199259"
+
+The model object contains a lot more information as well!
+
+
+### Helpful modelR functions - for models made with lm()
+
+*add_predictions*: takes in a data set with a column that has the same name as the predictor variable, and adds a new column with what the model predicts for those values. 
+
+```{r, results = 'hide'}
+childcare_costs_ca %>% add_predictions(childcare_model)
+
+
+rates <- tibble(flfpr_20to64 = c(60, 65, 70, 75, 80))
+rates 
+rates %>% add_predictions(childcare_model)
+```
+
+*add_residuals*: takes takes in a data set with a column that has the same name as the predictor variable AND a column that has the same name as the predicted variable, and adds a new column with the residuals
+
+```{r, results = 'hide'}
+childcare_costs_ca %>% add_residuals(childcare_model) 
+
+## This command won't work - need actual data values too to be able to calculate residuals
+rates %>% add_residuals(childcare_model)
+```
+
+
+Useful because can be used to apply an old model to new data.
+
+Note: both of these *only* work for models made with the lm() function
+For all models, can calculate predictions and residuals with mutate()
+
+
+### Assessing models by Plotting Residuals
+
+Even if you know a model is "best" according to some criteria, does that mean it's a good model? No, not necessarily.  
+
+(1) Want there to be no patterns in the residuals. 
+
+Model shouldn't consistently overestimate certain parameter ranges and consistently underestimate other parameter ranges
+
+```{r, results = 'hide'}
+childcare_costs_ca_resids <- childcare_costs_ca %>% 
+  add_residuals(childcare_model) 
+
+ggplot(childcare_costs_ca_resids) + geom_point(aes(x = flfpr_20to64, y = resid))
+```
+
+This seems pretty good - there is maybe a slightly downward trend in the residuals, but otherwise there doesn't seem to be much of a pattern
+
+Consider a data set u: 
+
+```{r, results = 'hide'}
+# you don't need to know how this example data set is made
+u <- tibble(x =c(1:10, 1:10)) %>%
+  mutate(y = 3 - 2.3 * x + 0.2 * x^2 + 0.5 * rnorm(length(x)))
+u
+
+modu <- lm(y ~ x, data = u)
+
+# a third way of calculating residuals
+u_res <- u %>% mutate(residuals = modu$residuals)
+u_res
+
+ggplot(data = u_res) + 
+  geom_point(aes(x, y = residuals))
+```
+
+Is definitely a pattern here: in certain ranges the model overestimates, in certain ranges the model underestimates. This isn't a good model! 
+
+This is in part because the original data isn't linear: 
+
+```{r, results = FALSE}
+ggplot(u) + geom_point(aes(x,y))
+```
+
+A line is not always the best model for your data! 
+
+Sometimes pattern in your data are immediately visible, but sometimes non-linear patterns only reveal themselves when looking for patterns in the residuals. 
+
+
+(2) Residuals should be normally distributed (look like a "Bell Curve") centered around 0: 
+
+```{r, results = FALSE}
+n <- tibble(x = rnorm(100000, 0, 1))
+ggplot(n) + geom_histogram(aes(x = x), bins = 100)
+```
+
+That residuals are distributed this way is an assumption made by the lm function
+
+If your residuals are far from normally distributed, that's a sign using the lm function maybe wasn't the best choice
+(your data has "skew")
+
+To see "shape" of residuals: can use geom_histogram, but to see general pattern can be more helpful to use: geom_density: like a histogram, but only the tops of the bins are shown, and somesmoothing is applies 
+
+```{r, results = FALSE}
+# For normal distribution above: 
+ggplot(n) + geom_density(aes(x = x))
+# This is what your residuals should look like
+```
+
+```{r, results = FALSE}
+#For childcare model 
+ggplot(childcare_costs_ca_resids) + geom_density(aes(x = resid))
+```
+
+This is centered about 0, which is nice!  But has two peaks instead of 1.  
+This is a pretty good model, but certainly room for improvement
+
+How close to a normal distribution you need to be depends on application area! 
+
+Keep in mind: With a small number of data points, don't expect curve to be perfect
+
+```{r, results = FALSE}
+# 58 numbers, normally distributed
+n <- tibble(x = rnorm(58, 0, 1))
+ggplot(n) + geom_density(aes(x = x))
+```
+
+
+
+### Correlation
+
+*is* comparable across different models
+
+*Correlation*: A number between -1 and 1 that describes how linearly related two variables are (Mathematically: a scaled version of covariance)
+
+r = +1: a perfect line with (any) positive slope
+
+r = -1: a perfect line with (any) negative slope 
+
+https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Correlation_examples2.svg/1920px-Correlation_examples2.svg.png
+
+Lines with different slopes can all have correlation 1. 
+
+Things with correlation 0: 
+- lines with 0 slope
+- data with no overall upward or downward trend
+
+Correlation = 0: Doesn't imply there's no relationship between the two variables, it just says there's not a linear relationship. 
+
+Square of the correlation = R^2 value = "Coefficient of determination" = how much of the variance int the y-variable (dependent variables) can be explained by the x-variable (independent variable). 
+
+Can get from the output of an lm function using summary.
+
+```{r, results = 'hide', fig.show='hide'}
+summary(childcare_model)
+summary(childcare_model)$r.square
+```
+
+About 56% of the variance in prices can be predicted by the female labor force participation rate.
+
+Whether this means the model is good or not depends on the context. 
+
+
+# Remember: Correlation does not mean causation!
+
+Just because we see a relationship between two variables, does not mean one is *causing* or *affecting* the other. 
+- Might be a third confounding variable.  For example, when ice cream sales are higher violent crime also tends to be higher. Third variable affecting both: heat! 
+- Might be hard to know which is affecting the other. For example, Vitamin D levels correlate with depression. Don't know if one causes the other. 
+
+And more reasons!
+
+Be especially careful about this in your final project.
+
+
+# Remember: Linear models are not the only type of models!
+
+Just because there is not a linear relationship between two variables doesn't mean there's no relationship!
+
+
+# Missing Values
+
+If you have NA for y or x, cannot get any information about their relationship, so can't be included in model.
+
+R's default behavior: silently drop them
+
+Better: Make sure you get a warning. Put when load library(modelr)
+
+```{r, results = FALSE}
+options(na.action = na.warn)
+```
+
+```{r, results = FALSE}
+df <- tribble(
+  ~x, ~y,
+  1, 2.2,
+  2, NA,
+  3, 3.5,
+  4, 8.3,
+  NA, 10
+)
+df
+
+mod <- lm(y ~ x, data = df)
+```
+
+Can see exactly how many observations were used for a model: 
+
+```{r, results = FALSE}
+nobs(mod)
+```
+
+
+## Summary 
+
+Linear Model: y = c1 + c2 * x
+
+Residual: Actual data value - predicted value. 
+
+If there's a pattern in the residuals: A sign your model is not capturing everything it should
+
+Finding the "best" model: Need to specify criteria
+
+Find the model that minimizes the sum of the squares of the residuals: use lm()
+
+Format: lm(y_col ~ x_col, data = dataset_name_here)
+
+Helpful Functions: add_predictions, add_residuals
+
+Assumption (which you should check): residuals are normally distributed
+
+Correlation, R^2 value: Assess how close your data is to a line, can be compared across datasets/models
+
+new geoms: 
+- geom_abline: draw a line with spcified slope and intercept
+- geom_densty: draw a curve that approximates the shape of a histogram
+
+## Activity
+
+On Canvas
+
+If finish regular questions, move on to bonus questions.
+
+If finish bonus questions, check in with Prof. Cannon, then can leave. 
+
+Can work individually or with classmates. 
+
