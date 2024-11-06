@@ -62,15 +62,15 @@ dbListTables(chinook_db)
 
 > c. **Set up a code chunk that can run SQL queries for this database. Use code to output all columns of the Album table. **
 
-```{r}
-dbGetQuery(chinook_db, "SELECT * FROM Album")
+```{sql, connection = chinook_db}
+SELECT * FROM Album
 ```
 
 
 > d. **Consider the table Track.  How many rows does it have and how many columns does it have? **
 
-```{r}
-dbGetQuery(chinook_db, "SELECT COUNT(*) FROM Track")
+```{sql, connection = chinook_db}
+SELECT COUNT(*) FROM Track
 ```
 
 
@@ -82,46 +82,38 @@ dbGetQuery(chinook_db, "SELECT COUNT(*) FROM Track")
 
 > a. **Output just the AlbumId and Name columns from the Track data Table. The names of these two columns in your output should be "Album ID" (with a space between Album and ID) and "Name of Track", respectively.** 
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
 SELECT AlbumId AS 'Album ID', Name AS 'Name of Track'
 FROM Track
-")
 ```
 
 
 
 > b. **How many different track names appear in the Track data table? Explain how you know.**
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
 SELECT COUNT(DISTINCT Name) AS num_distinct_names
 FROM Track
-")
 ```
 
 
 
 > c. **Arrange the Track table by UnitPrice. When there is a tie in UnitPrice, next arrange by Milliseconds. Be sure you display the UnitPrice, Milliseconds, and Name columns as the first three columns in your answer. Including more columns beyond these three is optional. ** 
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
 SELECT UnitPrice, Milliseconds, Name
 FROM Track
 ORDER BY UnitPrice, Milliseconds
-")
 ```
 
 
 
 > d. **Arrange the Track data table by Milliseconds, from highest to lowest. There is no need to include any tiebreakers. Be sure you display the Milliseconds and Name columns as the first two columns in your answer. Including more columns beyond these two is optional.** 
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
 SELECT Milliseconds, Name
 FROM Track
 ORDER BY Milliseconds DESC
-")
 ```
 
 
@@ -133,11 +125,9 @@ ORDER BY Milliseconds DESC
 > **Make two new columns in the Track data set, one that displays the length of the track in Seconds and one that displays the length of the track in minutes; these new columns should be calls "Length in Seconds" and "Length in Minutes", respectively.  Note there are 1000.0 milliseconds in one second, and 60.0 seconds in one minute; be sure to use 1000.0 and 60.0 in any calculations you do rather than 1000 and 60. Be sure you display your two new columns, the Milliseconds column, and the Name column as the first four columns in your answer. Including more columns beyond these four is optional.**
 
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
 SELECT Milliseconds, Name, (Milliseconds / 1000.0) AS 'Length in Seconds', (Milliseconds / 60000.0) AS 'Length in Minutes'
 FROM Track
-")
 ```
 
 &nbsp;
@@ -148,70 +138,58 @@ FROM Track
 
 > a. **Filter the Track data table to find all observations where the GenreID is not 2.**
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
 SELECT *
 FROM Track
 WHERE GenreId != 2
-")
 ```
 
 
 > b. **Filter the Track data table to find all observations where the track Name contains the substring "Love". It is fine if the string you're looking for appears capitalized or lowercase, and it's fine if it appears as a substring of a longer word. **
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
 SELECT *
 FROM Track
 WHERE Name LIKE '%Love%'
-")
 ```
 
 
 > c. **Filter the Track data table to find all observations where the track Name contains "Love" or the track name contains "Hate". It is fine if the strings you're looking for appear capitalized or lowercase, and it's fine if they appear as a substring of a longer word. **
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
 SELECT *
 FROM Track
 WHERE Name LIKE '%Love%' OR Name LIKE '%Hate%'
-")
 ```
 
 
 
 > d. **Filter the Track data table to find all observations where the track Name contains "Love", "Live", or any other string that has an L, followed by any single character, followed by "ve". It is fine if the strings you're looking for appear capitalized or lowercase, and it's fine if they appear as a substring of a longer word.**
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
 SELECT *
 FROM Track
 WHERE Name LIKE '%L_ve%'
-")
 ```
 
 
 
 > e. **Filter the Track data table to find all observations where there is no information on the composer of the track.  **
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
 SELECT *
 FROM Track
 WHERE Composer IS NULL
-")
 ```
 
 
 
 > f. **Filter the Track data table to display rows 1,001 to 1,500.  Your answer should not use the TrackId column; your command should be one that would work on any table, even those without ID columns. **
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
 SELECT *
 FROM Track
 LIMIT 500 OFFSET 1000
-")
 ```
 
 
@@ -223,46 +201,38 @@ LIMIT 500 OFFSET 1000
 
 > a. **Calculate the total Bytes of all tracks in the Tracks data set. **
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
 SELECT SUM(Bytes) AS total_bytes
 FROM Track
-")
 ```
 
 
 
 > b. **Calculate the minimum, mean, and maximum milliseconds of the tracks listed in the Track data table.**
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
 SELECT MIN(Milliseconds) AS min_milliseconds, AVG(Milliseconds) AS mean_milliseconds, MAX(Milliseconds) AS max_milliseconds
 FROM Track
-")
 ```
 
 
 
 > c. **Do the same calculations as part (b), but only for tracks where composer information is available. **
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
 SELECT MIN(Milliseconds) AS min_milliseconds, AVG(Milliseconds) AS mean_milliseconds, MAX(Milliseconds) AS max_milliseconds
 FROM Track
 WHERE Composer IS NOT NULL
-")
 ```
 
 
 
 > d. **Do the same calculations as part (b), but separately for each GenreID.**
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
 SELECT GenreId, MIN(Milliseconds) AS min_milliseconds, AVG(Milliseconds) AS mean_milliseconds, MAX(Milliseconds) AS max_milliseconds
 FROM Track
 GROUP BY GenreId
-")
 ```
 
 
@@ -294,33 +264,27 @@ Answer:
 
 > b. (3 points) **Join the Track and Album tables on their common column(s) to create a new table with columns for TrackId, Name (of track), AlbumId, Title (of album), and ArtistId.  Do this join _without_ using the join keyword. **
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
   SELECT Track.TrackId, Track.Name, Track.AlbumId, Album.Title, Album.ArtistId
   FROM Track, Album
   WHERE Track.AlbumId = Album.AlbumId
-")
 ```
 
 
 > c. (3 points) **Produce the same table as the previous part, but this time using the JOIN keyword and the USING keyword. **
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
   SELECT Track.TrackId, Track.Name, Track.AlbumId, Album.Title, Album.ArtistId
   FROM Track JOIN Album USING(AlbumId)
-")
 ```
 
 
 
 > d. (3 points) **Produce the same tibble as the previous two parts, but this time using the JOIN keyword and the ON keyword. **
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
   SELECT Track.TrackId, Track.Name, Track.AlbumId, Album.Title, Album.ArtistId
   FROM Track JOIN Album ON Track.AlbumId = Album.AlbumId
-")
 ```
 
 
@@ -333,12 +297,10 @@ dbGetQuery(chinook_db, "
 
 > f. (3 points) **Filter the tibble produced in parts (b)-(d) to only include Tracks where the Track does not mention "Walk" and the album title does not mention "Rock".  **
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
   SELECT Track.TrackId, Track.Name, Track.AlbumId, Album.Title, Album.ArtistId
   FROM Track JOIN Album ON Track.AlbumId = Album.AlbumId
   WHERE Track.Name NOT LIKE '%Walk%' AND Album.Title NOT LIKE '%Rock%'
-")
 ```
 
 
@@ -350,55 +312,45 @@ dbGetQuery(chinook_db, "
 
 > a. **(2 points) Make a table displaying all the different ArtistId's that appear in the Album table.If you've done this right, you should get a table with one column and 204 rows. **
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
   SELECT DISTINCT ArtistId
   FROM Album
-")
 ```
 
 
 > b. **(2 points) Make a table displaying all the different ArtistId's that appear in the Artist table. If you've done this right, you should get a table with one column and 275 rows. **
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
   SELECT DISTINCT ArtistId
   FROM Artist
-")
 ```
 
 
 
 > c. **(3 points) Using your answer to the previous two parts, write a code chunk that determines which ArtistIds appear in both the Album table and in the Artist table. **
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
   SELECT Album.ArtistId
   FROM Album JOIN Artist ON Album.ArtistId = Artist.ArtistId
-")
 ```
 
 
 
 > d. **(3 points) Using your answers to parts (a) and (b), write a code chunk to determine which ArtistIds appear in the Artist table but not the Album table. ** 
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
   SELECT Artist.ArtistId
   FROM Artist LEFT JOIN Album ON Artist.ArtistId = Album.ArtistId
   WHERE Album.ArtistId IS NULL
-")
 ```
 
 
 
 > e.  **(3 points) Use an appropriate  join to add the Album information from the Album table to the Artist table, keeping the ArtistId, Artist Name, AlbumId, and Album Title column column. All artists that appear in the Artist table should appear in your output, whether or not they have an album in the Album table.  **
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
   SELECT Artist.ArtistId, Artist.Name, Album.AlbumId, Album.Title
   FROM Artist LEFT JOIN Album ON Artist.ArtistId = Album.ArtistId
-")
 ```
 
 
@@ -426,74 +378,63 @@ WHERE is used to filter rows before aggregation, while HAVING is used to filter 
 > a. **Create a table that has a column that contains each AlbumId that appears in Track, a column for how many times that AlbumId appears in Track, and a column for the average milliseconds of all tracks on that album. Give your columns appropriate names.** 
 
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
   SELECT AlbumId, COUNT(*) AS num_tracks, AVG(Milliseconds) AS avg_milliseconds
   FROM Track
   GROUP BY AlbumId
-")
 ```
 
 
 > b. **Modify your answer to (a) so that the count and average only include the observations where the GenreId is 1 (Rock).  That is, you should have a column for AlbumId, a column for the number of tracks on that album that have GenreId 1, and a column for the average length (in milliseconds) of the tracks on that album that have GenreId 1. Your answer should not have any rows for albums with no Rock tracks. Give your columns appropriate names.**
 
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
   SELECT AlbumId, COUNT(*) AS RockTrackCount, AVG(Milliseconds) AS AvgMilliseconds
   FROM Track
   WHERE GenreId = 1
   GROUP BY AlbumId
-")
 ```
 
 
 > c. **Modify your answer to (b) so that you do have rows for the albums that have no tracks with genre 1; For example, there should be a row in your table for AlbumId 8, with 0 in the Number of Rock Tracks column and NA for the Average Length (in milliseconds) of the rock tracks on that album. **
 
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
   SELECT Album.AlbumId, 
          COUNT(CASE WHEN Track.GenreId = 1 THEN Track.TrackId ELSE NULL END) AS RockTrackCount, 
          AVG(CASE WHEN Track.GenreId = 1 THEN Track.Milliseconds ELSE NULL END) AS AvgMilliseconds
   FROM Album
   LEFT JOIN Track ON Album.AlbumId = Track.AlbumId
   GROUP BY Album.AlbumId
-")
 ```
 
 
 > d. **Make a table that has three columns: Album Id, Total number of tracks on that album, and total number of rock tracks on that album. **  
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
   SELECT AlbumId, 
          COUNT(*) AS num_tracks, 
          SUM(CASE WHEN GenreId = 1 THEN 1 ELSE 0 END) AS num_rock_tracks
   FROM Track
   GROUP BY AlbumId
-")
 ```
 
 
 > e. **Modify your code from (d) to only keep those AlbumIds that have at least 10 tracks total.**
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
   SELECT AlbumId, 
          COUNT(*) AS num_tracks, 
          SUM(CASE WHEN GenreId = 1 THEN 1 ELSE 0 END) AS num_rock_tracks
   FROM Track
   GROUP BY AlbumId
   HAVING COUNT(*) >= 10
-")
 ```
 
 
 > f. **Modify your code from (d) to also include a column for the Title of each album. **
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
   SELECT Album.AlbumId, 
          Album.Title, 
          COUNT(Track.TrackId) AS num_tracks, 
@@ -501,7 +442,6 @@ dbGetQuery(chinook_db, "
   FROM Album
   LEFT JOIN Track ON Album.AlbumId = Track.AlbumId
   GROUP BY Album.AlbumId
-")
 ```
 
 
@@ -512,14 +452,12 @@ dbGetQuery(chinook_db, "
 
 >  **Using any method you'd like, make a table with two columns: One for Genre (the full Genre name, not the GenreId), and one for how frequently the GenreId for that Genre appears in Tracks. **
 
-```{r}
-dbGetQuery(chinook_db, "
+```{sql, connection = chinook_db}
   SELECT Genre.Name AS Genre, 
          COUNT(Track.GenreId) AS Frequency
   FROM Track
   JOIN Genre ON Track.GenreId = Genre.GenreId
   GROUP BY Genre.Name
-")
 ```
 
 
