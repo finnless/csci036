@@ -1,0 +1,271 @@
+---
+title: "Homework 8"
+author: "Sarah Cannon"
+date: 'Due: 11/5/2024'
+output:
+  html_document: default  
+  pdf_document: default
+---
+
+```{r, message = FALSE, echo = FALSE}
+library(DBI)
+library(RSQLite)
+```
+
+## Question 1 (3 points)
+
+> **As we get farther into this semester, rather than providing you with specific ethics resources, I'm going to start asking you to do some of your own research!  This more closely mimics what you might need to do in the future, where you won't have a professor guiding your exploration and learning. **
+
+> **Find (at least) three different sources that discuss *differential privacy*.  List your three sources below. Using these three sources, explain in your own words in about one paragraph what differential privacy is, what its benefits are, and what some downsides are. **
+
+
+
+
+
+&nbsp;
+
+## Question 2 (2 points)
+
+> **Explain the difference between read_csv and dbConnect().  When would you want to use read_csv(), and when would you want to use dbConnect()? ** 
+
+
+
+
+
+&nbsp;
+
+## Question 3 (8 points)
+
+> a. **Set up a connection to the database in the Chinook_Sqlite.sqlite file; the rest of this assignment will use this connection. This data is publicly available at https://github.com/lerocha/chinook-database; this link also has come information about the tables included and the relationship between these tables. **
+
+
+
+
+> b. **Use code to output a list of all the tables in the Chinook database. ** 
+
+
+
+> c. **Set up a code chunk that can run SQL queries for this database. Use code to output all columns of the Album table. **
+
+
+
+> d. **Consider the table Track.  How many rows does it have and how many columns does it have? **
+
+
+
+
+
+&nbsp;
+
+## Question 4 (8 points)
+
+> a. **Output just the AlbumId and Name columns from the Track data Table. The names of these two columns in your output should be "Album ID" (with a space between Album and ID) and "Name of Track", respectively.** 
+
+
+
+
+> b. **How many different track names appear in the Track data table? Explain how you know.**
+
+
+
+
+> c. **Arrange the Track table by UnitPrice. When there is a tie in UnitPrice, next arrange by Milliseconds. Be sure you display the UnitPrice, Milliseconds, and Name columns as the first three columns in your answer. Including more columns beyond these three is optional. ** 
+
+
+
+
+> d. **Arrange the Track data table by Milliseconds, from highest to lowest. There is no need to include any tiebreakers. Be sure you display the Milliseconds and Name columns as the first two columns in your answer. Including more columns beyond these two is optional.** 
+
+
+
+
+&nbsp;
+
+## Question 5 (3 points) 
+
+> **Make two new columns in the Track data set, one that displays the length of the track in Seconds and one that displays the length of the track in minutes; these new columns should be calls "Length in Seconds" and "Length in Minutes", respectively.  Note there are 1000.0 milliseconds in one second, and 60.0 seconds in one minute; be sure to use 1000.0 and 60.0 in any calculations you do rather than 1000 and 60. Be sure you display your two new columns, the Milliseconds column, and the Name column as the first four columns in your answer. Including more columns beyond these four is optional.**
+
+
+
+&nbsp;
+
+## Question 6 (12 points)
+
+> **In all parts below, make sure your answer displays the column(s) you are using for your filtering and the Name column; including additional columns is optional.**
+
+> a. **Filter the Track data table to find all observations where the GenreID is not 2.**
+
+
+
+> b. **Filter the Track data table to find all observations where the track Name contains the substring "Love". It is fine if the string you're looking for appears capitalized or lowercase, and it's fine if it appears as a substring of a longer word. **
+
+
+
+> c. **Filter the Track data table to find all observations where the track Name contains "Love" or the track name contains "Hate". It is fine if the strings you're looking for appear capitalized or lowercase, and it's fine if they appear as a substring of a longer word. **
+
+
+
+
+> d. **Filter the Track data table to find all observations where the track Name contains "Love", "Live", or any other string that has an L, followed by any single character, followed by "ve". It is fine if the strings you're looking for appear capitalized or lowercase, and it's fine if they appear as a substring of a longer word.**
+
+
+
+
+> e. **Filter the Track data table to find all observations where there is no information on the composer of the track.  **
+
+
+
+
+> f. **Filter the Track data table to display rows 1,001 to 1,500.  Your answer should not use the TrackId column; your command should be one that would work on any table, even those without ID columns. **
+
+
+
+
+&nbsp;
+
+## Question 7 (8 points) 
+
+
+> a. **Calculate the total Bytes of all tracks in the Tracks data set. **
+
+
+
+
+> b. **Calculate the minimum, mean, and maximum milliseconds of the tracks listed in the Track data table.**
+
+
+
+
+> c. **Do the same calculations as part (b), but only for tracks where composer information is available. **
+
+
+
+
+> d. **Do the same calculations as part (b), but separately for each GenreID.**
+
+
+
+
+&nbsp;
+
+## Question 8 (16 points) 
+
+> a. (2 points) **What column(s) do the Track and Album tables have in common?  What column(s) to the Album and Artist tables have in common? What column(s) to the Artist and Track table have in common? You should only include columns where the data in the two columns is the same, that is, when these are columns you might want to join by.**
+
+
+
+> b. (3 points) **Join the Track and Album tables on their common column(s) to create a new table with columns for TrackId, Name (of track), AlbumId, Title (of album), and ArtistId.  Do this join _without_ using the join keyword. **
+
+
+
+> c. (3 points) **Produce the same table as the previous part, but this time using the JOIN keyword and the USING keyword. **
+
+
+
+
+> d. (3 points) **Produce the same tibble as the previous two parts, but this time using the JOIN keyword and the ON keyword. **
+
+
+
+
+> e. (2 points) **Explain when you can use the USING keyword, and when you can use the ON keyword. **
+
+
+
+> f. (3 points) **Filter the tibble produced in parts (b)-(d) to only include Tracks where the Track does not mention "Walk" and the album title does not mention "Rock".  **
+
+
+
+
+
+&nbsp;
+
+## Question 9 (13 points)
+
+> a. **(2 points) Make a table displaying all the different ArtistId's that appear in the Album table.If you've done this right, you should get a table with one column and 204 rows. **
+
+
+
+> b. **(2 points) Make a table displaying all the different ArtistId's that appear in the Artist table. If you've done this right, you should get a table with one column and 275 rows. **
+
+
+
+
+> c. **(3 points) Using your answer to the previous two parts, write a code chunk that determines which ArtistIds appear in both the Album table and in the Artist table. **
+
+
+
+
+> d. **(3 points) Using your answers to parts (a) and (b), write a code chunk to determine which ArtistIds appear in the Artist table but not the Album table. ** 
+
+
+
+
+> e.  **(3 points) Use an appropriate  join to add the Album information from the Album table to the Artist table, keeping the ArtistId, Artist Name, AlbumId, and Album Title column column. All artists that appear in the Artist table should appear in your output, whether or not they have an album in the Album table.  **
+
+
+
+
+
+&nbsp;
+
+## Question 10 (4 points)
+
+> a. **Explain, in your own words, the difference between WHERE and FILTER(WHERE ), including where in an SQL query they would appear and when you'd want to use one vs. the other.** 
+
+
+
+> b. **Explain, in your own words, the difference between WHERE and HAVING, including where in an SQL query they appear and when you'd want to use one vs. the other. **
+
+ 
+
+
+&nbsp;
+
+## Question 11 (18 points)
+
+> a. **Create a table that has a column that contains each AlbumId that appears in Track, a column for how many times that AlbumId appears in Track, and a column for the average milliseconds of all tracks on that album. Give your columns appropriate names.** 
+
+
+
+
+> b. **Modify your answer to (a) so that the count and average only include the observations where the GenreId is 1 (Rock).  That is, you should have a column for AlbumId, a column for the number of tracks on that album that have GenreId 1, and a column for the average length (in milliseconds) of the tracks on that album that have GenreId 1. Your answer should not have any rows for albums with no Rock tracks. Give your columns appropriate names.**
+
+
+
+
+> c. **Modify your answer to (b) so that you do have rows for the albums that have no tracks with genre 1; For example, there should be a row in your table for AlbumId 8, with 0 in the Number of Rock Tracks column and NA for the Average Length (in milliseconds) of the rock tracks on that album. **
+
+
+
+
+> d. **Make a table that has three columns: Album Id, Total number of tracks on that album, and total number of rock tracks on that album. **  
+
+
+
+> e. **Modify your code from (d) to only keep those AlbumIds that have at least 10 tracks total.**
+
+
+
+> f. **Modify your code from (d) to also include a column for the Title of each album. **
+
+
+
+
+&nbsp;
+
+## Question 12 (4 points) 
+
+>  **Using any method you'd like, make a table with two columns: One for Genre (the full Genre name, not the GenreId), and one for how frequently the GenreId for that Genre appears in Tracks. **
+
+
+
+
+&nbsp;
+
+## Question 13 (1 points)
+
+> **Close your connection to the database used throughout this assignment. **
+
+
+
