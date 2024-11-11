@@ -1,0 +1,367 @@
+---
+title: "Test 2 Information and Review"
+author: "CSCI 36, Fall 2024"
+date: "11/6/2024"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+# Upcoming Schedule
+
+Office hours next week: 
+- Monday 1:15-2:15 (If you have last-minute questions and can't make this time, send me an email)
+- Tuesday 10:30-11:30 and 2-3pm
+- Wednesday 1:15-2:15pm
+
+Today: 
+- Review for Test 2
+
+Tomorrow: 
+- Final deadline for Homework 9 (if using extension hours), 11:59pm
+
+Monday, November 11: 
+- Test 2, in class
+
+(no homework due)
+
+Wednesday, November 13: 
+- Normal pre-class video, class
+
+Monday, November 18
+- Normal pre-class video, class
+
+Tuesday, November 19
+- Final Project Proposal Due
+- Homework 10 due (Based on class on 11/4 and 11/13)
+
+Questions? 
+
+
+
+# Test 2 Overview
+
+**Date**: Monday, November 11, 2024
+
+**Time**: You will have 75 minutes to take the exam. 
+
+**Rules**: Must take test in person at scheduled time
+(only exceptions: by prior arrangement, or unforeseeable extenuating circumstances make it impossible for you to take the test in person at the scheduled time; documentation required)
+
+**Materials**: Can bring one 8.5"x11" paper with notes, two-sided (or two pages, one-sided). Must be hand-written, and each student must make their own. Students may *not* write on tablet and print. Must be written large enough for me to read. Will turn in at end of exam, make sure your name is on it.
+
+No calculators.
+
+**Test Rules**:
+
+Do not write on backs of pages
+
+Write initials at the top of every page
+
+Nothing on desk except test, cheat sheet, writing implements, drink
+
+Sit every other seat in the classroom. 
+
+
+**Material**: Everything from Monday, September 30 through Wednesday, October 30. This includes everything on Homeworks 6-9, all pre-class videos, class notes, and all activities, but not the BONUS activities. Here's a high-level description of the topics: 
+
+- Keys, Foreign Keys
+- Mutating Joins, Filtering Join
+- Sets and set operations: the concepts, how they show up in data science, and the specific functions for them
+- Factors
+- Regular Expressions/Using Regular Expressions
+- SQL
+
+Material from earlier in the semester will not be the main focus of any question on the test, but since this class is cumulative earlier material might show up in small ways. (For example: pipes may be used; understanding group_by() is important for understanding GROUP BY in SQL; you might be asked to make and/or explain ggplots)
+
+Modelling with one numeric variable, from class on 11/4, is not on the exam. 
+
+**Test Format**: Similar to first test; On paper (not computers)
+
+_True/False_, _Short Answer_, _Open-ended Questions_
+
+I will be clear about exactly what I'm looking for in an answer (number of sentences, tibble, etc.). In giving partial credit, I am looking to see how well you understand the concepts.
+
+Things I might ask you do to: 
+
+- Explain a concept/idea/function/etc. in your own words
+- Look at code and find/explain the mistake in it
+- Interpret/explain output of code
+- Given sample tibbles and some code, describe the output of that code (sketch, answer questions, draw out new tibble, etc.)
+- Describe how to solve a problem (e.g. what functions and arguments you would need)
+
+Things I will not ask you to do:
+
+- Write out exact R or SQL code in perfect syntax
+
+Example: Given a tibble t, how would you pick out only those rows where the stopping time is at least 5? 
+
+Acceptable answers: 
+filter, stopping time >= 5
+use filter, condition is that stopping time >= 5
+filter(stopping_time >= 5)
+t %>% filter(stopping time >= 5)
+
+# Class Review Notes
+
+I'll be typing the notes for our in-class review here, and will upload to Canvas an updated version of this file with these notes included after class. 
+
+```{r}
+library(tidyverse)
+```
+
+
+## Joins
+
+Q: Duplicate values, when all joins give you the same thing
+
+*When do all joins give you the same thing?*
+
+When the values appearing the in the joining column(s) are the same in both tables
+
+```{r}
+t1 <- tibble(a = c("red" , "red", "blue"), b = c(1,2,3))
+
+t2 <- tibble(a = c("blue", "red", "blue"), c = c(-4, -5, -6))
+
+# These are all the same
+inner_join(t1 , t2)
+left_join(t1 , t2)
+right_join(t1 , t2)
+full_join(t1 , t2)
+```
+
+Now, the inner and right joins are the same (rows corresponding to red or blue) and the  left and full joins are the same (rows for red, blue, and green)
+
+```{r}
+t1 <- tibble(a = c("red" , "green", "blue"), 
+  b = c(1,2,3))
+
+t2 <- tibble(a = c("blue", "red", "blue"), 
+        c = c(-4, -5, -6))
+
+inner_join(t1 , t2)
+left_join(t1 , t2)
+right_join(t1 , t2)
+full_join(t1 , t2)
+```
+
+Duplicate values:  Any time a data value is duplicated in one tibble, there are multiple rows for it in the joined tibble
+
+Doesn't affect whether the four join types give the same answer or not
+
+
+## union vs. full join
+
+union: needs all columns to be the same; combines all rows from two different tables with the same columns, remove duplicates
+
+full_join: If you join by *all* columns, it's actually the same as a union. Usually, instead it's used on two datasets that don't have the same columns, add new columns. 
+
+
+## Regular Expressions
+
+Question: Pulling out first letter of each word in a string
+
+There's often multiple ways to accomplish the same thing
+
+```{r}
+str_view(sentences %>% head(10), "\\b[^ .]")
+str_view(sentences %>% head(10), "\\b\\w")
+```
+The last letter of each word: 
+
+```{r}
+str_view(sentences %>% head(10), "\\w\\b")
+```
+
+## Regular expressions - ?
+
+? hads two meanings/roles in regular expressions
+
+*Use 1*: to have something appear 0 or 1 times 
+
+"\\bcats?\\b": the word cat or the words cats
+
+*Use 2*: To make a quantifier lazy, that is, to make it match as short a pattern as possible from a given starting point. 
+
+"\\b.+?\\b": Normally, .+ would, by default, be greedy, match as long a pattern as possible. Here we get almost the whole sentence: 
+
+```{r}
+str_view(sentences %>% head(10), "\\b.+\\b")
+```
+
+Putting ? after: Now we get each word/space (the shortest length to the next word boundary)
+
+```{r}
+str_view(sentences %>% head(10), "\\b.+?\\b")
+```
+
+Question: what if we use \\w instead of .?  Now we get the same answer: 
+
+```{r}
+# These are the same: 
+str_view(sentences %>% head(10), "\\b\\w+?\\b")
+str_view(sentences %>% head(10), "\\b\\w+\\b")
+```
+
+## FILTER WHERE, WHERE, HAVING
+
+```{r}
+library(DBI) # to connect to database management systems
+library(RSQLite) # To use SQLite in RMarkdown
+
+db <- dbConnect(
+          SQLite(), ## Dialect of SQL we will be using
+          dbname = "animals.sqlite" ## Name of database and where to find it
+)
+
+db
+```
+Check connction worked: 
+```{r}
+dbListTables(db)
+```
+
+In SQL, there are different ways of filtering for different situations
+
+WHERE: usual filter, happens before any aggregations
+
+When we do an aggregation, the filtering with WHERE is done first
+
+Count all animals: 
+```{sql, connection = db}
+SELECT * FROM austin_animal_center_intakes  
+```
+
+Count only dogs: 
+```{sql, connection = db}
+SELECT COUNT(*) 
+FROM austin_animal_center_intakes 
+WHERE animal_type = "Dog"
+```
+
+FILTER(WHERE ...) : Does filtering before an aggregation, but only for *one* aggregation Useful if you want different filtering for different aggregations
+
+```{sql, connection = db}
+SELECT COUNT(*) FILTER(WHERE animal_type = "Dog") AS "Number of Dogs", 
+COUNT(*) FILTER(WHERE animal_type = "Cat") AS "Number of Cats"
+FROM austin_animal_center_intakes 
+```
+Of course, there's an easier way to count the total number of dogs and cats, using GROUP BY: 
+
+```{sql, connection = db}
+SELECT animal_type, COUNT(*)
+FROM austin_animal_center_intakes 
+GROUP BY animal_type
+```
+
+HAVING: Used to filter a summary table that you've made using aggregations/group by
+
+```{sql, connection = db}
+SELECT animal_type, COUNT(*)
+FROM austin_animal_center_intakes 
+GROUP BY animal_type
+HAVING COUNT(*) > 1000
+```
+
+Wrong code that gives an error: 
+
+```{sql, connection = db}
+SELECT animal_type, COUNT(*)
+FROM austin_animal_center_intakes 
+WHERE COUNT(*) > 1000
+GROUP BY animal_type
+```
+
+
+## Using code to make regular expressions
+
+Used when you have a list of possible matches/things you're looking for 
+
+```{r}
+things_to_find = c("and", "the", "slot", "potato", "fruit")
+```
+
+Want: regular expression like: "\\band\\b|\\bthe\\b|\\bslot\\b|\\bpotato\\b|\\bfruit\\b"
+or 
+"\\b(and|the|slot|potato|fruit)\\b"
+
+One way to build: 
+
+```{r}
+str_c( "\\b(", str_c(things_to_find, collapse = "|"), ")\\b")
+```
+Another way to build: 
+
+```{r}
+r <- str_c( str_c("\\b", things_to_find, "\\b"), collapse = "|") 
+```
+
+Homework: Made a list of plurals first.
+
+Main way to proceed after this: make one super long list that has all the fruits and their plurals, then use str_c like in class 
+
+Then, use it to find things in any strings
+
+```{r}
+str_view(sentences %>% head(100), r)
+```
+
+## SQL shortcut to not have to change top of code chunk
+
+One bonus activity: use dbSendQuery, dbFetchQuery (I don't think I have quite the right function names but it's something like these)
+
+Something like: (this syntax/funciton name isn't quite right - see bonus activity)
+```{r}
+dbFetchQuery( "SELECT COUNT(*) FROM austin_animal_center_intakes", db)
+```
+
+## c() with an equal sign 
+
+Equal sign appear in list - this happens in joins
+
+```{r}
+t1 <- tibble(a = c("red" , "red", "blue"), 
+  b = c(1,2,3))
+
+t2 <- tibble(x = c("blue", "red", "blue"), 
+        c = c(-4, -5, -6))
+
+inner_join(t1, t2, by = c("a" = "x"))
+```
+
+```{r}
+str_replace(sentences %>% head(1), "and|the", replacement = c("the" = "z", "and" = "october"))
+```
+
+Gives a list of "equivalences" 
+
+
+## Factors
+
+A specific data type <fctr>: string data type but where there's some extra information attached that's referenced any time you try to put the column in order (sort, arrange, plot)
+
+That order is specified by the levels
+
+Lost of ways to create levels: can specify manually, can go based on order they appear originally, in order of frequency, etc. 
+
+There's a bunch of functions that let you manipulate/change/reorder levels
+
+Example with flights: 
+
+```{r}
+library(nycflights13)
+flights %>% mutate(dest2 = factor(dest) %>% fct_infreq()) %>% select(dest2, dest, everything()) %>% 
+  ggplot() + geom_bar(aes(dest2)) + coord_flip()
+  
+```
+Another example with flights: 
+
+```{r}
+flights %>% mutate(dest2 = factor(dest) %>% fct_lump_n(20) %>% fct_infreq() ) %>% select(dest2, dest, everything()) %>% 
+  ggplot() + geom_bar(aes(dest2)) + coord_flip()
+```
+
+
+
