@@ -1,0 +1,415 @@
+---
+title: "11-13 Class Notes - Non-linear models, categorical variables"
+author: "Sarah Cannon"
+date: "2024-11-13"
+output: html_document
+---
+
+```{r, message = FALSE}
+library(modelr)  
+options(na.action = na.warn) # Make sure missing values aren't silently dropped
+library(tidyverse)
+```
+
+# Announcements
+
+No homework due this week. 
+
+Due Tuesday, 11/19: Homework 10 (modelling, based on classes 11/4 and 11/13) **AND Final Project Proposal**
+
+Office Hours Next Week: 
+
+Monday 1:15-2:15pm
+Tuesday **1:30-3pm** (no usual morning office hours)
+Wednesday 1:15-2:15pm
+(Will try to add some morning office hours on Monday or Tuesday, still TBD, check email/canvas)
+
+Questions about upcoming schedule?
+
+
+# Last Class (before test)
+
+Linear models using one numerical variable to predict another numeric variable
+
+Assessing these models - residuals, correlation
+
+
+# Non-linear models using one numeric variable to predict another numeric variable
+
+## Preclass Video: Quadratic, Cubic Models
+
+It's not always the case that a line is the right model! 
+
+Quadratic Model: y = c1 + c2 * x + c3 * x^2
+
+[data that looks like a parabola: up then down, or down then up]
+
+Cubic Model: y = c1 + c2 * x + c3 * x^2 + c4 * x^3 
+
+[data with three distinct pieces/trends]
+
+Two methods to make these models, both with lm(): 
+
+- Use mutate to make x^2, x^3 columns
+- use I()
+
+Be especially careful about predictions outside of range of interest
+
+Often, other methods might be better (next week): data transformations, etc. 
+
+When is a quadratic/cubic model a good idea?  Try a linear model first and look at residuals! 
+
+
+## Splines
+
+Another option beyond polynomial models
+
+Constructs a model using: piece-wise polynomial curves
+
+(not one polynomial, but stitches together pieces of different polynomial curves)
+
+```{r}
+library(splines)
+set.seed(123456)
+sim6 <- tibble(
+  x = seq(-1, 2.5 * pi, length = 50),
+  y = 4 * sin(x) + rnorm(length(x))
+)
+sim6
+```
+
+Instead of using I() within lm, use ns()
+- First argument to ns: predictor variable (x)
+- Second argument to ns: number of degrees of freedom (1 = line)
+
+Model for spline with one degree of freedom: 
+
+```{r}
+mod1 <- lm(y ~ ns(x, 1), data = sim6)
+mod1
+```
+
+Can make models for more degrees of freedom:
+
+```{r}
+mod2 <- lm(y ~ ns(x, 2), data = sim6)
+mod3 <- lm(y ~ ns(x, 3), data = sim6)
+mod4 <- lm(y ~ ns(x, 4), data = sim6)
+mod5 <- lm(y ~ ns(x, 5), data = sim6)
+```
+
+Add all predictions for all 5 models onto data: gather_predictions
+
+```{r}
+sim6 %>% gather_predictions(mod1, mod2, mod3, mod4, mod5)
+```
+
+Predictions for each model in different rows: but is actually tidy! model is a variable and so should be in its own column, not as column names (will make plotting easier).
+
+Plotting the models: 
+
+```{r}
+sim6  %>% 
+  gather_predictions(mod1, mod2, mod3, mod4, mod5) %>% 
+  ggplot() + 
+  geom_point(aes(x,y)) + geom_line(aes(x = x, y = pred), color = "red") + 
+  facet_wrap(~ model)
+```
+
+One degree of freedom: a line
+More degrees of freedom: more places the curve can change/bend
+
+Even with 3 degrees of freedom, seems to do better job than cubic polynomial. 
+
+With more degrees of freedom, seems to capture more subtle shifts in data. 
+
+Splines often do better than polynomial curves. 
+
+
+### Drawbacks of Splines
+
+No precise equations, no explainability: Why does the curve look like this?  We don't know
+
+What number of degrees of freedom is 'right'?  This is a hard question to answer, and adds some ambiguity into your model
+
+This means splines are better for visualizations, general trends than precise predictions
+
+
+## Overfitting
+
+Overfitting happens when model fits data too closely, meaning it won't make good predictions on new data. 
+
+Hard to overfit a linear model with one variable (there are few parameters to work with) 
+
+But, you can certainly overfit a polynomial model or a spline model! 
+
+```{r}
+mod20 <- lm(y ~ ns(x, 20), sim6)
+sim6  %>% 
+  add_predictions(mod20) %>%
+  ggplot() + 
+  geom_point(aes(x,y)) + geom_line(aes(x, pred), color = "red")
+```
+
+This model is influenced too strongly by individual data points rather than capturing the overall trend of the data. 
+
+If we look at new data drawn from the same distribution: 
+
+```{r}
+# You don't need to know how this data was created
+# But just know it was generated using the same equation as sim6
+# Different randomness was used
+set.seed(555555)
+sim6_new <- tibble(
+  x = seq(-1, 2.5 * pi, length = 50),
+  y = 4 * sin(x) + rnorm(length(x))
+)
+```
+
+When you draw your old model on this new data, it's clear it's not a good fit
+
+```{r}
+sim6_new %>% 
+  add_predictions(mod20) %>%
+  ggplot() + 
+  geom_point(aes(x,y))+ 
+  geom_line(aes(x,pred), color = "red")
+```
+
+Sometimes overfitting can be detected visually - but sometimes it can't! 
+
+Next week: training/test data
+
+
+# Models with One Categorical Predictor
+
+Let's look at the sim2 data set: 
+
+```{r}
+sim2
+```
+
+Categorical variable x has four levels: a,b,c,d
+
+```{r}
+sim2 %>% ggplot() + geom_point(aes(x,y))
+```
+
+Because this data (specifically, the x column) is categorical, the best a model can do is make one prediction for each level. Notation within lm model is the same. 
+
+```{r}
+mod2 <- lm(y ~ x, data = sim2)
+sim2 %>% add_predictions(mod2)
+```
+
+Useful function: data_grid()
+
+For now: Apply to one column (usually a predictor column); get a new table with all unique values in the column appearing exactly once
+
+```{r}
+data_grid(sim2, x)
+```
+
+Format: data_grid(dataset, columnname)
+
+Now, can add predictions onto this data set!  Get just one prediction for each data value
+
+```{r}
+grid <- data_grid(sim2, x) %>% add_predictions(mod2)
+grid
+```
+
+Note: These predictions are just the average of the observed values!
+
+```{r}
+sim2 %>% group_by(x) %>% summarize(avg = mean(y))
+```
+
+The average minimizes the sum of squares of the distance from the prediction. (because need the mean of residuals to be 0)
+
+Can plot this:
+
+```{r}
+ggplot(sim2) + 
+  geom_point(aes(x = x, y = y)) + 
+  geom_point(data = grid, aes(x = x, y = pred), color = "red", size = 4)
+```
+
+Or can use boxplots (most useful if have many data points for each level)
+
+```{r}
+ggplot(sim2) + 
+  geom_boxplot(aes(x = x, y = y)) + 
+  geom_point(data = grid, aes(x = x, y = pred), color = "red", size = 4)
+```
+
+Can't predict the value when there are no observations
+
+```{r}
+#This code will give an error, because the model doesn't know what to do when x = "e"
+tibble(x = c('a', 'b', 'c', 'd', 'e')) %>% add_predictions(mod2)
+```
+
+For categorical variables: **Can only make predictions for levels that were in the original data set**
+
+(For numerical variables, can make predictions outside of the range of the original data, but this is generally not advised/you should be very careful about this!) 
+
+
+## What's really going on with categorical models
+
+What are the coefficients of mod2? How can a categorical variable show up in an equation?
+
+```{r}
+mod2
+```
+
+Have one intercept, but then have multiple other variables.
+
+Are four values of this categorical variable x: a, b, c, d
+
+Can create a _binary_ variable for each:
+
+xa = 1 if x is a, 0 otherwise
+xb = 1 if x is b, 0 otherwise
+xc = 1 if x is c, 0 otherwise
+xd = 1 if x is d, 0 otherwise
+
+But, this is redundant:
+
+If xb = 0, xc = 1, xd = 0: Then xa = 0
+If xb = 0, xc = 0, xd = 0: Then xa = 1
+
+If you know three of the variables, you can figure out the fourth
+
+When making a linear model for a categorical variable, R creates new variables for all but one of the levels of that variable: If it has n possible values, there are n-1 variables created. 
+
+Here: x had four possible values, made three new variables
+
+To find the prediction: 
+
+Our model: y = 1.1521664 + 6.9638728 * xb + 4.9750241 * xc + 0.7588142 * xd
+
+To find prediction when x = b: Set xb = 1, xc = 0, xd = 0
+
+y = 1.1521664 + 6.9638728 * 1 + 4.9750241 * 0 + 0.7588142 * 0 
+= 1.1521664 + 6.9638728 = 8.11
+
+To find prediction when x = a: Set xb = 0, xc = 0, xd = 0
+
+y = 1.1521664 + 6.9638728 * 0 + 4.9750241 * 0 + 0.7588142 * 0
+= 1.1521664
+
+(intercept is just the prediction for the level that isn't turned into a variable)
+
+
+# Variables that could be numeric or categorical
+
+Sometimes, a variable is ambiguous!  It might be better to treat it as categorical sometimes and numeric sometimes.  This makes a big difference in modelling.
+
+Example: Year
+
+year is a number
+
+If you try to make a linear model using year as a predictor variable, the difference between the predictions for 2022 and 2023 will be the same as the difference between the predictions for 2023 and 2024. 
+
+Childcare Costs in Los Angeles County: 
+```{r}
+ccc <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-05-09/childcare_costs.csv') %>% 
+  filter(county_fips_code == 6037) %>% select(study_year, mc_infant)
+ccc
+```
+
+```{r}
+ccc_mod <- lm(mc_infant ~ study_year, data = ccc)
+ccc_mod
+
+ggplot(ccc) + 
+  geom_point(aes(study_year, mc_infant)) + 
+  geom_abline(aes(slope = ccc_mod$coefficients[2], 
+              intercept = ccc_mod$coefficients[1]), color = "red")
+```
+Expect price in 2015 to be more related to price in 2014 and 2016 than other prices. 
+
+**Prediction for 2015 is influenced by data values for other years.** 
+
+Alternately: What if you're trying to predict how much ice cream each class of college students eats? You might have a column that has each student's graduation year. 
+
+However, there's no reason to believe that the difference between how much a freshman can eat and how much a sophomore can eat is the same as the difference between how much a sophomore can each and how much a junior can eat, etc.  Your prediction for sophomores really shouldn't depend on your data for juniors. 
+
+```{r}
+ice_cream <- tibble(student = c('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T'), 
+                    grad_year = c(2025, 2025, 2025, 2025, 2025, 2026, 2026, 2026, 2026, 2026,2027,2027,2027,2027,2027, 2028,2028,2028,2028,2028 ), ice_cream_amount = c(35, 20, 28, 38, 40, 38, 59, 60, 55, 63, 20, 21, 28, 35, 23, 60, 53, 68, 58, 70))
+
+ice_cream
+```
+
+```{r}
+ggplot(ice_cream) + geom_point(aes(y = ice_cream_amount, x = grad_year))
+```
+
+If you make a linear model treating grad_year as numeric: 
+
+```{r}
+imod <- lm(ice_cream_amount ~ grad_year, data = ice_cream)
+
+ice_cream %>% add_predictions(imod) %>% 
+  ggplot() + geom_point(aes(y = ice_cream_amount, x = grad_year)) + 
+  geom_point(aes(x = grad_year, y = pred), color = "red", size = 4)
+```
+
+Our predictions for each class year form a line!  This is probably not what we wanted, if we want a good prediction for each class. 
+
+Instead, change grad_year into a factor or string column and use that to model instead. 
+
+```{r}
+ice_cream2 <- ice_cream %>% mutate(grad_year = as.character(grad_year))
+ice_cream2
+
+imod <- lm(ice_cream_amount ~ grad_year, data = ice_cream2)
+
+ice_cream2 %>% add_predictions(imod) %>% 
+  ggplot() + geom_point(aes(y = ice_cream_amount, x = grad_year)) + 
+  geom_point(aes(x = grad_year, y = pred), color = "red", size = 4)
+```
+
+Now, have independent predictions for each graduation year.
+
+Same sometimes applies to: 
+
+- days
+- months
+- classification (group 1, group 2, etc.)
+
+Think about: should the values for the variable be treated as sequential/ordered/evenly spaced, or should they be treated independently? 
+
+If should be sequential/ordered/evenly spaced, treat it as a numeric variable
+
+If should be treated independently, treat it as a categorical variable (mutate column to make it a factor or a character string data type)
+
+
+# Summary 
+
+Quadratic, Cubic, and higher degree polynomial models: Use mutate() or I(), as in: 
+lm(ycol ~ xcol + I(xcol^2), data = ...)
+
+Spline models: lm(ycol ~ ns(xcol, df), data = ...), where df is the degrees of freedom. 
+Set df large enough to capture pattern of data, but small enough to avoid overfitting
+
+Linear model for categorical variables: lm(ycol ~ xcol, data = ...)
+Get one prediction for each level (value) of the categorical variable xcol
+If there are n values for xcol, get n-1 new variables that are either 0 or 1; together, they specify which of the n values xcol takes on.
+
+Be careful: some variables could be either categorical or numeric depending on the context, and this affects the model. 
+
+
+# Activity
+
+On Canvas
+
+If finish regular questions, move on to bonus questions.
+
+If finish bonus questions, check in with Prof. Cannon, then can leave. 
+
+Can work individually or with classmates. 
+
+
