@@ -1,0 +1,153 @@
+---
+title: "11-18 Activity Linear Models with Multiple Variables"
+author: "Sarah Cannon"
+date: "11/18/2024"
+output: html_document
+---
+
+```{r, message = FALSE}
+library(modelr)
+options(na.action = na.warn) 
+library(tidyverse)
+```
+
+> 1. **Look at the iris data set. We are going to try to model the Sepal.Width using the Sepal.Length and Species column.  To start, plot this data with Sepal.Length on the x-axis, Sepal.Width on the y-axis, and species as color. **
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
+  geom_point() +
+  labs(title = "Sepal Width vs Sepal Length by Species",
+       x = "Sepal Length",
+       y = "Sepal Width")
+```
+
+
+> 2. **Create a linear model for Sepal.Width in terms of Sepal.Length and Species, without allowing interactions between Sepal.Length and Species. What is the equation for your model?**
+
+
+```{r}
+
+model_no_interaction <- lm(Sepal.Width ~ Sepal.Length + Species, data = iris)
+
+
+summary(model_no_interaction)
+```
+
+
+
+> 3. **Use your model to make predictions (using either the original data set or a data grid), and then use geom_line to draw the lines of your model on top of your plot from Question 1. **
+
+
+```{r}
+
+iris %>%
+  add_predictions(model_no_interaction) %>%
+  ggplot(aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
+  geom_point() +
+  geom_line(aes(y = pred), size = 1) +
+  labs(title = "Linear Model of Sepal Width by Sepal Length and Species",
+       x = "Sepal Length",
+       y = "Sepal Width")
+```
+
+
+
+
+> 4. **Plot the residuals of your model (without interactions) from the previous question, with a separate facet for each Species. What do you observe? (A helpful argument of the facet_wrap is nrow, which specifies how many rows the facets will be organized into.  If it's hard to see your residuals because the dimensions of the plots are elongated, changing this argument could help)**
+
+
+```{r}
+
+iris %>%
+  add_residuals(model_no_interaction) %>%
+  ggplot(aes(x = Sepal.Length, y = resid, color = Species)) +
+  geom_point() +
+  facet_wrap(~ Species, nrow = 1) +
+  labs(title = "Residuals of Sepal Width Model by Species",
+       x = "Sepal Length",
+       y = "Residuals")
+```
+
+
+
+> 5. **Do the same things as Question 2-4, but for a model that does allow interactions between Species and Sepal.Length. What is the equation of your model, and what do you observe about the residuals of this model as opposed to the previous model without interactions? **
+
+```{r}
+
+model_with_interaction <- lm(Sepal.Width ~ Sepal.Length * Species, data = iris)
+
+
+summary(model_with_interaction)
+```
+
+
+> BONUS: **In the last BONUS question, we saw the model_matrix function, which creates a matrix with the binary values that the new model variables for a categorical variable has: **
+
+```{r}
+model_matrix(sim2, y ~ x )
+model_matrix(iris, Petal.Width ~ Species )
+```
+
+>**For each of these model matrices, how many rows does it have and how does that compare to the number of rows in the original data set?** 
+
+
+```{r}
+
+matrix_sim2 <- model_matrix(sim2, y ~ x)
+matrix_iris <- model_matrix(iris, Petal.Width ~ Species)
+
+
+nrow(matrix_sim2)  
+nrow(matrix_iris)  
+```
+
+Output:
+[1] 40
+[1] 150
+
+
+>**This model_matrix function is actually more general: For linear models involving more than one variable, it will create a column for each term that appears in the model equation, and the values in the row show what values teach term takes on for that data point: **
+
+```{r}
+model_matrix(sim3, y ~ x1 + x2)
+```
+
+>**Create two model matrices for each of the two models in the non-bonus questions above; how many columns does each have and does that match what you thought? **
+
+
+```{r}
+
+matrix_no_interaction <- model_matrix(iris, Sepal.Width ~ Sepal.Length + Species)
+
+
+matrix_with_interaction <- model_matrix(iris, Sepal.Width ~ Sepal.Length * Species)
+
+
+ncol(matrix_no_interaction)  
+ncol(matrix_with_interaction)  
+```
+
+Output:
+[1] 4
+[1] 6
+
+
+> **What are the values in the 51st row of the model matrix for the iris model with interactions? Explain why you see these values. **
+
+
+
+```{r}
+
+matrix_with_interaction[51, ]
+```
+
+Output:
+
+
+  `(Intercept)` Sepal.Length Speciesversicolor Speciesvirginica `Sepal.Length:Speciesversicolor` `Sepal.Length:Speciesvirginica`
+          <dbl>        <dbl>             <dbl>            <dbl>                            <dbl>                           <dbl>
+1             1            7                 1                0                                7                               0
+
+
+
+
