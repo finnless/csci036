@@ -22,6 +22,11 @@ library(tidyverse)
 
 > **- explain which element of a model card you were most surprised to see included and why it's important to include this in a model card. **
 
+A model card is a document that accompanies machine learning models, detailing their intended use, performance across various conditions, and potential limitations. It includes metrics for different demographic groups, ethical considerations, and context-specific recommendations to ensure responsible deployment and informed usage.
+
+Model cards are important because they promote transparency, fairness, and accountability in ML, particularly in sensitive applications like healthcare or law enforcement. They help users understand a model's suitability, mitigate biases, and ensure ethical practices in model development.
+
+An element that stood out to me is "Intersectional Analysis" which evaluates performance across combined demographic factors like race and gender. This helps for identifying biases that may not appear when analyzing groups separately, ensuring fairness and equity in models.
 
 
 &nbsp;
@@ -30,6 +35,11 @@ library(tidyverse)
 
 > **Load in the libraries necessary to make linear and spline models. Be sure to specify the same options we did in class, and explain why you should do this. **
 
+```{r}
+library(modelr)
+library(splines)
+options(na.action = na.warn)
+```
 
 
 &nbsp;
@@ -50,19 +60,40 @@ c
 
 > a. (2 points) **Suppose the model $new_daily_cases = -100 + 50 * day_number$ is suggested.  Add a column to your table from (a) that has the predicted number of new daily covid cases, based on this model.**
 
+```{r}
+c <- c %>% mutate(predicted_new_daily_cases = -100 + 50 * day_number)
+c
+```
 
 
 > b.  (3 points) **Make a scatterplot with days_since_start on the x-axis and total number of new daily covid cases on the y-axis. Add a line to your plot for the model $new_daily_cases = -100 + 50 * day_number$. Does this seem like a good model? **
 
+```{r}
+ggplot(c, aes(x = day_number, y = new_daily_cases)) +
+  geom_point() +
+  geom_line(aes(y = predicted_new_daily_cases), color = "red")
+```
 
+The model seems to be going in the right direction, but is linear while the data has non-linear trends.
 
 > c. (3 points) **Add to your table a column for the residuals of the model $new_daily_cases = -100 + 50 * day_number$. **
+
+```{r}
+c <- c %>% mutate(residuals = new_daily_cases - predicted_new_daily_cases)
+c
+```
 
 
 
 
 > d. (2 points) **Make a scatterplot showing the days_since_start on the x-axis and the residuals on the y-axis.  Are there any patterns in these residuals? **
 
+```{r}
+ggplot(c, aes(x = day_number, y = residuals)) +
+  geom_point()
+```
+
+The residuals first trend downwards, then significantly upwards, then significantly downwards.
 
  
 
@@ -72,32 +103,89 @@ c
 
 > a. (2 points) **Using the same California covid data set from the previous question, use the lm function to come up with a different, better linear model for this data. Write out what the equation would be, e.g., in the form new_daily_cases = c1 + c2 * day_number, specifying what c1 and c2 are. ** 
 
+```{r}
+model <- lm(new_daily_cases ~ day_number, data = c)
+summary(model)
+```
+
+new_daily_cases = -1372.668 + 67.705 * day_number
 
 
 
 > b. (2 points) **Using functions we learned in class rather than doing the calculations explicitly, add a column for the predictions of your model from (a) and a column for the residuals of your model from (a) on to your data set.**
 
+```{r}
+c <- c %>% mutate(predicted_new_daily_cases = -1372.668 + 67.705 * day_number,
+                   residuals = new_daily_cases - predicted_new_daily_cases)
+c
+```
+
 
 
 > c. (3 points) **Make a plot showing the data and your model from (a), and then make a plot showing the residuals of this model. Assess this model: how good is it? **
 
+```{r}
+ggplot(c, aes(x = day_number, y = new_daily_cases)) +
+  geom_point() +
+  geom_line(aes(y = predicted_new_daily_cases), color = "red")
+```
+
+The model seems to fit better, but is still limited by the linear nature of the model.
 
 
 > d. (3 points) **Make a density plot of the residuals. Explain what this plot should look like if your model is a good model, and compare the plot you've made to this ideal. **
 
+```{r}
+ggplot(c, aes(x = residuals)) +
+  geom_density()
+```
+
+The plot should be centered around 0 with a symmetric distribution. The actual plot is centered around 0, but is not symmetric.
 
 
 > e. (3 points) **What is the R^2 value for this model, and what is the correlation for this model?  Explain what this tells you about the model, and about how much of the variance in new_daily_cases can be predicted using day_number.**
 
+R^2 = 0.7344
+Correlation = 0.857
+
+This tells us that 73.44% of the variance in new_daily_cases can be predicted using day_number.
 
 
 > f. (3 points) **While we should always be careful about the limitations of our model, what does your linear model predict to be the total number of new daily covid cases on August 3 (day number 156)? See how close your model was to the reality (for example, by changing the filter() on the chunk importing the code; just be sure to change it back after you're done!); was this a good prediction? **
 
+```{r}
+predicted_cases <- -1372.668 + 67.705 * 156
+predicted_cases
+```
 
+Actual cases on August 3, 2020:
+
+```{r}
+c <- read_csv("https://raw.githubusercontent.com/datadesk/california-coronavirus-data/refs/heads/master/cdph-state-cases-deaths.csv") %>% 
+  select(date, confirmed_cases) %>% 
+  arrange(date) %>% 
+  mutate(new_daily_cases = confirmed_cases - lag(confirmed_cases)) %>% 
+  filter(date <= "2020-08-03", date >= "2020-03-01") %>% 
+  mutate(day_number = row_number())
+
+actual_cases_august_3 <- c %>% filter(date == "2020-08-03") %>% select(new_daily_cases)
+actual_cases_august_3
+```
+
+Difference between predicted and actual cases:
+
+```{r}
+predicted_cases - actual_cases_august_3
+```
+
+The model was off by 1662 cases.
 
 
 > g. (2 points) **Explain why using your model to predict the number of covid cases on August 3, 2020 might be a reasonable thing to do, but using your model to predict the number of daily covid cases a year later, on August 3, 2021 (365 + 156 = 521 days after the conflict started) would not be a reasonable thing to do.**
 
+Using the model to predict cases on August 3, 2020, is reasonable because it falls nearby the data range used to build the model, capturing local trends.
+
+Predicting for August 3, 2021, is unreasonable because extending predictions far beyond the data range can lead to inaccuracies. Factors like new variants and vaccination rates can alter trends, which the model doesn't account for.
 
 
 
@@ -107,20 +195,54 @@ c
 
 > a. (3 points) **The lm function finds the linear model such that the sum of the squares of the residuals is as small as possible. Compute the sum of the squares of the residuals of both the model -100 + 50 * day_number from Question 3 and the model you found using the lm() function in Question 4. Is the sum of the squares of the residuals smaller for the model you found with the lm function? **
 
+```{r}
+model1_residuals <- c$new_daily_cases - (-100 + 50 * c$day_number)
+sum_squares_model1 <- sum(model1_residuals^2)
+sum_squares_model1
+```
+[1] 611366599
+
+Q 4 model:
+
+```{r}
+model2_residuals <- c$new_daily_cases - predict(model, c)
+sum_squares_model2 <- sum(model2_residuals^2)
+sum_squares_model2
+```
+[1] 542179146
+
+The sum of the squares of the residuals is smaller for the model found using the lm() function, indicating that it fits the data better.
 
 
 
 > b. (3 points) **The sum of the square of the residuals is not the only way to assess a model.  For the same two models, compute the sum of the absolute values of the residuals. According to this metric, which model is better? **
 
+```{r}
+sum_abs_model1 <- sum(abs(model1_residuals))
+sum_abs_model1
+```
+[1] 214191
+
+```{r}
+sum_abs_model2 <- sum(abs(model2_residuals))
+sum_abs_model2
+```
+[1] 226128.5
+
+According to the sum of absolute values of the residuals, Model 1 is better, as it has a smaller sum. This suggests that Model 1 might be less sensitive to outliers or has a more consistent fit across the data points.
 
 
 > c. (3 points) **Based on everything you've considered so far about the two models (plotting the models, plotting the residuals, the values computed in parts a and b), which model do you think is better?  Explain why. **
 
+The choice of the better model depends on the context and what is prioritize. If minimizing large errors is important, Model 2 is better. If robustness to outliers is more important, Model 1 might be better. Model 2 is typically preferred.
 
 
 > d. (3 points) **Do some research yourself on the difference between modelling to try to minimize the sum of the squares of the residuals vs. the sum of the absolute values of the residuals.  When might you want to use one vs. the other?  Explain in your own words here. **
 
 
+Sum of Squares of Residuals is sensitive to outliers and is commonly used because it has nice mathematical properties, making it easier to compute derivatives and find the best fit.
+
+Sum of Absolute Values of Residuals is more robust to outliers and might be preferred when the data contains outliers or when a more robust fit is desired.
 
 
 
@@ -134,6 +256,7 @@ c
 
 > **Put these plots in order from smallest correlation (closest to -1) to largest correlation (closest to +1), by listing the letters a-e in that order here: **
 
+a, d, b, e, c
 
 
 &nbsp;
@@ -157,15 +280,70 @@ daily_covid_cases_winter_peak
 
 > a. (3 points) **Make a scatterplot of the relationship between date (on the x-axis) and new_daily_cases (on the y-axis). Make a linear model for this data and plot its residuals. Explain why a linear model is not a good choice for this data.**
 
+```{r}
+ggplot(daily_covid_cases_winter_peak, aes(x = date, y = new_daily_cases)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+A linear model is not a good choice for this data because the relationship between date and new_daily_cases is not linear.
 
 
 > b. (4 points) **Create a quadratic model for this data, trying to predict new_daily_cases using day (be sure to use day instead of date, because the lm function will not work with a <date> data type).  Write out the equation of your model, draw your model on top of your data, and make a scatterplot of its residuals.  Assess the strengths and weaknesses of this model, referring to your plots.**
 
+```{r}
+quadratic_model <- lm(new_daily_cases ~ day + I(day^2), data = daily_covid_cases_winter_peak)
+summary(quadratic_model)
+```
 
+Model Equation:
+new_daily_cases = 125.3 + 95.6 * day + (-0.87 * day^2)
+
+```{r}
+ggplot(daily_covid_cases_winter_peak, aes(x = day, y = new_daily_cases)) +
+  geom_point() +
+  geom_smooth(method = "lm", formula = y ~ x + I(x^2), se = FALSE)
+```
+
+Residuals:
+
+```{r}
+daily_covid_cases_winter_peak <- daily_covid_cases_winter_peak %>% add_residuals(quadratic_model)
+
+ggplot(daily_covid_cases_winter_peak, aes(x = day, y = resid)) +
+  geom_point() +
+  labs(title = "Residuals of Quadratic Model")
+```
+
+The quadratic model is a better fit than the linear model because it captures the non-linear trend in the data. Although it is still not perfect, it is a better fit than the linear model.
 
 
 > c. (5 points) **Look at the residuals both for your linear and quadratic model.  Based on these residuals, what polynomial model do you think might be appropriate? Explain your choice, make your model, draw it on top of your data, and plot your residuals.  Assess this model - is it a good model? Is it better than your linear and quadratic models? ** 
 
+Since the trend of the residuals starts out near zero with slight negative slope, then flat, then rapidly increasing, then rapidly decreasing, then flat again, then slightly positive slope, a cubic model might be appropriate.
+
+```{r}
+cubic_model <- lm(new_daily_cases ~ day + I(day^2) + I(day^3), data = daily_covid_cases_winter_peak)
+summary(cubic_model)
+```
+
+```{r}
+ggplot(daily_covid_cases_winter_peak, aes(x = day, y = new_daily_cases)) +
+  geom_point() +
+  geom_smooth(method = "lm", formula = y ~ x + I(x^2) + I(x^3), se = FALSE)
+```
+
+Residuals:
+
+```{r}
+daily_covid_cases_winter_peak <- daily_covid_cases_winter_peak %>% add_residuals(cubic_model)
+
+ggplot(daily_covid_cases_winter_peak, aes(x = day, y = resid)) +
+  geom_point() +
+  labs(title = "Residuals of Cubic Model")
+```
+
+I would say the cubic model is not significantly better than the quadratic model, although it's residuals are slightly more centered around zero and it's R^2 is slightly higher.
 
 
 
@@ -177,21 +355,64 @@ daily_covid_cases_winter_peak
 
 > a. (2 points) **Create a model for this data that is a spline with one degree of freedom.  Make predictions for your model, and draw your model on top of the data points.  What do you observe?**
 
+```{r}
+spline_model_1 <- lm(new_daily_cases ~ ns(day, df = 1), data = daily_covid_cases_winter_peak)
+```
+
+```{r}
+daily_covid_cases_winter_peak <- daily_covid_cases_winter_peak %>% add_predictions(spline_model_1)
+
+ggplot(daily_covid_cases_winter_peak, aes(x = day, y = new_daily_cases)) +
+  geom_point() +
+  geom_line(aes(y = pred), color = "red") +
+  labs(title = "Spline Model with 1 Degree of Freedom")
+```
+
+With one degree of freedom, the spline is essentially a linear model. It may not capture the data non-linear trends well.
 
 
 > b. (2 points) **Create a model for this data that is a spline with two degrees of freedom.  Make predictions for your model, and draw your model on top of the data points.  What do you observe?**
 
+```{r}
+spline_model_2 <- lm(new_daily_cases ~ ns(day, df = 2), data = daily_covid_cases_winter_peak)
+```
+
+```{r}
+daily_covid_cases_winter_peak <- daily_covid_cases_winter_peak %>% add_predictions(spline_model_2)
+
+ggplot(daily_covid_cases_winter_peak, aes(x = day, y = new_daily_cases)) +
+  geom_point() +
+  geom_line(aes(y = pred), color = "red") +
+  labs(title = "Spline Model with 2 Degrees of Freedom")
+```
+
+With two degrees of freedom, the spline can capture some curvature, providing a better fit than a linear model.
 
 
 > c. (4 points) **Create 10 models for this data for splines with 2, 4, 6, 8, 10, 12, 14, 16, 18, 20 degrees of freedom. Use one single function to add predictions for *all 10* of these data points onto your original data set, and plot all 10 of these models. Hint: You can do this using one call to the ggplot() function.**
 
+```{r}
+models <- map(seq(2, 20, by = 2), ~ lm(new_daily_cases ~ ns(day, df = .x), data = daily_covid_cases_winter_peak))
+
+predictions <- map_df(models, ~ add_predictions(daily_covid_cases_winter_peak, .x), .id = "model")
+
+ggplot(predictions, aes(x = day, y = new_daily_cases)) +
+  geom_point() +
+  geom_line(aes(y = pred, color = model)) +
+  labs(title = "Spline Models with Various Degrees of Freedom")
+```
 
 
 > d. (2 points) **Based on your plots in the previous part, which of the 10 models would you choose if you had to pick one? **
 
 
+I might use model 5, as it seems to capture the trend well without too much overfitting, although this visual decision is somewhat subjective.
 
-> e. (2 points) **Explain why you don't just want to use as many degrees of freedom as possible, for example why using a spline with 100 degrees of freedom for this data would be a bad idea. **
+
+> e. (2 points) **Explain why you don''t just want to use as many degrees of freedom as possible, for example why using a spline with 100 degrees of freedom for this data would be a bad idea. **
+
+Using too many degrees of freedom can lead to overfitting, where the model captures noise rather than the underlying trend.
+
 
 
 
@@ -205,6 +426,23 @@ c2 <- read_csv("https://raw.githubusercontent.com/datadesk/california-coronaviru
   mutate(day_number = row_number())
 c2
 ```
+
+```{r}
+spline_model <- lm(new_daily_cases ~ ns(day_number, df = 10), data = c2)
+c2 <- c2 %>% add_predictions(spline_model)
+```
+
+Plot:
+
+```{r}
+ggplot(c2, aes(x = day_number, y = new_daily_cases)) +
+  geom_point() +
+  geom_line(aes(y = pred), color = "red") +
+  labs(title = "Spline Model of New Daily COVID Cases")
+```
+
+A spline model with 10 degrees of freedom is chosen to balance capturing the datas trends without overfitting.
+The plot shows how well the model fits the data, highlighting trends over time.
 
 
 &nbsp;
@@ -222,25 +460,59 @@ cw
 
 > a. (2 points) **Use the lm function to create a linear model that predicts the number of new daily cases for each weekday. You model should *only* use weekday to make this prediction and not days since start. Output this linear model.**
 
+```{r}
+linear_model <- lm(new_daily_cases ~ weekday, data = cw)
+summary(linear_model)
+```
+
 
 
 > b. (3 points) **How many coefficients does your model have and why? What are the variables that correspond to these coefficients? Explain what each of these variables means and what values they can take on.**
 
+The model has 7 coefficients: one for each weekday (Monday is the baseline) and the intercept. The intercept is the coefficient for Monday, while the other coefficients are the differences between each weekday and Monday.
 
 > c. (3 points) **Write out the equation for your model, and use this equation (not code) to predict the number of new daily cases on Friday and the number of new daily cases on Monday.**
 
+new_daily_cases = 4572.0 + (-394.9) * Friday + 0 * Monday
+
+Predicted number of new daily cases on Friday:
+new_daily_cases = 4572.0 + (-394.9) * 1 = 4177.1
+
+Predicted number of new daily cases on Monday:
+new_daily_cases = 4572.0 + 0 * 1 = 4572.0
 
 
 > d. (3 points) **Create a data grid that has a column for each weekday and add a column for the predicted number of new daily cases for each weekday. (Hint: go back and make sure your answers to (c) match what you see here!)**
 
+```{r}
+data_grid <- data.frame(weekday = levels(cw$weekday))
+
+data_grid$predicted_cases <- predict(linear_model, newdata = data_grid)
+data_grid
+```
 
 
 > e. (3 points) **Plot both the original data points and your predictions with an appropriate type of plot. **
 
+```{r}
+ggplot(cw, aes(x = weekday, y = new_daily_cases)) +
+  geom_point() +
+  geom_point(data = data_grid, aes(y = predicted_cases), color = "red", size = 3) +
+  labs(title = "Predicted vs Actual New Daily Cases by Weekday")
+```
 
 
 > f. (2 points) **Compute the average daily number of new cases for each weekday.  What do you notice?**
 
+```{r}
+average_cases <- cw %>%
+  group_by(weekday) %>%
+  summarize(average_cases = mean(new_daily_cases, na.rm = TRUE))
+average_cases
+```
+
+The average number of new daily cases decreases from Monday to Sunday.
+There is a noticeable drop in cases over the weekend, which might indicate reporting delays or lower testing rates on weekends.
 
 
 &nbsp;
@@ -249,6 +521,7 @@ cw
 
 > a. (3 points) **Explain why some variables could be categorical or numerical depending on the context, and give an example of this different from the examples we discussed in class (an the example in part b).**
 
+variables can switch between being categorical or numerical depending on the situation. Take "age" for instance: it can be a category like "teen" or "adult" in some cases, or just a number like 25 or 30 in others. It all depends on what youre looking at.
 
 
 
@@ -262,6 +535,24 @@ br
 
 > **Make a model that predicts, for each episode number within a season, how many colors will be used. Your prediction for episode 1 should only depend on the data for episode 1 (across all the seasons) and should not be influenced by how many colors were used in other episodes, and the same for all other episode numbers. Plot your data and model. **
 
+```{r}
+episode_models <- br %>%
+  group_by(episode) %>%
+  do(model = lm(num_colors ~ 1, data = .))
+
+predictions <- episode_models %>%
+  rowwise() %>%
+  mutate(predicted_colors = predict(model, newdata = data.frame(episode = episode))) %>%
+  ungroup()
+
+ggplot(br, aes(x = factor(episode), y = num_colors)) +
+  geom_jitter(width = 0.2, alpha = 0.5) +
+  geom_point(data = predictions, aes(y = predicted_colors), color = "red", size = 3) +
+  labs(title = "Number of Colors Used in Bob Ross Episodes",
+       x = "Episode Number",
+       y = "Number of Colors") +
+  theme_minimal()
+```
 
 
 
