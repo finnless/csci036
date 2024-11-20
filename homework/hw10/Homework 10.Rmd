@@ -1,0 +1,268 @@
+---
+title: "Homework 10 Solutions"
+author: "Sarah Cannon"
+date: 'Due: 11/19/24'
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r, message = FALSE, echo = FALSE}
+library(tidyverse)
+```
+
+## Question 1 (5 points)
+
+> **Read the paper "Model Cards for Model Reporting," available at https://arxiv.org/pdf/1810.03993. In your own words in 1-2 paragraphs, you should: **
+
+> **- explain what a model card is**
+
+> **- explain why model cards are important**
+
+> **- explain which element of a model card you were most surprised to see included and why it's important to include this in a model card. **
+
+
+
+&nbsp;
+
+## Question 2 (3 points) 
+
+> **Load in the libraries necessary to make linear and spline models. Be sure to specify the same options we did in class, and explain why you should do this. **
+
+
+
+&nbsp;
+
+## Question 3 (10 points) 
+
+>  **The following code imports a data set with the daily confirmed cases of coronavirus in California, and makes a new column with the number of new daily cases, and focuses on March - July, 2020. For convenience, there is also a column with the day number, with March 1st beign 1, March 2nd being 2, etc.**
+
+```{r}
+c <- read_csv("https://raw.githubusercontent.com/datadesk/california-coronavirus-data/refs/heads/master/cdph-state-cases-deaths.csv") %>% 
+  select(date, confirmed_cases) %>% 
+  arrange(date) %>% 
+  mutate(new_daily_cases = confirmed_cases - lag(confirmed_cases)) %>% 
+  filter(date <= "2020-07-31", date >="2020-03-01") %>% 
+  mutate(day_number = row_number())
+c 
+```
+
+> a. (2 points) **Suppose the model $new_daily_cases = -100 + 50 * day_number$ is suggested.  Add a column to your table from (a) that has the predicted number of new daily covid cases, based on this model.**
+
+
+
+> b.  (3 points) **Make a scatterplot with days_since_start on the x-axis and total number of new daily covid cases on the y-axis. Add a line to your plot for the model $new_daily_cases = -100 + 50 * day_number$. Does this seem like a good model? **
+
+
+
+> c. (3 points) **Add to your table a column for the residuals of the model $new_daily_cases = -100 + 50 * day_number$. **
+
+
+
+
+> d. (2 points) **Make a scatterplot showing the days_since_start on the x-axis and the residuals on the y-axis.  Are there any patterns in these residuals? **
+
+
+ 
+
+&nbsp; 
+
+## Question 4 (18 points)
+
+> a. (2 points) **Using the same California covid data set from the previous question, use the lm function to come up with a different, better linear model for this data. Write out what the equation would be, e.g., in the form new_daily_cases = c1 + c2 * day_number, specifying what c1 and c2 are. ** 
+
+
+
+
+> b. (2 points) **Using functions we learned in class rather than doing the calculations explicitly, add a column for the predictions of your model from (a) and a column for the residuals of your model from (a) on to your data set.**
+
+
+
+> c. (3 points) **Make a plot showing the data and your model from (a), and then make a plot showing the residuals of this model. Assess this model: how good is it? **
+
+
+
+> d. (3 points) **Make a density plot of the residuals. Explain what this plot should look like if your model is a good model, and compare the plot you've made to this ideal. **
+
+
+
+> e. (3 points) **What is the R^2 value for this model, and what is the correlation for this model?  Explain what this tells you about the model, and about how much of the variance in new_daily_cases can be predicted using day_number.**
+
+
+
+> f. (3 points) **While we should always be careful about the limitations of our model, what does your linear model predict to be the total number of new daily covid cases on August 3 (day number 156)? See how close your model was to the reality (for example, by changing the filter() on the chunk importing the code; just be sure to change it back after you're done!); was this a good prediction? **
+
+
+
+
+> g. (2 points) **Explain why using your model to predict the number of covid cases on August 3, 2020 might be a reasonable thing to do, but using your model to predict the number of daily covid cases a year later, on August 3, 2021 (365 + 156 = 521 days after the conflict started) would not be a reasonable thing to do.**
+
+
+
+
+&nbsp;
+
+## Question 5 (12 points)
+
+> a. (3 points) **The lm function finds the linear model such that the sum of the squares of the residuals is as small as possible. Compute the sum of the squares of the residuals of both the model -100 + 50 * day_number from Question 3 and the model you found using the lm() function in Question 4. Is the sum of the squares of the residuals smaller for the model you found with the lm function? **
+
+
+
+
+> b. (3 points) **The sum of the square of the residuals is not the only way to assess a model.  For the same two models, compute the sum of the absolute values of the residuals. According to this metric, which model is better? **
+
+
+
+> c. (3 points) **Based on everything you've considered so far about the two models (plotting the models, plotting the residuals, the values computed in parts a and b), which model do you think is better?  Explain why. **
+
+
+
+> d. (3 points) **Do some research yourself on the difference between modelling to try to minimize the sum of the squares of the residuals vs. the sum of the absolute values of the residuals.  When might you want to use one vs. the other?  Explain in your own words here. **
+
+
+
+
+
+&nbsp; 
+
+## Question 6 (3 points) 
+
+> **Consider the five scatterplots of X and Y shown in the correlation.pdf document, attached to this assignment (note: you'll need to put the correlation.pdf file in the same directory as this RMarkdown file to make this PDF show up in your knitted file) **
+
+![Correlation Image](correlation.pdf)
+
+> **Put these plots in order from smallest correlation (closest to -1) to largest correlation (closest to +1), by listing the letters a-e in that order here: **
+
+
+
+&nbsp;
+
+## Question 7 (12 points)
+
+> **Consider the data daily_covid_cases_winter_peak, made by the following code chunk.  This shows the number of new daily (confirmed and probable) covid cases in LA County from October 15, 2022 to February 1, 2023.**
+
+```{r}
+# You do not need to know how this code works
+daily_covid_cases_winter_peak <- read_csv("https://raw.githubusercontent.com/datadesk/california-coronavirus-data/master/cdph-county-cases-deaths.csv") %>% 
+  filter(county == "Los Angeles") %>% 
+  arrange(date) %>%  
+  mutate(new_daily_cases =  confirmed_and_probable_cases - lag(confirmed_and_probable_cases, 1)) %>% 
+  filter(date >= "2022-10-15", date <= "2023-02-01" ) %>% 
+  mutate(day = row_number()) %>% 
+  select(day, date, new_daily_cases)
+daily_covid_cases_winter_peak
+```
+
+
+> a. (3 points) **Make a scatterplot of the relationship between date (on the x-axis) and new_daily_cases (on the y-axis). Make a linear model for this data and plot its residuals. Explain why a linear model is not a good choice for this data.**
+
+
+
+> b. (4 points) **Create a quadratic model for this data, trying to predict new_daily_cases using day (be sure to use day instead of date, because the lm function will not work with a <date> data type).  Write out the equation of your model, draw your model on top of your data, and make a scatterplot of its residuals.  Assess the strengths and weaknesses of this model, referring to your plots.**
+
+
+
+
+> c. (5 points) **Look at the residuals both for your linear and quadratic model.  Based on these residuals, what polynomial model do you think might be appropriate? Explain your choice, make your model, draw it on top of your data, and plot your residuals.  Assess this model - is it a good model? Is it better than your linear and quadratic models? ** 
+
+
+
+
+&nbsp;
+
+## Question 8 (15 points)
+
+> **This question continues looking at the data set daily_covid_cases_winter_peak from the previous question.**
+
+> a. (2 points) **Create a model for this data that is a spline with one degree of freedom.  Make predictions for your model, and draw your model on top of the data points.  What do you observe?**
+
+
+
+> b. (2 points) **Create a model for this data that is a spline with two degrees of freedom.  Make predictions for your model, and draw your model on top of the data points.  What do you observe?**
+
+
+
+> c. (4 points) **Create 10 models for this data for splines with 2, 4, 6, 8, 10, 12, 14, 16, 18, 20 degrees of freedom. Use one single function to add predictions for *all 10* of these data points onto your original data set, and plot all 10 of these models. Hint: You can do this using one call to the ggplot() function.**
+
+
+
+> d. (2 points) **Based on your plots in the previous part, which of the 10 models would you choose if you had to pick one? **
+
+
+
+> e. (2 points) **Explain why you don't just want to use as many degrees of freedom as possible, for example why using a spline with 100 degrees of freedom for this data would be a bad idea. **
+
+
+
+> f. (3 points) **The following data set is all new daily covid cases in California from February 1, 2020 to May 30, 2023 (when data collection stopped). Create an appropriate model for this data, draw it on top of the data, and explain why you chose the model you did. **
+
+```{r}
+c2 <- read_csv("https://raw.githubusercontent.com/datadesk/california-coronavirus-data/refs/heads/master/cdph-state-cases-deaths.csv") %>% 
+  select(date, confirmed_cases) %>% 
+  arrange(date) %>% 
+  mutate(new_daily_cases = confirmed_cases - lag(confirmed_cases)) %>% 
+  mutate(day_number = row_number())
+c2
+```
+
+
+&nbsp;
+
+## Question 9 (16 points)
+
+> **This question looks at the effect of weekday on the number of new reported confirmed covid cases. This code creates a new dataset cw which has a new column for the weekday of each particular date.**
+
+```{r}
+cw <- c %>% mutate(weekday = factor(weekdays(date), 
+                    levels = c("Monday", "Tuesday", "Wednesday", "Thursday", 
+                    "Friday", "Saturday", "Sunday") ))
+cw
+```
+
+> a. (2 points) **Use the lm function to create a linear model that predicts the number of new daily cases for each weekday. You model should *only* use weekday to make this prediction and not days since start. Output this linear model.**
+
+
+
+> b. (3 points) **How many coefficients does your model have and why? What are the variables that correspond to these coefficients? Explain what each of these variables means and what values they can take on.**
+
+
+> c. (3 points) **Write out the equation for your model, and use this equation (not code) to predict the number of new daily cases on Friday and the number of new daily cases on Monday.**
+
+
+
+> d. (3 points) **Create a data grid that has a column for each weekday and add a column for the predicted number of new daily cases for each weekday. (Hint: go back and make sure your answers to (c) match what you see here!)**
+
+
+
+> e. (3 points) **Plot both the original data points and your predictions with an appropriate type of plot. **
+
+
+
+> f. (2 points) **Compute the average daily number of new cases for each weekday.  What do you notice?**
+
+
+
+&nbsp;
+
+## Question 10 (6 points)
+
+> a. (3 points) **Explain why some variables could be categorical or numerical depending on the context, and give an example of this different from the examples we discussed in class (an the example in part b).**
+
+
+
+
+> b. (3 points) **The following data includes how many colors Bob Ross used in each episode of "The Joy of Painting." **
+
+```{r}
+br <- read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-02-21/bob_ross.csv')
+br %>% select(season, episode, num_colors)
+br
+```
+
+> **Make a model that predicts, for each episode number within a season, how many colors will be used. Your prediction for episode 1 should only depend on the data for episode 1 (across all the seasons) and should not be influenced by how many colors were used in other episodes, and the same for all other episode numbers. Plot your data and model. **
+
+
+
+
+
