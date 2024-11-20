@@ -1,0 +1,434 @@
+---
+title: "11-18 Class Notes Linear Models Two Variables"
+author: "Sarah Cannon"
+date: "2024-11-18"
+output: html_document
+---
+
+
+# Announcements
+
+Due Tuesday, 11/19: Homework 10 (modelling, based on classes 11/4 and 11/13) **AND Final Project Proposal** (on Gradescope) 
+
+Homework 10, Question 3: All parts should reference the same model as given in Part (a): 
+$new_daily_cases = -100 + 50 * day_number$
+
+Office Hours this week: 
+
+Tuesday **2-2:30pm and 3-3:30pm** (no usual morning office hours)
+Wednesday 1:15-2:15pm
+
+Wednesday's preclass video: Review of Logarithms/exponential (not code)
+
+Questions about upcoming schedule?
+
+
+# Linear Models with Mulitple Variables
+
+```{r}
+library(tidyverse)
+library(modelr)
+options(na.action = na.warn)
+```
+
+
+# Modelling with Two Predictor Variables
+
+Preclass Video: California Childcare costs data set
+
+mc_infant = -310.450 + 8.847 * flfpr_20to64 - 1.224 * pr_f
+
+This model is a plane in three dimensions
+
+For different values of pr_f, the relationship between mc_infant and flfpr_20to64 is a line
+This line always has the same slope, no matter the value of pr_f
+
+Questions from preclass video? 
+
+
+In class: sim4 data set 
+
+```{r}
+sim4
+```
+
+Goal 1: equation like y = c1 + c2 * x1 + c3 * x2
+
+```{r}
+sim4_mod <- lm(y ~ x1 + x2, data = sim4)
+sim4_mod
+```
+
+Model: y = 0.03546 + 1.92167 * x1 - 2.7852 * x2
+
+Can visualize in Wolfram Alpha: "Plot y = 0.03546 + 1.82167 * x1 - 2.78252 * x2"
+
+Instead, let's understand this model a different way: for different values of x2, what does the relationship between x1 and y look like? Like taking "slices" 
+
+Could pick particular values for x1 and x2 to look at (like we did in preclass video: looked at lines for pr_f = 10 and pr_f = 20)
+
+Or, just look at many values! 
+
+If your data set doesn't have too many unique values (like sim4 - 10 values for x1, 10 values for x2), use data_grid()
+
+data_grid(dataset, col1, col2, ...) returns a data set with all unique combinations of a value from col1 and a value from col2 (and a value from col3, etc.) 
+
+```{r}
+data_grid(sim4, x1, x2)
+```
+
+Gives us all possible combinations of x1 and x2 in data set. Removes duplicates. 
+Let's add on our predictions:
+
+```{r}
+sim4_pred <- data_grid(sim4, x1, x2) %>% add_predictions(sim4_mod)
+sim4_pred
+```
+
+To plot model when x2 = 1: 
+
+```{r}
+sim4_pred %>% filter(x2 == 1) %>% 
+  ggplot() + 
+  geom_line(aes(x = x1, y = pred))
+```
+
+geom_line is not drawing a line!  It is connecting the different predicted points, which happen to form a line because we've done a linear model. 
+
+What if we want to draw this line on top of our original data for x2 = 1? 
+
+Need to specify data argument of our geom_point. 
+
+```{r}
+sim4_pred %>% filter(x2 == 1) %>% 
+  ggplot() + 
+  geom_line(aes(x = x1, y = pred)) + 
+  geom_point(data = sim4 %>% filter(x2 == 1), aes(x = x1, y = y))
+```
+
+We've done this for one slice of our data : the slice x2 = 1.  
+
+We could do this individually for all other slices. 
+
+But, instead, we'll do them all at once! Don't need to draw each line separately.
+
+To plot lines all at the same time: use color! Need to also *group*: within geom_line, this makes a separate line for each value. (Need to do this for numerical variables). 
+
+```{r}
+sim4_pred %>% ggplot() + 
+  geom_point(data = sim4, aes(x = x1, y = y, color = x2)) +
+  geom_line(data = sim4_pred, aes(x = x1, y = pred, color = x2, group = x2))
+```
+
+Like with ccc in pre-class video, lines all have same slope, just different intercepts.  
+
+Larger x2 = *smaller* intercept, this makes sense because coefficient of x2 is negative. 
+
+What if slope should change as x2 changes?
+
+
+## Modeling: Two numerical variables with interactions
+
+For when the slope of the relationship between two variables should change based on the value of a third variable. 
+
+Previous pattern: y = c1 + c2 * x1 + c3 * x2
+
+Now: Add term for x1 * x2
+
+New pattern: y = c1 + c2 * x1 + c3 * x2 + c4 * x1 * x2
+
+How to find this linear model: 
+
+```{r}
+sim4_interaction <- lm(y ~ x1 * x2, data = sim4) 
+sim4_interaction
+```
+
+Equation: y = 0.03546 + 1.82167 * x1 - 2.78252 * x2 + 0.95228 * x1 * x2
+
+For any fixed value of x1, have a linear relationship between x2 and y
+
+For any fixed value of x2, have a linear relationship between x1 and y
+
+But, model is no longer a plane! (because of the x1 * x2 term). Can view in Wolfram Alpha.
+
+https://www.wolframalpha.com/input?i=z+%3D+0.03546+%2B+1.82167+*+x+-+2.78252+*+y+%2B+0.95228+*+x+*+y
+
+Can view models between x1 and y for different values of x2
+
+```{r}
+data_grid(sim4, x1, x2) %>% 
+  add_predictions(sim4_interaction) %>% 
+  ggplot() + geom_line(aes(x = x1, y= pred, color = x2, group = x2))
+```
+
+All these lines have different slopes! 
+
+Equation: y = 0.03546 + 1.82167 * x1 - 2.78252 * x2 + 0.95228 * x1 * x2
+
+When x2 = 1: 
+
+y = 0.03546 + 1.82167 * x1 - 2.78252 * 1 + 0.95228 * x1 * 1
+ = -2.74706 + 2.77228 * x1
+
+When x2 = -1: 
+
+y = 0.03546 + 1.82167 * x1 - 2.78252 * -1 + 0.95228 * x1 * -1
+= 2.81798 + 0.86939 * x1
+
+Relationship between x1 and y changes for different values of x2
+
+Can also see that relationship between x2 and y changes for different values of x1: 
+
+```{r}
+data_grid(sim4, x1, x2) %>% 
+  add_predictions(sim4_interaction) %>% 
+  ggplot() + geom_line(aes(x = x2, y= pred, color = x1, group = x1))
+```
+
+Can also add in data points and/or use facets: 
+
+```{r}
+data_grid(sim4, x1, x2) %>%
+  add_predictions(sim4_interaction) %>%
+  ggplot() + 
+  geom_line(aes(x = x2 , y = pred, color = x1 , group = x1)) + 
+  geom_point(data = sim4, aes(x = x2, y=y, color = x1))
+```
+
+
+Another way to visualize the model: A new geom: geom_tile: 
+
+```{r}
+data_grid(sim4, x1, x2) %>% 
+  add_predictions(sim4_interaction) %>% 
+  ggplot() + 
+  geom_tile(aes(x = x1, y = x2, fill = pred))
+```
+
+Model predicts: highest values for large x1, small x2; lowest values for small x1, large x2
+
+(Must have data grid and equally-spaced data points for this to work well) 
+
+
+### seq_range
+
+This data set had nice, evenly-spaced data points.  
+
+This made both our geom_tile and our geom_line with groups work nicely. 
+
+In sim4, x1 took on 10 different values: got 10 lines. 
+
+If x1 takes on 10000 different values, would get 10000 lines - not great! 
+
+To make a data grid, spanning the range of your data, with a fixed number of values: 
+
+```{r}
+dg5 <- sim4 %>% data_grid(
+  x1 = seq_range(x1, 5), 
+  x2 = seq_range(x2, 5)
+)
+dg5
+```
+
+seq_range(x1, 5): returns a list with 5 values, evens spaced between the smallest value for x1 and the largest value for x1.  
+
+Using this data grid: Get 5 lines, or 25 tiles
+
+```{r}
+dg5 %>% 
+  add_predictions(sim4_interaction) %>% 
+  ggplot() + 
+  geom_line(aes(x = x1, y = pred, color = x2, group = x2))
+```
+
+```{r}
+dg5 %>% 
+  add_predictions(sim4_interaction) %>% 
+  ggplot() + 
+  geom_tile(aes(x = x1, y = x2, fill = pred))
+```
+
+
+## Models with one categorical and one numerical predictor
+
+Example: sim3 data set
+
+```{r}
+sim3
+```
+
+We will try to predict y based on x1 (numerical) and x2 (categorical)
+
+```{r}
+count(sim3, x1)
+count(sim3, x2)
+```
+
+Let's visualize this: 
+
+```{r}
+ggplot(sim3) + geom_point(aes(x = x1, y = y, color = x2))
+```
+
+Let's try two different models:
+
+1. without iterations between x1 and x2 (for all four colors, model line will have same slope)
+
+2. with interactions between x1 and x2 (for all four colors, model line can have different slopes)
+
+```{r}
+mod_wo_int <- lm(y ~ x1 + x2, data = sim3)
+mod_int <- lm( y ~ x1 * x2, data  = sim3)
+mod_wo_int
+mod_int
+```
+
+Let's make our predictions for mod_wo_int and mod_int. Could make a separate data grid for each, but will be more convenient to do at same time!
+
+If want to do add_predictions for multiple models at the same time, use gather_predictions:
+
+```{r}
+sim3_preds <- sim3 %>% data_grid(x1, x2) %>% gather_predictions(mod_wo_int, mod_int) 
+
+sim3_preds
+```
+
+Predictions for each model in different rows: but is actually tidy! model is a variable and so should be in its own column, not as column names (will make plotting easier).
+
+Now, let's draw the model!  
+
+Can do model without interactions first: 
+
+```{r}
+sim3_preds %>% filter(model == "mod_wo_int") %>% 
+  ggplot() + geom_line(aes(x = x1, y = pred, color = x2)) + 
+  geom_point(data = sim3, aes(x = x1, y =y, color = x2))
+```
+
+In model without interactions, all lines have same slope (slightly down)
+
+Let's plot both our models at the same time - use facets! 
+
+```{r}
+sim3_preds %>%
+  ggplot() + geom_line(aes(x = x1, y = pred, color = x2)) + 
+  geom_point(data = sim3, aes(x = x1, y =y, color = x2)) + 
+  facet_wrap( ~ model)
+```
+
+This is an example of why tidy data is good/useful! 
+
+In model with interactions, lines for different values of x2 have different slopes! 
+
+Which is better? 
+
+- Model without interactions is simpler, so if it does a good job, use it! 
+
+- If you have reason to believe the value of the categorical variable (x2) shouldn't change the slope of the interaction between the other two variables, use model without interactions
+
+- Otherwise, model with interactions is often more accurate/a better option
+
+Can check residuals to see.  To calculate residuals for each model, need original data values too - let's add our residuals for the models to the original data set, rather than the data grid.
+
+For multiple models: use gather_residuals, rather than add_residuals
+
+```{r}
+sim3 %>% 
+  gather_residuals(mod_int, mod_wo_int) %>% 
+  ggplot() + geom_point(aes(x = x1, y = resid, color = x2)) + 
+  facet_grid(x2 ~ model)
+```
+
+facet_grid:  Can break a plot out into facets based on two categorical variables, rather than just one. 
+
+Easier to see patterns in residuals when look at residuals separately for each color.
+
+See here, model with interactions is better: less of a pattern within residuals. 
+
+
+### Equations of these models
+
+```{r}
+mod_wo_int
+```
+
+Have new variables x2b, x2c, x2d, which are 0 or 1 according to the value x2 takes on (if all 0, x2 = a)
+
+y = 1.8717 - 0.1967 * x1 + 2.8878 * x2b + 4.8057* x2c + 2.3596 * x2d
+
+Changing the value of x2: only changes the intercept of the relationship between x1 and y
+
+```{r}
+mod_int
+```
+
+Now, also have products of x1 with all these variables
+
+y = 1.30124 - 0.09302 * x1 + 7.06938 * x2b + 4.43090 * x2c + 0.83455 * x2d 
+        - 0.76029 * x1 * x2b + 0.06815 * x1 * x2c + 0.27728 * x1 * x2d
+        
+When x2 = a: 
+y = 1.30124 - 0.09302 * x1 + 7.06938 * 0 + 4.43090 * 0 + 0.83455 * 0 
+        - 0.76029 * x1 * 0 + 0.06815 * x1 * 0 + 0.27728 * x1 * 0
+  = 1.30124 - 0.09302 * x1
+
+When x2 = d: 
+
+y = 1.30124 - 0.09302 * x1 + 7.06938 * 0 + 4.43090 * 0 + 0.83455 * 1 
+        - 0.76029 * x1 * 0 + 0.06815 * x1 * 0 + 0.27728 * x1 * 1
+  = 1.30124 - 0.09302 * x1 + 0.83455 + 0.27728 * x1
+  = 2.1359 + 0.18426 * x1
+
+Setting x2 = d (x2d = 1, x2c = 0, x2b = 0): adds a correction to *both* the intercept and the slope. 
+
+
+## Models with two categorical predictors
+
+Extremely similar to models with one categorical predictor
+
+Make one prediction for each category
+
+Before: category = one value of the categorical variable
+
+Now: category = a combination of a value for the first categorical variable and the second categorical variable
+
+Model has terms like: x1_val1 * x2_val2 
+Coefficient is contribution to predicted value when x1 takes on val1 and x2 takes on val2
+
+Everything else we learned for categorical models still applies. 
+
+
+
+# Summary: Linear modelling with two predictor variables
+
+Model without interactions: lm(y ~ x1 + x2, data = ...)
+- If x1 and x2 both numeric: Model is a plane in three dimensions
+- if x1 is numeric and x2 is categorical: Model is a line for each category
+- The relationship between y and x1 will always have the same slope, regardless of value of x2
+
+Model with interactions: lm(y ~ x1 * x2, data = ...)
+- If x1 and x2 both numeric: Model is a curved surface in three dimensions 
+        (every slice parallel to an axis is a line)
+- if x1 is numeric and x2 is categorical: Model is a line for each category
+- The relationship between y and x1 will have different slops for different values of x2
+  
+New functions: 
+- gather_predictions, gather_residuals: used to look at multiple models at the same time
+- geom_line with group aes: make a different line for each value of a numeric variable
+- geom_tile: Each grid square colored according to value of 3rd variable
+
+wolframalpha.com: can quickly plot equations/surfaces to see what they look like (and more!)
+
+
+# Activity
+
+On Canvas
+
+If finish regular questions, move on to bonus questions.
+
+If finish bonus questions, check in with Prof. Cannon, then can leave. 
+
+Can work individually or with classmates. 
+
+
