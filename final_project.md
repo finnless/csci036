@@ -76,61 +76,35 @@ Yes, all questions involve relationships between multiple variables.
 
 **10. When do you plan to complete the various parts of the project? Make a timeline, working backwards from the due date and keeping in mind other commitments and demands on your time you may have.**
 
-- November 20 - November 23: Data Import and Initial Exploration
-  - Import the cumulative CCES data set and the relevant yearly data sets into R.
-  - Begin initial data exploration to understand the variables, data structure, and any discrepancies between data sets.
-  - Start drafting the Data Source section by researching how the data was collected and documenting any relevant URLs and citations.
+- Nov 20-23: Data Import and Exploration
+  - Import CCES data sets into R.
+  - Explore variables and data structure.
+  - Draft Data Source section with URLs.
 
-- November 24 - November 27: Data Cleaning and Tidying
-  - Perform data cleaning steps, including:
-    - Handling missing values and discussing NA values.
-    - Standardizing variable names and formats across different years.
-  - Use joins to merge the cumulative data set with yearly data sets.
-  - Document each step in the Data Cleaning and Tidying section, providing explanations for code chunks.
-  - Reflect on whether any data removal could impact conclusions, in the Data Cleaning and Tidying section.
+- Nov 24-27: Data Cleaning and Tidying
+  - Handle missing values and standardize names.
+  - Merge data sets with joins.
+  - Document cleaning steps and impacts.
 
-- November 28 - December 1: Data Exploration and Analysis
-  - Question 1:
-    - Use data transformation techniques to aggregate media source preferences by year and demographic groups.
-    - Create visualizations to illustrate changes over time.
-    - Perform any necessary modeling to support findings.
-    - Document findings with code explanations in the Data Exploration section.
-  - Question 2:
-    - Conduct cross-tabulations between media consumption and political identification.
-    - Calculate overlap percentages and consider visualizations like diagrams.
-    - Explain the analysis process and interpret results.
-  - Question 3:
-    - Perform correlation analysis between issue priorities, political leanings, and media sources.
-    - Build regression models to compare the strength of relationships.
-    - Discuss statistical significance and potential limitations.
-    - Provide explanations of any techniques used.
+- Nov 28-Dec 1: Data Exploration and Analysis
+  - Q1: Aggregate and visualize media preferences.
+  - Q2: Cross-tabulate media and political ID, calculate overlaps.
+  - Q3: Correlate issue priorities with political leanings and media sources.
 
-- December 2 - December 4: Ethics Reflection and Writing
-  - Write the Ethics Reflection section, discussing:
-    - Ethical considerations related to survey data and privacy.
-    - Potential biases in self-reported data.
-    - Ethical implications if the data were used differently.
-  - Begin drafting the Introduction and Conclusion sections.
-    - Introduction: Present the topic, research questions, and a summary of findings.
-    - Conclusion: Summarize insights, discuss limitations, and suggest next steps.
+- Dec 2-4: Ethics Reflection and Writing
+  - Discuss survey data privacy and biases.
+  - Draft Introduction and Conclusion.
 
-- December 5 - December 6: Review and Revise
-  - Review the entire project for coherence, completeness.
-  - Check that every code chunk and figure includes an explanation.
-  - Ensure all warnings are explained and any NA values are discussed.
-  - Verify that any advanced functions or techniques are explained.
-  - Cross-reference the project checklist to confirm all requirements are met.
+- Dec 5-6: Review and Revise
+  - Ensure project coherence and completeness.
+  - Explain code chunks and address warnings.
 
-- December 7 - December 8: Presentation Preparation
-  - Create slides for the five-minute presentation, focusing on:
-    - Data Used: Source, collection method, and any pertinent details.
-    - Research Questions: Clearly state the questions explored.
-    - Findings: Highlight key results with visual aids.
-    - Conclusion: Summarize insights and their implications.
-  - Practice the presentation to ensure it fits within the time limit and is engaging.
+- Dec 7-8: Presentation Preparation
+  - Create slides on data, questions, findings, and conclusions.
+  - Practice presentation.
 
-- December 9: Final Touches
-  - Perform a proofreading of the written project.
+- Dec 9: Final Touches
+  - Proofread project.
 
-- December 10: Presentation Day
-  - Submit the final project on Gradescope.
+- Dec 10: Presentation Day
+  - Submit project on Gradescope.
