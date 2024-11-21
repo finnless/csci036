@@ -1,0 +1,163 @@
+---
+title: "11-20 Activity"
+author: "Sarah Cannon"
+date: "11/20/2024"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(modelr)
+options(na.action = na.warn)
+
+# Creating data set sim7, you don't need to know how this is done
+set.seed(123456)
+sim7 <- tibble(
+  days = seq(0.05, 2.5, length = 50),
+  total_bacteria = (3^days + rnorm(length(days)))*1000
+)
+```
+
+
+
+> 1. **Plot the sim7 dataset.  What do you observe? **
+
+
+```{r}
+sim7 %>%
+  ggplot(aes(x = days, y = total_bacteria)) +
+  geom_point()
+```
+
+Oberve a curve, not linear.
+
+> 2. **Add columns to your data set for the logarithm (base 2) of days and the logarithm (base 2) of the total bacteria.**
+
+```{r}
+sim7 <- sim7 %>%
+  mutate(log_days = log2(days),
+         log_total_bacteria = log2(total_bacteria))
+sim7
+```
+
+
+> 3. **Plot log of total bacteria vs. days; number of bacteria vs. log of days, and log of number of bacteria vs. log of days (always put the term involving days on the x-axis and the term involving bacteria on the y-axis, since we're going to try to predict number of bacteria using days). Which looks most linear? **
+
+```{r}
+sim7 %>%
+  ggplot(aes(x = days, y = log_total_bacteria)) +
+  geom_point()
+```
+
+```{r}
+sim7 %>%
+  ggplot(aes(x = log_days, y = log_total_bacteria)) +
+  geom_point()
+```
+
+The first one looks most linear.
+
+> 4. **If you've done the previous part correct, it should be that log of total bacteria vs. Days looks most linear. Create a linear model predicting log2(total_bacteria) using days.  What is the equation of your model? Draw it on top of your plot from the previous question. **
+
+```{r}
+model <- lm(log_total_bacteria ~ days, data = sim7)
+summary(model)
+```
+
+
+The equation is:
+
+log2(total_bacteria) = 10.2556 + 1.4087*days
+
+```{r}
+sim7 %>%
+  ggplot(aes(x = days, y = log_total_bacteria)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+
+> 5. **If you haven't already, add a new column to your data set that has the predictions your model makes for the log of the total bacteria.  Then, add an additional column for your model's prediction for total bacteria (if pred is your column of predictions for the log, your new column can be computed by doing 2^pred). Draw this model on top of your original data (before any logs were taken).**
+
+```{r}
+sim7 <- sim7 %>%
+  mutate(pred = predict(model, sim7))
+sim7
+```
+
+```{r}
+sim7 %>%
+  ggplot(aes(x = days, y = total_bacteria)) +
+  geom_point() +
+  geom_line(aes(y = 2^pred), color = "red")
+```
+
+
+6. **Split the sim7 data set up into training and test data, with half the data in each category. **
+
+```{r}
+set.seed(123)
+n <- nrow(sim7)
+train <- sim7 %>% slice_sample(n = n/2)
+test <- sim7 %>% anti_join(train)
+```
+
+7. **Pick a few different degrees of freedom, and make spline models using the training data. Compute the mean residual square for each of these models. **
+
+```{r}
+library(splines)
+
+spline3 <- lm(total_bacteria ~ ns(days, df = 3), data = train)
+spline5 <- lm(total_bacteria ~ ns(days, df = 5), data = train)
+spline10 <- lm(total_bacteria ~ ns(days, df = 10), data = train)
+```
+
+```{r}
+train %>%
+  gather_residuals(spline3, spline5, spline10) %>%
+  group_by(model) %>%
+  summarize(mean_sq_residual = mean(resid^2))
+```
+
+
+8. **Using your spline models from the previous part, see how they do on the test data.  Which model gives the smallest mean(residual)^2 on the test data? **
+
+```{r}
+test %>%
+  gather_predictions(spline3, spline5, spline10) %>%
+  mutate(resid = total_bacteria - pred) %>%
+  group_by(model) %>%
+  summarize(mean_sq_residual = mean(resid^2))
+```
+
+spline3 has the smallest mean(residual)^2 on the test data.
+
+
+> BONUS: **Because we found a linear model between log(total_bacteria) and days, this means there is an exponential model between total_bacteria and days.  Using the linear model you found for log(total_bacteria) and days, solve and figure out what a1 and a2 in your exponential model should be.  Write down your model equation in the form total_bacteria = a1*a2^days, where you've filled in a1 and a2.**
+
+
+a1 = 2^10.2556 ≈ 1217
+a2 = 2^1.4087 ≈ 2.65
+
+total_bacteria = 1217 * (2.65)^days
+
+> BONUS: **Is our model affected by the fact that we took our logarithms base 2? Repeat the above steps (taking logarithms, finding a linear model, and figuring out what a1 and a2 should be in total_bacteria = a1*a2^days) but using base-10 logarithms instead of base-2 logarithms.  The relevant R function is log10(). Do you get a different model?**
+
+
+```{r}
+sim7 <- sim7 %>%
+  mutate(log10_days = log10(days),
+         log10_total_bacteria = log10(total_bacteria))
+
+model_10 <- lm(log10_total_bacteria ~ days, data = sim7)
+summary(model_10)
+```
+
+log10(total_bacteria) = 3.08726 + 0.42407 days
+
+a1 = 10^3.08726 ≈ 1223
+a2 = 10^0.42407 ≈ 2.66
+
+total_bacteria = 1223 * (2.66)^days
+
+The model is basically the same. Its a little bit different though. This shows changing base of the log doens't have much of an effect.
