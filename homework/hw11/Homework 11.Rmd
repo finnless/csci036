@@ -1,0 +1,315 @@
+---
+title: "Homework 11 - Modeling"
+author: "Sarah Cannon"
+date: "Due: 11/26/24"
+output:
+  pdf_document: default
+---
+
+```{r, message = FALSE, echo = FALSE}
+library(tidyverse)
+library(modelr)
+options(na.action = na.warn)
+```
+
+
+
+## Question 1 (3 points) 
+
+> **Pick any model we've made this week (either in class or on the homework). Create a model card for this model, following the outline/examples given in last week's reading, available at https://arxiv.org/pdf/1810.03993.  You should be sure to include all relevant sections of the model card. Note that you do not need to format your model card in the way that was done in the examples in the paper, just listing the sections with sentences and/or lists and/or images for each is fine.**
+
+
+
+
+&nbsp;
+
+## Question 2 (21 points) 
+
+> a. (1 points) **Import the "lwh.csv" data set. Plot your data with length on the x-axis, height on the y-axis, and width as color. ** 
+
+
+
+
+> b. (2 points) **Use the lm function to create a model for this data set, using length and width to predict height, without allowing any interactions between length and width. What is the equation you get for height in terms of length and width? **
+
+
+
+> c. (3 points) **If you know the width is 1, what is the equation of your model for height in terms of length?  If you know the width is 5, what is the equation of your model for height in terms of length? **
+
+ 
+
+
+> d. (3 points) **Make a data grid that only has six different values for length and six different values for width in it. Your grid should have 36 rows in total**
+
+
+
+> e. (3 points) **Add predictions from your model onto the data grid you made in the previous part, and add to the ggplot you made in part (a) six different lines, one for each of the six different models you get relating height to length for the six different widths.**
+
+
+
+
+> f. (2 points) **What do you observe about the slopes of the six lines you drew in the previous part? Explain why this is the case. **
+
+
+
+
+> g. (2 points) **Add residuals on to the original data set, and plot these residuals with length on the x-axis. You do not need to incorporate width into your plot in any way. **
+
+
+
+
+> h. (3 points) **Filter the data set (with residuals added) that you made in the previous part to keep rows where the width is greater than 5, and then plot the residuals again, just for the rows where width is greater than 5. Do the same for data points when the width is less than two. **
+
+
+
+
+> i. (2 points) **Based on your answers to the previous two parts, do you think this is a good model? Explain.**
+
+
+
+
+&nbsp;
+
+## Question 3 (10 points)
+
+> a. (2 points) **Use the lm function to create a model for the same data set as the previous question, using length and width to predict height, *allowing interactions between length and width*. What is the equation you get for height in terms of length and width? **
+
+
+
+
+> b. (2 points) **If you know the width is 1, what is the equation of your model for height in terms of length?  What about when width is 5? **
+
+
+
+
+> c. (3 points) **Add to the ggplot you made in part (a) of Question 2 six different lines, corresponding to six different values of width evenly spaced from your smallest width to your largest width. What do you observe about the slopes of the six lines? Explain why this is the case. **
+
+
+
+
+> d. (3 points) **Plot the residuals for all widths, and then plot the residuals when the width is greater than 5, and when the width is less than 2. What observations do you make about them, and how does this model with interactions compare to your model without interactions in Question 2?**
+
+
+
+
+
+## Question 4 (18 points)
+
+> **This question returns to the new daily covid cases data set from the last homework. However, to make things clearer we'll only look at the first 100 days of data. **
+
+```{r}
+c <- read_csv("https://raw.githubusercontent.com/datadesk/california-coronavirus-data/refs/heads/master/cdph-state-cases-deaths.csv") %>% 
+  select(date, confirmed_cases) %>% 
+  arrange(date) %>% 
+  mutate(new_daily_cases = confirmed_cases - lag(confirmed_cases)) %>% 
+  filter(date >="2020-03-01") %>% 
+  mutate(day_number = row_number()) %>% 
+  filter(day_number <= 100) %>%
+  mutate(day_of_week = factor(weekdays(date), 
+                    levels = c("Monday", "Tuesday", "Wednesday", "Thursday", 
+                    "Friday", "Saturday", "Sunday") ))
+c 
+```
+
+> a. (2 points). **Let's see if we can get a better model by incorporating both day_number and day_of_week into our model (last homework, we tried these factors separately). Before creating a model, make a plot that shows the relationship between day_number, day_of_week, and new_daily_cases. What do you observe?** 
+
+
+
+> b. (3 points) **Create a linear model for the number of new_daily_cases in terms of both day_number and day_of_week that does not allow for interactions between the day_number and day_of_week. What is the equation of your model? **
+
+
+
+> c. (3 points) **Create a linear model for the number of new_daily_cases in terms of both day_number and day_of_week that does allow for interactions between the day_number and day_of_week. What is the equation of your model? **
+
+
+
+
+> d.  (2 points) **Use an appropriate function to add to your original data set predictions from *both* of the models you created in the two previous parts; you should do this using a single function. **
+
+
+
+
+> e. (3 points) **Make a plot with two facets, one for each of your models from parts (b) and (c).  Each facet should have the original data points (with day_number on the x-axis, new_daily_cases on the y-axis, and colored according to day_of_week) with the lines from your model, one for each day_of_week, drawn on top of it.**
+
+
+
+
+
+> f. (3 points) **Plot the residuals of both models using facets, one for each day_of_week. You are welcome to do all of these facets in one plot like we did in one class, or split it up into separate plots for each model if that makes it easier for you to see the patterns of the residuals.  **
+
+
+
+
+> g. (2 points) **Look at your plots in the previous two parts.  Which model do you think is better and why? **
+
+
+
+
+
+&nbsp;
+
+## Question 5 (14 points)
+
+> **Consider the following data set, that shows (fictional) voltage and current  measurements of several samples of a semiconductor material.  You want to try to predict, for this material, what voltage is required to achieve a certain current (that is, predict current based on voltage). **
+
+```{r}
+# You don't need to know how this code works
+set.seed(1)
+vc <- tibble(voltage = abs(-0.1 + rnorm(100, 1)), 
+                                       current = voltage^(1/3) + rnorm(100, mean = 0, sd = 0.1))
+```
+
+
+> a. (2 points) **Plot the data (with voltage on the x-axis and current on the y-axis, because we're trying to predict current based on voltage), and attempt to model it with a line. Using your plot, explain why a line isn't a particularly good model for this data.**
+
+
+
+
+> b. (3 points) **You know, based on your work with semiconductor materials, that a good family of models to try to predict current based on voltage  might be polynomial models: **
+
+\[ current = a1 * voltage^(a2) \]
+
+> **where we expect a2 to be small, like maybe around 1/2 or 1/3. Taking the log of both sides and simplifying terms using logarithm rules (just like in class), this means we're looking for the model:** 
+
+\[ log2(current) = log2(a1) + a2 * log2(voltage)\]
+
+> **Create columns in the vc data set for log2(voltage) and log2(current), and make a plot showing the relationship between log(voltage) and log2(current).  Does the relationship appear to be linear? **
+
+
+
+
+> c. (3 points) **Create a linear model predicting log2(current) from log2(voltage). What are the coefficients of this linear model, and what is your equation for log2(current) in terms of log2(voltage)? **
+
+
+
+
+> d. (3 points)  **Starting with the linear model you made in the previous part for log2(current) in terms of log2(voltage), work backwards to get an equation for current in terms of voltage. That is, your answer should look like current = a1 * voltage^(a2), but with the values a1 and a2 replaced by numbers. What does your equation for current in terms of voltage become?**
+
+
+
+
+> e. (3 points) **Add a column to your original data set for the model you came up with in the previous part (that is, add a column giving a prediction for current, not a prediction for log(current)), and draw this model on top of your original data.  Does it look like a good model? Explain why or why not. **
+
+
+
+
+&nbsp;
+
+## Question 6 (9 points) 
+
+> **Sometimes, like in the previous question, you have some contextual information that helps you guess at what class of models makes sense.  Sometimes, you don't have that information!  **
+
+> a. (1 points) **Import the data set "sim8.csv", which has an x column and a y column. Add a log2(x) and a log2(y) column**
+
+
+
+>b. (4 points)  **Make 4 plots for this data: x vs. y, x vs. log2(y),  log2(x) vs. y, and log2(x) vs. log2(y). (Note the easiest way to do this is to call the ggplot function 4 separate times). Which plot looks most linear? **
+
+
+
+
+> c. (4 points) **Using your answer from the previous question, determine what linear model you should make, and make this linear model.  Write out the equation of your linear model. What value does your model predict for y when x is 4? **
+
+
+
+
+&nbsp; 
+
+## Question 7 (5 points) 
+
+> **When you look at the diamonds data set, it seems like diamonds with better colors have lower prices (letters closer to the beginning of the alphabet are better color ratings):**
+
+```{r}
+ggplot(diamonds) + geom_boxplot(aes(color, price))
+```
+> **However, size (carat) might be a confounding variable here.  When you look at what part of a diamond's price isn't explained by size, what do you observe about the relationship between color and price?**
+
+
+
+
+&nbsp;
+
+## Question 8 (10 points)
+
+> **Consider the flights data set.**
+
+```{r}
+library(nycflights13)
+set.seed(555555) # Fixes the randomness used throughout the rest of this question, so students all get  the same answers
+```
+
+> a. (2 points) **First, remove all flights that do not have an arrival delay. Split the remaining data up into training and test data, where 80% of your data is in the training data set and 20% is in the test data set.**
+
+
+
+> b. (3 points) **Make a model, using your training data, that attempts to predict arrival delay using departure delay. Compute the mean of the squares of the residuals of this model on the training data and on the test data.  Do you think there is overfitting? ** 
+
+
+
+
+> c. (5 points) **Make a model trying to predict arrival delay using at least three different columns in flights. You can choose which columns to use and whether to use interactions or not, but your mean residuals squared for the training data should be less than for the model in the previous part. Compute the mean squared residual for your model on both the training data and the test data.  Do you think there's overfitting in your model?**
+
+
+
+
+&nbsp; 
+
+## Question 9 (4 points)
+
+> a. **Explain what geom_tile() does, explain when you might want to use it, and make an example plot using geom_tile() and a model different from the one we used in class (the data grid with predictions from Question 2 or 3 might be particularly convenient).**
+
+
+
+> b. **Explain what geom_hex() does, explain when you might want to use it, and make an example plot using geom_hex() and a data set different from the one we used in class (diamonds). **
+
+
+
+&nbsp;
+
+## Question 10 (6 points)
+
+> **Here is an example tibble to use for this question:** 
+
+```{r}
+example <- tibble(date = rep(c(1:14), each = 2), 
+                  day_of_week = rep(rep(c("Sunday", "Monday", "Tuesday", 
+                                          "Wednesday", "Thursday", "Friday", 
+                                          "Saturday"), times = 2), each = 2), 
+                  time_of_day = rep(c("Morning", "Afternoon"), times = 14), 
+                  num_observations = c(38,45,16,32,45,32,45,43,23,38,
+                                       75,34,54,28,38,42,16,32,45,32,
+                                       24,43,23,45,75,34,54,28))
+
+example
+```
+
+> a. **Explain why the following two commands produce different output: **
+
+```{r}
+data_grid(example, day_of_week, time_of_day)
+select(example, day_of_week, time_of_day)
+```
+
+
+
+
+> b. **Explain why the following two commands produce the same output: **
+
+```{r}
+example %>% data_grid(day_of_week, time_of_day)
+example %>% distinct(day_of_week, time_of_day) %>% complete(day_of_week, time_of_day)
+```
+
+
+
+
+> c. **Explain why creating the following data grid would be a bad idea: **
+
+```{r}
+data_grid(example, date, day_of_week)
+```
+
+
+
+
+
