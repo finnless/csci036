@@ -1,0 +1,524 @@
+---
+title: "11-20 Class Notes: Data Transformations, Residuals, Overfitting"
+author: "Sarah Cannon"
+date: "2024-11-20"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(splines)
+library(modelr)
+options(na.action=na.warn)
+```
+
+# Announcements
+
+Homework 10 (modelling, based on classes 11/4 and 11/13) **AND Final Project Proposal**: Final deadline Thursday 11/21, 11:59pm
+
+Homework 10, Question 3: All parts should reference the same model as given in Part (a): 
+new_daily_cases = -100 + 50 * day_number
+
+Homework 11: Based on this week's classes, due Tuesday 11/26
+
+
+Remaining Schedule: 
+
+Monday, 11/25: Modelling (predicting Categorical variables) 
+
+Monday, 12/2: Review for Quiz
+
+Wednesday, 12/4: Quiz (Based on Homeworks 10-12)
+
+Last Homework: Homework 12, based on class 11/25 (Monday), half the length of a normal assignment
+
+Due Monday 12/2, 11:59pm, can use up to a maximum of 12 hours of extension time
+
+Solutions will be release Tuesday 12/3 at noon. 
+
+Questions about upcoming schedule?
+
+
+# Preclass: Review of Logarithms
+
+log_2 (n) = power you need to raise 2 to to get n
+
+In computer science (and this class), all logarithms are base 2
+
+Logarithm Facts: 
+
+log(2) = 1, log(1) = 0
+
+For any 0 < n < 1, log_2 (n) < 0
+
+log(a*b) = log(a) + log(b)
+log(a^b) = b log a
+2^(log a) = a
+
+A polynomial model y = a_1 * x^(a_2) becomes a linear model:
+log(y) = log(a_1) + a_2 log(x) = c_1 + c_2 log(x) 
+(where c_1 = log(a_1), a_1 = 2^(c_1), c_2 = a_2)
+
+To make a polynomial model: make a linear model using log(x) to predict log(y), then turn it back into a model using x to predict y
+
+Also sometimes need exponential facts: 
+
+2^(a+b) = 2^a * 2^b 
+2^(a*b) = (2^a)^b
+2^(log a) = a
+
+Questions from preclass video?
+
+
+# Data Transformations
+
+Sometimes, there is not a linear relationship between one variable and another: 
+
+```{r}
+ggplot(diamonds) + 
+  geom_point(aes(x = carat, y = price), alpha = 0.1)
+```
+
+```{r}
+dmod <- lm(price ~ carat, data = diamonds)
+dmod
+
+ggplot(diamonds) + 
+  geom_point(aes(x = carat, y = price), alpha = 0.1) + 
+  geom_abline(aes(intercept = dmod$coefficients[1], 
+                  slope = dmod$coefficients[2] ), 
+              color = "red")
+```
+
+Note: when have many points on top of each other: geom_hex can be useful: colors to show how many data points are in each region
+
+```{r}
+# install.packages("hexbin")
+library(hexbin)
+```
+
+```{r}
+ggplot(diamonds) + 
+  geom_hex(aes(x = carat, y = price)) + 
+  geom_abline(aes(intercept = dmod$coefficients[1], 
+                  slope = dmod$coefficients[2] ), 
+              color = "red")
+```
+
+For simplicity: let's just try to find a model that works for diamonds less than 2.5 carats (99.7% of the diamonds)
+
+```{r}
+diamonds2 <- diamonds %>% filter(carat <= 2.5)
+```
+
+```{r}
+ggplot(diamonds2) + 
+  geom_hex(aes(x = carat, y = price)) + 
+  geom_abline(aes(intercept = dmod$coefficients[1], 
+                  slope = dmod$coefficients[2] ), 
+              color = "red")
+```
+
+Seems to be an upward curve: like half of a parabola, or half of a cubic, or half of a quartic, don't know exactly what the power of x should be.
+
+Possible model:  
+
+price = a1 * carat^a2
+
+Would expect it to go through (0,0), so no other terms needed. 
+
+How to find best model here? Take a logarithm of both sides! 
+
+[A good idea because an unknown coefficient is in the exponent]
+
+Using logarithm rules and rearranging terms, this becomes: 
+
+log(price) = log(a1 * carat^a2) = log(a1) + log(carat^a2) = log(a1) + a2 * log(carat)
+
+In R: 
+
+log2(price) = log2(a1) + a2 * log2(carat)
+
+This is the same as a linear model between log2(price) and log2(carat)!
+
+[Note in computer science, almost always do base 2 logarithms, not base 10 or base e]
+
+Let's look at the relationship between log2(price) and log2(carat):
+
+```{r}
+diamonds3 <- diamonds2 %>% mutate( lprice = log2(price), lcarat = log2(carat))
+diamonds3
+```
+
+Does the relationship between lprice and lcarat look linear?
+
+(Was our original guess that price = a1 * carat^a2 a good one?)
+
+```{r}
+ggplot(diamonds3) + geom_point(aes(x = lcarat, y = lprice), alpha = 0.2)
+ggplot(diamonds3) + geom_hex(aes(x = lcarat, y = lprice))
+```
+
+Let's find a linear model between lcarat and lprice.
+
+```{r}
+lmod <- lm(lprice ~ lcarat, data = diamonds3)
+
+ggplot(diamonds3) +
+  geom_point(mapping = aes(x = lcarat, y = lprice), alpha = 0.2) + 
+  geom_abline(aes(intercept = lmod$coefficients[1], 
+                  slope = lmod$coefficients[2]), color= "red")
+lmod
+```
+
+
+Equation: log2(price) = 12.194 + 1.681 * log2(carat)
+
+Original equation: log2(price) = log2(a1) + a2 * log2(carat)
+
+Matching terms: 
+
+a2 = 1.681
+To find a1: Know log2(a1) = 12.194; To get a1, exponentiate
+
+2^(log2(a1)) = 2^(12.194)
+
+a1 = 2^(12.194)
+
+```{r}
+a2 <- lmod$coefficients[2]
+a1 <- 2^(lmod$coefficients[1])
+
+a1 
+a2
+```
+ 
+Model for price in terms of carat: 
+price = a1 * carat^a2 = 4685 * (carat)^1.681
+
+Make predictions for original data:
+
+```{r}
+diamonds3 %>% mutate(pred_price = a1 * carat^a2) %>% 
+  ggplot() + geom_point(aes(carat, price), alpha = 0.1) + 
+  geom_line(aes(x = carat, y = pred_price), color = "red")
+```
+
+(alternate way to make predictions: add predictions for lprice, then use mutate and the formula price = 2^lprice)
+
+In summary: Don't be afraid to transform your variables to find a linear relationship
+
+
+## Logarithmic and Exponential Models
+
+With this data, we saw (from plotting) a somewhat linear relationship between log(price) and log(carat)
+
+This is an indicator there's a polynomial relationship between price and carat. 
+
+What about a linear relationship between price and log(carat)? Or between carat and log(price)? 
+
+Can plot: y vs. x, log(y) vs. log(x), y vs. log(x), log(y) vs. x
+
+
+If y vs. log(x) looks linear: 
+
+Model: y = c1 + c2 * log(x) : logarithmic model! 
+  
+
+
+If log(y) vs. x looks linear: 
+
+Model: log(y) = c1 + c2 * x
+
+To get a model that predicts y: 
+
+2^log(y) = 2^(c1 + c2 * x)
+
+y = (2^c1) * 2^(c2 * x) = 2^c1 * (2^c2)^x = a * b^x : Exponential model
+
+Will see examples on activity and homework.
+
+
+# Explaining one variable with another variable
+
+Motivating Question: Why do "better" diamonds tend to be cheaper? 
+
+```{r}
+diamonds %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = cut, y = price))
+
+diamonds %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = clarity, y = price))
+```
+
+This seems counterintuitive! 
+
+There is a confounding variable:  carat
+
+Diamonds of higher quality tends to be smaller, and therefore, cheaper
+
+**Question:** What part of a diamond's price *isn't* explained by carat? 
+
+
+## Intuitive Role of Residuals
+
+If we get rid of the dependence on carat, what is the relationship between price and quality (cut/clarity)? 
+
+What's left over when you model price using carat? Residual
+
+For different cuts, what part of price isn't explained by carat?  
+
+Residuals = what's not explained by our model.  If there are patterns, can try to readjust model 
+
+```{r}
+diamonds4 <- diamonds3 %>% 
+  mutate(pred_price = a1 * carat^a2) %>% 
+  mutate(residual = price - pred_price)
+
+diamonds4 %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = cut, y = residual)) + 
+  ylim(-2500, 2500)
+```
+
+When we've removed the part of price that's explained by carat:  Now ideal diamonds do tend to be more expensive than our model predicted! 
+ 
+See same thing for clarity: 
+ 
+```{r}
+diamonds4 %>% 
+  ggplot() + 
+  geom_boxplot(aes(x = clarity, y = residual)) + 
+  ylim(-2500, 2500)
+```
+
+When you look at the part of a diamond's price that isn't explained by size: better cuts and clarities are more expensive. 
+
+Note: There's a pattern in these residuals! 
+
+- Residuals indicate what's not accounted for in the model
+- In want a more accurate model, incorporate these factors! 
+
+Because there are patterns in the residuals for cut and clarity, should incorporate cut and clarity into model! 
+
+[We'll stop here, but in similar situations you should keep going!]
+
+
+# Overfitting
+
+Can be hard to know when to stop! Depends some on context and why you're building this model/what you're looking to learn from model.
+
+If you add cut and clarity into your diamonds model but it still doesn't completely explain price, what do you do next? Add color?
+
+Intuition for this comes with experience.
+
+Make model as complicated as you need to to explain data/make your model useful, and not more.
+
+Code from last week: 
+```{r}
+# You don't need to know how this data was created
+# But just know it was generated using the same equation as sim6
+# Different randomness was used
+set.seed(123456)
+sim6 <- tibble(
+  x = seq(-1, 2.5 * pi, length = 50),
+  y = 4 * sin(x) + rnorm(length(x))
+)
+set.seed(555555)
+sim6_new <- tibble(
+  x = seq(-1, 2.5 * pi, length = 50),
+  y = 4 * sin(x) + rnorm(length(x))
+)
+mod20 <- lm(y ~ ns(x, 20), data = sim6)
+```
+
+Model drawn on original data: 
+
+```{r}
+sim6  %>% 
+  add_predictions(mod20) %>%
+  ggplot() + 
+  geom_point(aes(x,y))+ 
+  geom_line(aes(x,pred), color = "red")
+```
+
+Model drawn on new data from same distribution: 
+
+```{r}
+sim6_new  %>% 
+  add_predictions(mod20) %>%
+  ggplot() + 
+  geom_point(aes(x,y))+ 
+  geom_line(aes(x,pred), color = "red")
+```
+
+Sometimes you can visually detect when there's overfitting, but sometimes you can't. 
+
+
+# Training/Test Data
+
+To avoid overfitting:  separate your data into *training data* and *test data*. Make your model using training data, and then test your model against your test data. 
+
+See if you model has siilar accuracy in the training data and the test data. 
+
+```{r}
+training_data <- sim6
+test_data <- sim6_new
+
+# Find average residual^2 of model on training data
+training_data %>% 
+  add_residuals(mod20) %>% 
+  summarize(mean(resid^2))
+
+# Find average residual^2 of model on test data
+test_data %>% 
+  add_residuals(mod20) %>% 
+  summarize(mean(resid^2))
+
+```
+
+Much larger average residual in test data!  That's a sign your model might be overfitting.
+
+Note: these residual values aren't comparable across different data. 
+
+This isn't the case for mod5 (a spline with 5 degrees of freedom): 
+
+```{r}
+mod5 <- lm(y ~ ns(x, 5), data = sim6)
+
+# Find average residual^2 of model on training data
+training_data %>% 
+  add_residuals(mod5) %>% 
+  summarize(mean(resid^2))
+
+# Find average residual^2 of model on test data
+test_data %>% 
+  add_residuals(mod5) %>% 
+  summarize(mean(resid^2))
+```
+
+These are much closer! 
+
+Usually you won't have a second data set with data drawn from the same source: you'll have to divide your data into two pieces: using sample_n(dataset, number_of_rows)
+
+For example, if we didn't make a new data set and instead wanted to divide sim6, which has 50 rows.
+
+```{r}
+# randomly sample 30 rows of sim6 to be the training data set
+sim6_training <- sample_n(sim6, 30)
+
+#put all other rows in the test data set
+sim6_test <- anti_join(sim6, sim6_training)
+
+sim6_training
+sim6_test
+```
+
+You should do this whenever overfitting is a potential concern. 
+
+What fraction of data goes into training vs. test data depends on context
+- sometimes 50% of data in each
+- sometimes 80% of data in training, 20% of data in test
+
+Want enough data in training set to make a good model, but still have enough data in test set to evaluate the model. 
+
+Usually, want to divide data randomly.
+
+Sometimes, may want to divide each subgroup randomly.
+
+Occasionally, random division doesn't make the most sense.
+
+This can help us "see" overfitting, even when we can't visualize our model as well as we can for splines. 
+
+The more variables you're using as your predictors, the more likely you are to have overfitting
+
+
+
+## Case study: predicting price using carat, cut, and clarity
+
+Step 1: Make training and test data
+
+```{r}
+dtraining <- sample_n(diamonds3, nrow(diamonds3) * 0.8)
+dtest <- anti_join(diamonds3, dtraining)
+```
+
+Make a model for lprice using lcarat, cut, and clarity
+
+(We haven't previously seen models with more than 2 predictor variables, but everything is similar)
+
+A model without interactions: 
+
+```{r}
+dmod2 <- lm(lprice ~ lcarat + cut + clarity, data = dtraining)
+```
+
+```{r}
+dtraining %>% 
+  add_predictions(dmod2) %>% 
+  mutate(price_pred = 2^pred) %>% 
+  mutate(residual = price - price_pred) %>% 
+  summarize(mean(residual^2))
+```
+
+```{r}
+dtest %>% 
+  add_predictions(dmod2) %>% 
+  mutate(price_pred = 2^pred) %>% 
+  mutate(residual = price - price_pred) %>% 
+  summarize(mean(residual^2))
+```
+
+The model does slightly better on the training data than the test data, but not dramatically so. There may be slight overfitting. 
+
+Is there still some effect based on color that we're not accounting for? 
+
+```{r}
+dtraining %>% 
+  add_predictions(dmod2) %>% 
+  mutate(price_pred = 2^pred) %>% 
+  mutate(residual = price - price_pred) %>% 
+  ggplot() + geom_boxplot(aes(color, residual))
+```
+
+Yes!  We could maybe make our model even better by incorporating color. 
+
+Note: Test data should be used sparingly.  Only test a model once you're confident in it/don't plan to make any more changes. 
+
+If we were going to incorporate color, we should have done that before touching the test data. 
+
+
+# Summary
+
+Data Transformations: Can transform data to find a linear relationship!
+
+Linear model between log(x) and log(y) <-> polynomial model model between x and y;
+Linear model between log(x) and y <-> logarithmic model between x and y;
+Linear model between x and log(y) <-> exponential model between x and y;
+
+Residuals = what part of y isn't explained by x
+
+Can see relationship between two variables with a third confounding variable removed, by making a model using that confounding variable and looking at residuals
+
+Overfitting:
+
+- Not always clear visually
+- Split data into training and test data
+- look at mean(residual^2) to compare
+- Don't want a model that does dramatically better on training data than test data - that's a sign of overfitting
+
+
+# Activity
+
+On Canvas
+
+If finish regular questions, move on to bonus questions.
+
+If finish bonus questions, check in with Prof. Cannon, then can leave. 
+
+Can work individually or with classmates. 
+
+
+
