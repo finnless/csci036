@@ -1,0 +1,424 @@
+---
+title: "11-25 Class Notes - Predicting Categorical Variables"
+author: "Sarah Cannon"
+date: "11/25/2024"
+output: html_document
+---
+
+
+```{r}
+library(tidyverse)
+library(modelr)
+options(na.action = na.warn)
+```
+
+# Announcements
+
+See feedback on Final Project Proposal
+
+Homework 11: Based on last week's classes, due Tuesday 11/26
+
+Remaining Schedule: 
+
+Today: Modelling (predicting Categorical variables) 
+
+Monday, 12/2: Review for Quiz, Course Evaluations
+
+Wednesday, 12/4: Quiz (Based on Homeworks 10-12, all about modelling)
+
+Last Homework: Homework 12, based on class today, half the length of a normal assignment
+Available tomorrow morning
+Due **MONDAY** 12/2, 11:59pm
+Can only use a **maximum of 12 hours of extension time**
+Final due date: Tuesday, 12/3, 11:59am
+Solutions released: Shortly after
+
+Upcoming Office Hours: 
+Tuesday 11/26 10:30-11:30am and 2-3pm (in person and Zoom)
+No office hours Wednesday 11/27. 
+
+
+# Predicting Categorical Variables
+
+Previously: The thing we were trying to predict was a numerical variable
+
+Today: Trying to predict the value of a categorical variable
+Specifically: Trying to predict a categorical variable with two outcomes
+Yes/No, True/False, Positive/Negative, etc. 
+
+For simplicity, will assume the two outcomes are 1 and 0.
+
+Baseline Model: Predict whichever outcome occurs more frequently in your data
+Any other model should do better than the baseline model!
+
+Making a prediction: mutate() is one option
+Seeing what fraction of the time a prediction is correct: mean( pred == actual_y_value )
+
+Depending on context: May want this 0/1 column to be a numerical column, may want it to be a categorical column (in class) 
+When plotting: use factor() or group =  to display correctly 
+
+*Caution 1*: Be careful making conclusions based on trends in subgroups: Are these just trends in the data set overall? 
+
+*Caution 2*: Be careful about missing data! 
+
+Questions from Preclass Video? 
+
+
+## Logistic Regression
+
+Can we use what we learned about predicting numerical values to help us predict categorical variables? 
+
+Here's some random example data where the outcome is either 0 or 1: 
+
+```{r}
+set.seed(123456)
+ex  <- tibble(x = runif(100, 0, 10), 
+              y = ifelse( x + rnorm(100, mean = 0, sd = 3) < 5, 0, 1))
+ex
+ggplot(ex) + geom_point(aes(x,y))
+```
+
+It certainly seems that the larger x is, the more likley it is for y to be 1. 
+
+We can use lm():
+
+```{r}
+mod <- lm(y ~ x, data = ex)
+ex %>% add_predictions(mod) %>% 
+  ggplot() + geom_point(aes(x,y)) + 
+  geom_line(aes(x,pred), color = "red", lwd = 1)
+```
+
+This model doesn't incorporate a key thing we know, that the y-values are always 0 or 1. 
+
+Instead of directly modelling the data using a linear model:
+Let p be the probability the outcome is 1, and we're going to try to predict p. 
+
+If p is the probability the outcome is 1, then 1-p is the probability the outcome is 0. 
+ 
+Just using lm() doesn't capture a key fact we know: That p needs to eb between 0 and 1.  
+Our linear models we've done so far don't understand/respect this kind of restriction. 
+There's no way to incorporate this into our model. 
+
+Solution: Do a transformation on our data. Transform p (which is between 0 and 1) to be something else that has no range restrictions.  
+
+*logit function*: If the probability of one outcome is p, and the probability of another outcome is 1-p, then the logit function is the logarithm of the odds of the first outcome to the second outcome.  That is: 
+logit(p) = log( p / (1-p) )
+
+Note that for p between 0 and 1: logit(p) can be any positive or negative number 
+
+If p is not between 0 and 1: p/(1-p) is negative, and logit(p) is undefined. 
+
+When p = 1-p = 0.5, this is log(1) = 0
+
+When p is greater than 1-p (more likely that outcome is 1): logit(p) > 0
+
+When 1-p is greater than p (more likely that outcome is 0), logit(p) < 0
+
+The key idea of logistic regression is to predict logit(p) 
+
+We can then transform this back into a prediction about p. 
+Will always get something between 0 and 1. 
+
+
+In R, we create such a model with:  the glm() function [generalized linear models]
+
+Need to specify the correct model family, which is "binomial" in this case. 
+
+```{r}
+mod_logit <- glm(y ~ x, data = ex, family = "binomial")
+mod_logit
+```
+
+Now we can make our predictions for the value of logit(p), where p is the probability of the outcome being 1
+
+```{r}
+ex %>% add_predictions(mod_logit) %>% 
+  ggplot() + geom_line(aes(x, pred)) + 
+  ylab("Prediction for logit(p)")
+```
+
+It's much easier to interpret if we translate these results back into p. 
+
+add_predictions will do this if we specify type = "response"
+
+```{r}
+ex %>% add_predictions(mod_logit, type = "response")
+```
+
+Now, the pred column has the predicted value for p, the likelihood that the outcome is 1.  We can plot this!
+
+```{r}
+ex %>% add_predictions(mod_logit, type = "response") %>% 
+  ggplot() + geom_point(aes(x,y)) + 
+  geom_line(aes(x, pred), color = "red")
+```
+
+A simple method to predict outcomes: If p >= 0.5, predict 1; if p < 0.5, predict 0. 
+
+```{r}
+ex_preds <- ex  %>% add_predictions(mod_logit, type = "response") %>% 
+  mutate(predicted_outcome = ifelse( pred >= 0.5, 1, 0))
+
+ex_preds
+```
+
+We could have also see this from plots: 
+- in logit plot, line is above 0 for all x >= 4.7, that means for all x >= 4.7, the predicted value for p is greater than 1/2, so our final prediction is 1. 
+- in our model for p, similarly we see that whenever x >= 4.7, our prediction for p is greater than 0.5, so our final prediction is 1. 
+
+
+### Assessing your model
+
+See what fraction of the time your predictions are correct: 
+
+```{r}
+ex_preds %>% summarize(frac_correct = mean(predicted_outcome == y))
+```
+77% of our predictions were correct. 
+
+Whether this is a good value or not depends on your data, baseline model, etc. 
+For this data, it's about as good as we could hope for because of the noisiness 
+
+Note: residuals are always 0 or 1 or -1 here! While you could plot the residuals, it's not terribly informative.
+
+### Multiple predictor variables
+
+Note: Here we applied logistic regression with one numerical predictor variable, but:  it also works with mule predictor variables and with categorical variables. 
+
+Here's some example data: 
+
+```{r}
+df <- tibble(x = c(0.05, 0.4, 0.05, 0.9, 0.4, 0.5, 0.3),
+            y = c(1, 0.7, 0.8, 0.5, 0.05, 0.3, 0.05), 
+            class = factor(c(0,0,0,1,1,1,1)))
+g <- df %>% ggplot() + geom_point(aes(x, y, shape = class, color = class))
+g
+```
+
+If we want to use logistic regression:
+
+```{r}
+mod2 <- glm(class ~ x + y, data = df, family = "binomial")
+df %>% add_predictions(mod2, type = "response")
+```
+
+(This is just because there isn't much data, and the two classes are well-separated)
+
+
+
+## Support Vector Machines
+
+A way of classifying data into two categories
+
+Supervised Learning: We have labels for our data, that is, we know (at least for our training data) which data points fall into which categories. 
+
+A *support vector machine* classifies by trying to split the data into two groups using a hyperplane (2D: Line; 3D: plane; 4 or more dimensions: hyperplane) 
+
+In some cases, this is very easy, and the hyperplane can be used directly.
+
+Let's look at our last example:  
+
+```{r}
+g <- df %>% ggplot() + geom_point(aes(x, y, shape = class, color = class))
+g
+```
+
+For two-dimensional data, a linear SVM:  is just a line separating the two classes of data. 
+
+Here's three possible SVMs for this data: 
+
+```{r}
+g +
+geom_abline(aes(intercept = 0.25, slope = 1),
+color = "red") +
+geom_abline(aes(intercept = 0.1, slope = 1),
+color = "green") +
+geom_abline(aes(intercept = 0.15, slope = 1.2),
+color = "blue")
+```
+
+All three of these lines separate the two classes. 
+
+Rather than constructing SVMs by hand, we can build them with code
+
+The svm() function is in the package e1071
+
+Format is similar to lm()
+
+But, the thing you're trying to predict should be a categorical variable (<fctr> or <chr> data type)
+
+To build your separator from lines: use kernel = "linear"
+
+```{r}
+#install.packages("e1071")
+library(e1071)
+
+mod_svm <- svm(class ~ x + y, data = df, kernel = "linear")
+df %>% add_predictions(mod_svm)
+```
+
+This model is also 100% correct! 
+
+What does this model "look" like? 
+
+Easiest way to see: See what predictions are everywhere! 
+
+Make a data grid covering the entire space. 
+
+```{r}
+dg <- data_grid( df, 
+                 x = seq_range(x, 100), 
+                 y = seq_range(y, 100))
+dg %>% add_predictions(mod_svm) %>% 
+  ggplot() + geom_point(aes(x,y, color = pred), alpha = 0.05) + 
+  geom_point(data = df, aes(x,y,color = class, shape = class))
+```
+
+To see options: 
+
+```{r}
+?svm
+```
+
+It gets harder if your data isn't clearly separated, however. 
+
+```{r}
+set.seed(123456)
+n <- 40
+r <- rnorm(n)
+df2 <- tibble(
+  x = c(r,r), 
+  y = c(r + rnorm(n), r + 2 + 2*rnorm(40)), 
+  class = factor(c(rep("1", n), rep("2", n)))
+)
+```
+
+```{r}
+ggplot(df2) + geom_point(aes(x,y, color = class))
+```
+
+No basic SVM can perfectly classify this data.  But, we can try to get close. 
+
+```{r}
+mod_svm2 <- svm(class ~ x + y, data = df2, kernel = "linear")
+```
+
+Let's add in our predictions:
+
+```{r}
+df2 %>% add_predictions(mod_svm2) %>% 
+  ggplot() + geom_point(aes(x,y, color = class, size = pred, shape = pred))
+```
+
+How often is this right? 
+
+```{r}
+df2 %>% add_predictions(mod_svm2) %>% 
+  summarize(frac_correct = mean(pred == class))
+```
+
+## Non-linear SVM
+
+These models can do much more than just lines!
+
+(Homework/quiz will stick to lines, but in case you want to do more for your final project): 
+
+```{r}
+# install.packages("mda")
+# This is just to bring in the example data
+library(mda)
+data(ESL.mixture)
+```
+
+```{r}
+df3 <- tibble(
+x = ESL.mixture$x[, 1],
+y = ESL.mixture$x[, 2],
+class = factor(ESL.mixture$y)
+)
+df3 %>%
+ggplot() +
+geom_point(aes(x, y, color = class))
+```
+
+The svm() function has a lot more parameters you can set/tune
+
+```{r}
+mod_svm4 <- svm(class ~ x + y, data = df3, scale = FALSE, kernel = "radial", cost = 5)
+```
+
+```{r}
+# Make a data grid of predictions and add predictions to it
+grid <- df3 %>% data_grid(x = seq_range(x, 100),
+                          y = seq_range(y, 100)) %>%
+  add_predictions(mod_svm4)
+
+# Plot data
+ggplot() +
+  geom_point(data = df3, aes(x, y, color = class, shape = class)) +
+  # plot predictions
+  geom_point(data = grid, aes(x, y, color = pred), alpha = 0.05)
+```
+
+For these kinds of models, training/test data split is very important!  Can be easy to overfit. 
+
+```{r}
+mod_svm5 <- svm(class ~ x + y, data = df3, scale = FALSE, kernel = "radial", cost = 200)
+
+grid <- df3 %>% data_grid(x = seq_range(x, 100),
+                          y = seq_range(y, 100)) %>%
+  add_predictions(mod_svm5)
+
+# Plot data
+ggplot() +
+  geom_point(data = df3, aes(x, y, color = class, shape = class)) +
+  # plot predictions
+  geom_point(data = grid, aes(x, y, color = pred), alpha = 0.05)
+```
+
+
+
+## Other types of models/machine learning
+
+This is far from the only kinds of machine learning models that exist! 
+
+See class textbook for many more. 
+
+
+
+# Summary
+
+Predicting Categorical Variables
+
+Baseline model: Predict most likely outcome; any model should beat baseline model
+
+Logistic regression: predict logit(p), where p is the probability the outcome is one
+Use glm(..., family = "binomial")
+To add predictions for p: %>% add_predictions(model_name, type = "response")
+
+Support Vector Machines: Creates a hyperplane (line/plane) separating data 
+Use svm( ... , kernel = "linear") 
+(Can also be used to find non-linear separators, but we'll stick to linear separators)
+
+Depending on context: May want your 0/1 column to be a numerical column, may want it to be a categorical column (in class) 
+When plotting: use factor() or group =  to display correctly 
+
+*Caution 1*: Be careful making conclusions based on trends in subgroups: Are these just trends in the data set overall? 
+
+*Caution 2*: Be careful about missing data! 
+
+
+# Activity 
+
+On Canvas
+
+If finish regular questions, move on to bonus questions.
+
+If finish bonus questions, check in with Prof. Cannon, then can leave. 
+
+Can work individually or with classmates. 
+
+
+
+
