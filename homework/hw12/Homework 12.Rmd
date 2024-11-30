@@ -1,0 +1,166 @@
+---
+title: "Homework 12"
+author: "Prof. Cannon"
+date: "Due MONDAY 12/2/24"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+> **NOTE: THIS ASSIGNMENT IS DUE ON *MONDAY* 12/2, at 11:59pm, NOT TUESDAY**
+
+> **NOTE: YOU MAY ONLY USE UP TO 12 HOURS OF EXTENSION TIME ON THIS ASSIGNMENT.  THE FINAL DEADLINE IS TUESDAY 12/3 AT 11:59am (NOON).**
+
+> **This is because your Quiz is Wednesday 12/4, and I want to release the homework solutions before the quiz so you have a chance to look them over.**
+
+
+```{r, message = FALSE, results = 'hide', warning = FALSE}
+library(tidyverse)
+library(modelr)
+options(na.action = na.warn)
+library(nycflights13)
+```
+
+
+```{r}
+# This will make figures show up slightly smaller in your knitted file, which will make it easier to grade
+knitr::opts_chunk$set(fig.width=6, fig.height=4) 
+```
+
+
+## Question 1 (3 points)
+
+> **Reflect on what you learned about data ethics this semester. What are your key takeaways, and how do you plan to incorporate data ethics into your future data science work? Your answer should be about one paragraph.**
+
+
+
+&nbsp;
+
+## Question 2 (12 points) 
+
+> **This question (and subsequent questions) will consider the flights data set with a new column, called "delayed", which contains a 1 if the flight was delayed upon arrival and 0 otherwise. Throughout this question, this is the column you will be trying to predict. To make plotting/modelling more efficient, this data set only contains flights to Chicago O'Hare International Airport.  All rows where the arrival delay is NA have also been removed. **
+
+```{r}
+# So every students use the same randomness
+set.seed(555555)
+# Add delayed column
+flights_hw12 <- flights %>%
+  filter(dest == "ORD", !is.na(arr_delay)) %>%
+  mutate(delayed = ifelse(arr_delay >0, 1, 0)) 
+```
+
+> a. (1 point) **Split the flights_hw12 data set into training and test data, with 80% of the data in the training data set**
+
+
+
+
+> b. (3 points) **Looking at the training data set, what should your baseline model be?  Explain how you know, and use code to support your answer.**
+
+
+
+
+> c. (3 points) **Add a new column onto your training data set with the prediction of your baseline model.  What fraction of the time is this prediction correct on your training data set?**
+
+
+
+
+> d. (2 points) **Suppose your friend makes a model that's correct for 60% of the flights in the flights test data set, and they're excited because their model has greater than 50% accuracy.  Should they be excited about this?  Explain. **
+
+
+
+> e. (3 points) **Consider a model that predicts the flight is delayed if the departure delay is greater than 0, and not delayed otherwise.  What fraction of the time is this prediction correct on your training data set?**
+
+
+
+
+&nbsp;
+
+## Question 3 (20 points)
+
+
+> **This question uses the flights training data set you made in the previous question. We are still trying to prediuct the value in the delayed column, that is, we want to predict 1 if the flights is delayed and 0 otherwise.**
+
+> a. (2 points) **Explain, in your own words, why it's hard to make a linear model using the lm() function, as we've done in past weeks, to predict whether a flights is delayed or not.**
+
+
+
+
+> b. (2 points) **Explain, in your own words, what logit(p) is and why it's useful to try to predict logit(p) as a first step in trying to predict whether a flight is delayed or not. **
+
+
+
+
+> c. (2 points) **Make a scatterplot, using your flights training data set from the previous question, with dep_delay on the x-axis and delayed on the y-axis. (Note all points should have a y-coordinate of either 0 or 1).**
+
+
+
+> d. (3 points) **Make a logistic regression model using your flights training data set, that is, make a linear model that uses dep_delay to predict logit(p). Add your predictions for logit(p) onto your training data set, and plot your model for logit(p), with delayed on the x-axis and logit(p) on the y-axis.**
+
+
+
+
+> e. (2 points) **Looking at your plot in the previous part, comment on for what range of values of dep_delay your prediction for logit(p) is greater than 0, and explain what that tells you. You may want to use xlim() and ylim() to zoom in on the part of the plot where the prediction for logit(p) crosses 0. **
+
+
+
+
+> f. (3 points) **For the logistic regression model you made in (d), add predictions for p (not logit(p)) onto your training data set. Plot your model for p on top of the scatterplot you made in part (c).**
+
+
+
+
+> g. (2 points) **Looking at your plot in the previous part, comment on for what range of values of dep_delay your prediction for p is greater than 0.5, and explain what that tells you. **
+
+
+
+> h. (2 points) **Using your model's predictions for p, make a prediction of 1 or 0 for each flight (delayed or not delayed). **
+
+
+
+
+> i. (2 points) **For what fraction of flights is the model you made in the previous part correct? **
+
+
+
+
+&nbsp;
+
+## Question 4 (6 points)
+
+> a. (2 points) **Make a plot showing, in the training data set, the relationship between origin and whether a flight was delayed.  You should make a bar chart with three bars, one for each origin airport, with the bars filled in according to the delayed column. Make all your bars the same height, and change all axis/legend labels accordingly.**
+
+
+
+> b. (2 points) **Explain why, in your final project, you should be careful making conclusions based on trends in subgroups without looking at the trends in the data as a whole.  Give an example (different from any we discussed in class) where you could go wrong doing this. **
+
+
+
+> c. (2 points) **Write a single command (one line only) that outputs, for each column in the flights data set (the original flights data set, not the smaller one from previous questions), how many NA values there are in that column. **
+
+
+
+
+
+&nbsp;
+
+## Question 5 (9 points)
+
+> a. (2 points)  **Explain, in your own words, what a support vector machine is.**
+
+
+
+> b. (2 points) **Using the same training data set as the previous question, make a linear svm() model that attempts to use dep_delay and hour to predict whether a flight is delayed or not. Be sure to change the delayed column into a factor or character string data type first.** 
+
+
+
+> c. (3 points) **Make a data grid with 600 values for dep_delay, spanning from the smallest to the largest value; 24 values for hour, spanning from the smallest to the largest value; and all possible combinations of these.  Add the predictions of your svm model onto this data grid, and plot these predictions in an appropriate way.  What do you observe about this model? **
+
+
+
+> d. (2 points) **Add predictions from your svm model onto your training data set.  What fraction of the time is this model correct? **
+
+
+
+
+
