@@ -1,0 +1,99 @@
+```{r}
+library(tidyverse)
+library(haven)
+```
+
+
+```{r}
+# Read in the cumulative CCES data
+cc <- read_dta("cumulative_2006-2023.dta")
+```
+
+```{r}
+# Read 2022 CCES data
+cc22 <- read_dta("CCES22_Common_OUTPUT_vv_topost.dta")
+```
+
+```{r}
+# Subset media variables
+# NOTE: caseid is the ID variable in the 2022 CCES data
+cc22_media <- cc22 |>
+  select(caseid, matches("CC22_300"))
+```
+
+```{r}
+# Merge with cumulative data
+cc_media <- cc |>
+  filter(year == 2022) |>
+  mutate(case_id = as.numeric(case_id)) |>
+  left_join(cc22_media, by = c("case_id" = "caseid"))
+```
+
+```{r}
+# Look at the first media variable
+cc_media |> 
+  select(CC22_300_1) |> 
+  count(CC22_300_1)
+
+# And one from each group
+cc_media |> 
+  select(CC22_300a) |> 
+  count(CC22_300a)
+
+cc_media |> 
+  select(CC22_300b_1) |> 
+  count(CC22_300b_1)
+
+cc_media |> 
+  select(CC22_300d_1) |> 
+  count(CC22_300d_1)
+```
+
+
+```{r}
+# Create summary of network preferences
+cc_media |> 
+  select(matches("CC22_300b_[1-8]")) |>
+  summarise(across(everything(), 
+                  ~sum(.x == 1, na.rm = TRUE))) |>
+  pivot_longer(everything(), 
+              names_to = "network",
+              values_to = "viewers")
+```
+
+```{r}
+# Create network viewership plot
+cc_media |> 
+  select(matches("CC22_300b_[1-8]")) |>
+  summarise(across(everything(), 
+                  ~sum(.x == 1, na.rm = TRUE))) |>
+  pivot_longer(everything(), 
+              names_to = "network",
+              values_to = "viewers") |>
+  # Clean up network names
+  mutate(
+    network = case_when(
+      network == "CC22_300b_1" ~ "ABC",
+      network == "CC22_300b_2" ~ "CBS",
+      network == "CC22_300b_3" ~ "NBC",
+      network == "CC22_300b_4" ~ "CNN",
+      network == "CC22_300b_5" ~ "Fox News",
+      network == "CC22_300b_6" ~ "MSNBC",
+      network == "CC22_300b_7" ~ "PBS",
+      network == "CC22_300b_8" ~ "Other"
+    ),
+    # Convert to factor and order by viewership
+    network = fct_reorder(network, viewers)
+  ) |>
+  # Create the plot
+  ggplot(aes(x = network, y = viewers)) +
+  geom_col(fill = "#b45346") +
+  coord_flip() + # Horizontal bars
+  labs(
+    title = "Network News Viewership in 2022",
+    x = "Network",
+    y = "Number of Viewers",
+    caption = "Source: CCES 2022"
+  ) +
+  theme_minimal()
+```
