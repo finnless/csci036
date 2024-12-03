@@ -1,0 +1,284 @@
+---
+title: "Quiz Information and Review"
+author: "CSCI 36, Fall 2024"
+date: "12/2/2024"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+# Upcoming Schedule
+
+Homework 12 Due tonight 11:59pm, *can use at most 12 extension hours*
+Final Deadline: 11:59am tomorrow (Tuesday)
+Solutions available shortly after noon tomorrow
+
+Office hours before quiz:
+- Tuesday 10:30-11:30 and 2-3pm
+- Wednesday 1:15-2:15pm
+
+Extra Office hours for Final Project:
+
+- Monday 12/9 12:30-1:30
+
+- Wednesday 10/11 10-10:45am
+(I won't be having my usually scheduled office hours during finals week)
+
+Final Project Presentations: Tuesday 12/10 7-10pm, Kravis 165 (usual classroom)
+
+Final Project Due: Wednesday 12/11 12pm (noon)
+
+Late Policy: Students will lose 1 point for each hour the project is late
+1-60 minutes late: -1 point
+61-120 minutes late: -2 points
+etc. 
+
+Questions? 
+
+# Other Announcements
+ 
+*Final Project*: Must be written in R, RStudio.  Must be submitted as a PDF that is a knitted RMarkdown file (just like you do for homework). 
+
+
+# Quiz Overview
+
+**Date**: Wednesday, December 4, 2024
+
+**Time**: You will have 75 minutes to take the exam. 
+
+**Rules**: Must take test in person
+(only exceptions: if quarantined/isolated, or unforeseeable extenuating circumstances make it impossible for you to take the test in person; documentation required)
+
+**Materials**: Can bring one 8.5"x11" paper with notes, two-sided (or two pages, one-sided). Must be hand-written, and each student must make their own. Students may *not* write on tablet and print. Must be written large enough for me to read. Will turn in at end of exam, make sure your name is on it.
+
+No calculators.
+
+**Test Rules**:
+
+Do not write on backs of pages
+
+Write initials at the top of every page
+
+Nothing on desk except test, cheat sheet, writing implements, drink
+
+Sit every other seat in the classroom. 
+
+
+**Material**: Modeling! Everything from the five classes: Monday November 4, Wednesday November 13, Monday November 18, Wednesday November 20, Monday November 25. 
+
+This includes everything on Homeworks 10-12, all pre-class videos, and all activities, but not the BONUS activities. 
+
+Material from earlier in the semester will not be the main focus of any question on the test, but since this class is cumulative earlier material might show up in small ways. (For example: pipes may be used; geom_point come up a lot in modeling; the output format of gather_residuals is so the data will be tidy)
+
+**Test Format**: Similar to first two tests
+
+_True/False_, _Short Answer_, _Explanations_, _Open-ended Questions_
+
+Things I might ask you do to: 
+
+- Look at code and find/explain the mistake in it
+- Interpret output of code
+- Given sample tibbles and some code, describe the output of that code (sketch, answer questions, draw out new tibble, etc.)
+- Explain concepts, explain what certain commands do
+- Describe how to solve a problem
+
+Things I will not ask you to do:
+
+- Write out exact R code in perfect syntax
+
+Example: Given a tibble t, how would you pick out only those rows where the stopping time is at least 5? 
+
+Acceptable answers: 
+filter, stopping time >= 5
+use filter, condition is that stopping time >= 5
+filter(stopping_time >= 5)
+t %>% filter(stopping time >= 5)
+
+# Class Review Notes
+
+```{r}
+library(modelr)
+library(tidyverse)
+```
+
+
+## kernel, linear
+
+In svm() models, you're trying to fund curves/surfaces that separate the data into pieces 
+
+In general, these curves/surfaces can look like anything. 
+
+For this class, we focused on trying to separate the data using only lines
+
+This is what kernel = "linear" means. 
+
+```{r}
+# install.packages("mda")
+# This is just to bring in the example data
+library(mda)
+data(ESL.mixture)
+```
+
+```{r}
+df3 <- tibble(
+x = ESL.mixture$x[, 1],
+y = ESL.mixture$x[, 2],
+class = factor(ESL.mixture$y)
+)
+df3 %>%
+ggplot() +
+geom_point(aes(x, y, color = class))
+```
+
+```{r}
+library(e1071)
+mod_svm <- svm(class ~ x + y, data = df3, kernel = "linear")
+mod_svm
+```
+
+```{r}
+df3 %>% add_predictions(mod_svm)
+```
+
+```{r}
+df3 %>% add_predictions(mod_svm) %>%
+ggplot() +
+geom_point(aes(x, y, color = class, size = pred, shape = pred))
+```
+
+```{r}
+dg <- data_grid( df3, 
+                 x = seq_range(x, 100), 
+                 y = seq_range(y, 100))
+
+dg
+
+dg %>% add_predictions(mod_svm) %>% 
+  ggplot() + geom_point(aes(x,y, color = pred), alpha = 0.1) + 
+  geom_point(data = df3, aes(x,y,color = class))
+```
+
+
+## Predicting 0/1 values: numeric vs. categorical
+
+This matters for plotting. 
+
+We learn two types of models: 
+- logistic regression: in R, it doesn't matter whether the column you're trying to predict is numeric or categorical
+- svm(): for this to work correctly, the column you're trying to predict should always be categorical (character string or factor data type) 
+
+For variables used to make the prediction: it does always matter whether they're numeric or categorical. These two different types of variables are treated differently by the model. 
+
+
+## Homework 10, Question 8
+
+Why not just do a quadratic model? 
+
+A: it depends on your purpose/what you're trying to accomplish with a model. Plus, a quadratic model would probably predict negative values near the left and right ends of the plot. 
+
+
+## Why to use logit model 
+
+Used when you're tyring to predict something where the outcome is always 0 or 1.
+
+Trying to use lm() like we've been doing introduces two possible problem: 
+
+- Might predict fractional values
+- Might predict values that are bigger than 0 or less than 1. 
+
+Solution: rather than trying to predict the outcome itself, instead try to predict the *probability* the outcome is 1. 
+
+Now fractional values are fine, but just trying to predict p with a linear model still has the problem that some predicted values might be greater than 1 or less than 0.
+
+So, instead of trying to predict p, do a transformation.  Try to predict p with a curve that can never go below 0 and never go above 1, instead of a line. 
+
+logit transformation: Instead of predicting p with a line, predict logit(p) with a line
+
+logit(p) = log (p/(1-p))
+
+Once we make a prediction for logit(p), an transform this back into a prediction for p. 
+
+What's nice is that logit(p) can be anything - any number between -infinity and +infinity. (this is why it's nicer to work with logit(p) - no range restrictions)
+
+But when you transform logit(p) back into p, now you're *guaranteed* that p is between 0 and 1 - which is what we wanted! 
+
+## Homework 10, predicting using categorical variables
+
+When using only one categorical variable to make a prediction, the predictions are *always* the average. 
+
+This is because minimizing the sum of the squares of the residuals is the same as making sure the average residuals is 0 which guarantees that the average value is the best choice. 
+
+If you model is only using one categorical variable, you could just use averages. 
+
+We learned models with one categorical variable as preparation for doing models with multiple predictor variables, some of which might be categorical. 
+
+
+## Splines - choosing degrees of freedom
+
+There are many possible values you could choose.
+
+Which is best depends on your goals/why you're modelling/how you prioritize accuracy vs. simplicity. 
+
+Too few degrees of freedom - it just doesn't fit the data. 
+
+Too many degrees of freedom - can lead to overfitting (but this is very data-dependent) 
+
+
+## When to use a data grid, seq_range
+
+data_grid - most useful when you hvae mulitple numerical predictor variables. 
+
+(We did use it with only one preditor variable, but in that case it's really just doing the same as distinct() )
+
+Used when you want to make predictions on a simplified/stylized subset of the data. 
+
+If you want to plot, say, 5 lines showing the relationship between x1 and 7 for 5 different values of x2, but x2 has way more than  values, this is where a data_grid can be good. 
+
+```{r}
+sim5 <- sim4 %>% mutate(x1 = x1 + runif(300, -0.1, 0.1), 
+                x2 = x2 + runif(300, -0.1, 0.1))
+
+sim5
+
+m <- lm(y ~ x1 + x2, data = sim5)
+sim5 %>% add_predictions(m)
+```
+
+Visualizing this is hard! 
+
+Can use data_grid to simplify things. We'll only make predictions for some select, regularly spaced values, which makes it easier to visualize our model. 
+
+```{r}
+dg <- data_grid(sim5, x1 = seq_range(x1, 10), 
+                x2 = seq_range(x2, 10))
+dg %>% add_predictions(m)
+```
+
+Ways to visualize this model: 
+
+- With models lines for different values of x2 
+
+```{r}
+dg %>% add_predictions(m) %>% 
+  ggplot() + geom_line(aes(x = x1, y = pred, color = x2, group = x2))
+sim5 %>% add_predictions(m) %>% 
+  ggplot() + geom_line(aes(x = x1, y = pred, color = x2, group = x2))
+
+```
+
+- using geom_tile: need evenly sapced values for this to work. 
+
+```{r}
+dg %>% add_predictions(m) %>% 
+  ggplot() + geom_tile(aes(x = x1, y = x2, fill = pred))
+```
+
+- using geom_point and alpha to lightly color in the background of the plot (need a data grid with a lot of values for this, but it's still helpful when they're evenly spaced). Here the number of points isn't the issue, the even spacing is what we need to make this kind of plot. 
+
+See svm() example above. 
+
+
+## Course Evaluations
+
+Be sure to complete them if you haven't already!
