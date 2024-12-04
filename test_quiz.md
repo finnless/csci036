@@ -402,9 +402,62 @@ Understand the nature of your data:
 - Use residuals to uncover hidden relationships and ensure model validity.
 
 
+# 11-25 Class Notes - Predicting Categorical Variables
 
+## Logistic Regression
 
-# TODO: copy from chat. Then convert next 3 notes. Then review all while writing on sheet.
+Predicts probability p of an outcome being 1 using glm() [generalized linear models] with family set to "binomial". Transformations are applied to ensure predictions range between 0 and 1.
 
+Example Usage:
 
-https://platform.openai.com/playground/chat?preset=CNYispQdpoLHnCqv360qWC03
+```{r}
+mod_logit <- glm(y ~ x, data = ex, family = "binomial")
+```
+
+Add predictions with a transformed probability scale:
+
+```{r}
+ex %>% add_predictions(mod_logit, type = "response")
+```
+
+Simple prediction method: If predicted p >= 0.5, predict 1; otherwise, predict 0.
+
+Assess model accuracy by fraction of correct predictions:
+
+```{r}
+ex_preds %>% summarize(frac_correct = mean(predicted_outcome == y))
+```
+
+## Multiple Predictor Variables
+
+Logistic regression works with multiple predictor variables, including categorical types.
+
+Example Data:
+
+```{r}
+mod2 <- glm(class ~ x + y, data = df, family = "binomial")
+```
+
+## Support Vector Machines
+
+Classify data into two categories using svm() from e1071 package. Models can classify using hyperplanes.
+
+Example Usage:
+
+```{r}
+mod_svm <- svm(class ~ x + y, data = df, kernel = "linear")
+```
+
+Plot predictions made by the SVM:
+
+```{r}
+dg %>% add_predictions(mod_svm) %>% 
+  ggplot() + geom_point(aes(x, y, color = pred), alpha = 0.05)
+```
+
+For non-linear separations, customize kernel and cost parameters:
+
+```{r}
+mod_svm4 <- svm(class ~ x + y, data = df3, scale = FALSE, kernel = "radial", cost = 5)
+```
+
