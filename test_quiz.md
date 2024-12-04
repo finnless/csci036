@@ -4,6 +4,7 @@ TODO:
 Things I don't understand:
  - add_predictions
  - add_residuals
+ - data_grid()
 
 
 # Modelling Day 1 - Complete Notes
@@ -147,9 +148,83 @@ Remember: Correlation does not mean causation!
 
 
 
-# Non-linear Models and Categorical Variables
+# 11-13 Class Notes - Non-linear Models and Categorical Variables
 
+## Non-linear Models
 
+### Quadratic and Cubic Models
+
+- **Quadratic Model**: y = c1 + c2*x + c3*x^2 
+  - Use when data looks like a parabola.
+- **Cubic Model**: y = c1 + c2*x + c3*x^2 + c4*x^3 
+  - Use when there are three distinct trends.
+
+**Methods:**
+- Use `mutate` to create x^2, x^3 columns.
+- Use `I()` within `lm()`.
+
+Recommendation: Try a linear model first and examine residuals.
+
+### Splines
+
+Use piece-wise polynomial curves for modeling `ns(xcol, df)`.
+```{r}
+mod1 <- lm(y ~ ns(x, 1), data = sim6)  # 1 degree of freedom
+```
+- Increase degrees of freedom for better curve fitting.
+
+Plotting example:
+```{r}
+sim6 %>% 
+  gather_predictions(mod1, mod2, mod3, mod4, mod5) %>% 
+  ggplot() +
+  geom_point(aes(x,y)) + geom_line(aes(x = x, y = pred), color = "red") +
+  facet_wrap(~ model)
+```
+**Drawbacks**: No precise equation, and the right number of degrees of freedom is ambiguous. Better for trends than predictions.
+
+### Overfitting
+
+Occurs when the model fits the data too closely and fails on new data.
+
+Example of overfitting with 20 degrees of freedom:
+```{r}
+mod20 <- lm(y ~ ns(x, 20), sim6)
+```
+
+## Categorical Models
+
+Handle variables that might be either numeric or categorical based on context.
+
+For the `sim2` data set:
+```{r}
+mod2 <- lm(y ~ x, data = sim2)
+```
+**Function**:
+- `data_grid()`: Gets all unique values for a predictor variable.
+
+**Example**:
+```{r}
+grid <- data_grid(sim2, x) %>% add_predictions(mod2)
+```
+Predictions are just the averages for each category.
+
+### Variables That Could be Numeric or Categorical
+
+Consider whether the variable should be treated as sequential or independent.
+
+- **Numeric Example**: Yearly trends.
+- **Categorical Example**: Graduation year as a class year.
+
+**Transformations**:
+- Numeric: Treat as number for sequential data.
+- Categorical: Convert to factor or character for independent predictions.
+
+Example with graduation year:
+```{r}
+ice_cream2 <- ice_cream %>% mutate(grad_year = as.character(grad_year))
+imod <- lm(ice_cream_amount ~ grad_year, data = ice_cream2)
+```
 
 
 # TODO: copy from chat. Then convert next 3 notes. Then review all while writing on sheet.
