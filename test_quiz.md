@@ -226,6 +226,110 @@ ice_cream2 <- ice_cream %>% mutate(grad_year = as.character(grad_year))
 imod <- lm(ice_cream_amount ~ grad_year, data = ice_cream2)
 ```
 
+# 11-18 Class Notes Linear Models Two Variables
+
+## Modelling with Two Predictor Variables
+
+### Example: sim4 Data Set
+
+**Model Formula**: y = c1 + c2 * x1 + c3 * x2
+
+```r
+sim4_mod <- lm(y ~ x1 + x2, data = sim4)
+```
+
+- Visualize using `geom_line` to plot slices by fixing one variable and varying the other.
+- Use `data_grid` to get combinations of predictors without duplicates.
+
+```r
+data_grid(sim4, x1, x2) %>% add_predictions(sim4_mod)
+```
+
+### Plotting Example
+
+```r
+data_grid(sim4, x1, x2) %>% ggplot() + 
+  geom_line(aes(x = x1, y = pred, color = x2, group = x2))
+```
+
+- All lines have the same slope, different intercept for each value of x2.
+
+## Modeling: Two Numerical Variables with Interactions
+
+**Model Formula with Interaction**: y = c1 + c2 * x1 + c3 * x2 + c4 * x1 * x2
+
+```r
+sim4_interaction <- lm(y ~ x1 * x2, data = sim4)
+```
+
+- Opt to include interaction terms when slopes should depend on another variable.
+
+### Plot Interaction Data
+
+```r
+data_grid(sim4, x1, x2) %>% 
+  add_predictions(sim4_interaction) %>% 
+  ggplot() + geom_line(aes(x = x1, y= pred, color = x2, group = x2))
+```
+
+- Lines now have different slopes due to the interaction term.
+
+### Visualization with geom_tile
+
+```r
+data_grid(sim4, x1, x2) %>% 
+  add_predictions(sim4_interaction) %>% 
+  ggplot() + geom_tile(aes(x = x1, y = x2, fill = pred))
+```
+
+**seq_range**: Use to sample evenly across the range of a variable.
+
+```r
+dg5 <- sim4 %>% data_grid(
+  x1 = seq_range(x1, 5), 
+  x2 = seq_range(x2, 5)
+)
+```
+
+## Models with One Categorical and One Numerical Predictor
+
+### Example: sim3 Data Set
+
+```r
+sim3_preds <- sim3 %>% data_grid(x1, x2) %>% gather_predictions(mod_wo_int, mod_int)
+```
+
+- Compare models with and without interaction:
+
+```r
+mod_wo_int <- lm(y ~ x1 + x2, data = sim3)
+mod_int <- lm(y ~ x1 * x2, data = sim3)
+```
+
+### Model Visualization using Facets
+
+```r
+sim3_preds %>%
+  ggplot() + geom_line(aes(x = x1, y = pred, color = x2)) + 
+  geom_point(data = sim3, aes(x = x1, y = y, color = x2)) + 
+  facet_wrap(~ model)
+```
+
+### Residuals Check
+
+```r
+sim3 %>% 
+  gather_residuals(mod_int, mod_wo_int) %>% 
+  ggplot() + geom_point(aes(x = x1, y = resid, color = x2)) + 
+  facet_grid(x2 ~ model)
+```
+
+- Check for patterns in residuals to determine the better model.
+
+## Models with Two Categorical Predictors
+
+- Works similarly to having one categorical predictor but involves combinations of categorical levels.
+
 
 # TODO: copy from chat. Then convert next 3 notes. Then review all while writing on sheet.
 
