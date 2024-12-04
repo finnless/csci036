@@ -330,6 +330,79 @@ sim3 %>%
 
 - Works similarly to having one categorical predictor but involves combinations of categorical levels.
 
+# 11-20 Class Notes: Data Transformations, Residuals, Overfitting
+
+## Key Concepts
+
+### Data Transformations
+
+- **Logarithms**: Useful for transforming polynomial models into linear models.
+  - Conversion: log(y) = log(a1) + a2 log(x)
+- **Example**: Using diamonds dataset, we can transform price prediction to a linear relationship using log transformations.
+  - Transform using R: `log2(price) = log2(a1) + a2 * log2(carat)`
+
+```{r}
+diamonds3 <- diamonds2 %>% mutate(lprice = log2(price), lcarat = log2(carat))
+lmod <- lm(lprice ~ lcarat, data = diamonds3)
+# Model equation: log2(price) = 12.194 + 1.681 * log2(carat)
+# Reconstruct original equation: price = a1 * carat^a2
+a1 <- 2^(lmod$coefficients[1])
+a2 <- lmod$coefficients[2]
+```
+
+### Logarithmic and Exponential Models
+
+- **Logarithmic Model**: `y = c1 + c2 * log(x)`
+- **Exponential Model**: `y = a * b^x` when `log(y) = c1 + c2 * x`
+- Determine model type by visual inspection of graphs:
+  - If y vs. log(x) or log(y) vs. x appears linear.
+
+### Explaining One Variable with Another
+
+- Use residuals to determine what part of a variable's change isn't explained by another known variable.
+- Example: Removing dependence on `carat` to understand `price` influences by cut and clarity.
+
+```{r}
+diamonds4 <- diamonds3 %>% 
+  mutate(pred_price = a1 * carat^a2) %>% 
+  mutate(residual = price - pred_price)
+# Analyze residuals using boxplots by `cut` or `clarity`
+diamonds4 %>% ggplot() + geom_boxplot(aes(x = cut, y = residual))
+```
+
+### Overfitting
+
+- Occurs when a model fits the training data too well but performs poorly on new data.
+- **Detection**: Split data into training and test sets, and compare residual sum of squares.
+
+```{r}
+training_data <- sim6
+test_data <- sim6_new
+# Compare mean residuals
+training_resid <- training_data %>% add_residuals(mod20) %>% summarize(mean(resid^2))
+test_resid <- test_data %>% add_residuals(mod20) %>% summarize(mean(resid^2))
+```
+
+### Training/Test Data
+
+- Dividing data ensures model evaluation accuracy.
+- Typical splits: 70-80% training, 20-30% test.
+- Use random sampling or stratification based on context.
+
+```{r}
+dtraining <- sample_n(diamonds3, nrow(diamonds3) * 0.8)
+dmod2 <- lm(lprice ~ lcarat + cut + clarity, data = dtraining)
+```
+
+## Discussion
+
+Understand the nature of your data:
+- Transform variables to linear relationships when necessary.
+- Recognize overfitting through cross-validation (train/test evaluation).
+- Use residuals to uncover hidden relationships and ensure model validity.
+
+
+
 
 # TODO: copy from chat. Then convert next 3 notes. Then review all while writing on sheet.
 
