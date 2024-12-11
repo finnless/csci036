@@ -1,3 +1,80 @@
+---
+title: "Beyond the Bubble: Understanding American TV News Viewership Patterns"
+author: "Nolan Windham"
+date: "12/11/24"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# Introduction
+
+Television news remains a crucial source of information for many Americans, yet viewing patterns have become increasingly fragmented and potentially polarized. This analysis examines TV news consumption patterns using the Cooperative Election Study (CCES) data from 2020 and 2022, focusing on three key questions:
+
+1. How do ideological preferences relate to news network choice, and to what extent do viewers consume news from multiple sources?
+2. What is the age distribution of viewers across different networks, and how might this impact the future of TV news?
+3. How closely do viewers' policy preferences align with their chosen news sources, and what does this suggest about media's role in political polarization?
+
+This analysis reveals several important findings. First, while ideological sorting is evident (e.g., Fox News viewers skewing conservative, MSNBC viewers skewing liberal), most networks maintain a significant moderate audience base. Second, TV news viewership skews older across all networks, with median viewer ages ranging from 52-59 years. Finally, it finds strong correlations between viewers' policy preferences and their network choices, particularly on issues like immigration and climate change, though the direction of causality remains unclear.
+
+# Data Source
+
+This analysis primarily uses data from the Cooperative Election Study (CCES), a large-scale academic survey project coordinated by Harvard University. The CCES employs an online survey methodology, collecting responses from a nationally stratified sample of approximately 60,000 American adults each year. This analysis combines three key datasets:
+
+1. The Cumulative CCES (2006-2023), which contains 641,955 respondents and harmonizes common variables across survey years. This dataset is available through Harvard Dataverse ([doi:10.7910/DVN/II2DB6](https://doi.org/10.7910/DVN/II2DB6)).
+
+2. Individual year CCES surveys for 2020 and 2022, which provide detailed media consumption variables not included in the cumulative file.
+
+3. The Cumulative CES Policy Preferences dataset ([doi:10.7910/DVN/OSXDQO](https://doi.org/10.7910/DVN/OSXDQO)), which offers standardized measures of policy positions.
+
+The CCES employs a two-stage survey design. First, respondents complete a pre-election survey in October, collecting demographic information, political attitudes, and media consumption habits. A post-election wave in November captures voting behavior and additional political opinions. YouGov conducts the survey using matched random sampling to achieve a representative sample of the U.S. adult population.
+
+The documentation for these datasets is thorough and well-maintained. Each variable includes clear descriptions, coding schemes, and notes about changes across survey years. However, one limitation is that media consumption questions have evolved over time, making longitudinal comparisons challenging. For this reason, this analysis focuses primarily on recent years (2020-2022) where media questions remained consistent.
+
+The data's key strengths include:
+- Large sample size (~60,000 per year)
+- Consistent core questions across years
+- Detailed media consumption measures
+- Validated voting behavior
+- Comprehensive demographic information
+
+Key limitations include:
+- Self-reported media consumption
+- Online-only survey methodology
+- Some variables not available in all years
+- Potential response bias in survey participation
+
+
+# Ethics Reflection
+
+The analysis of media consumption patterns and political attitudes raises several important ethical considerations:
+
+1. **Survey Representation and Access**
+   - The CCES's online-only methodology may systematically exclude certain populations, particularly older Americans or those without reliable internet access
+   - While YouGov employs matching techniques to achieve representative samples, the initial pool of respondents is limited to those who can and choose to participate in online surveys
+   - This could lead to underrepresentation of certain viewpoints and experiences, particularly from rural or low-income communities
+
+2. **Self-Reporting Bias**
+   - Media consumption habits are self-reported, which may be subject to social desirability bias
+   - Respondents might underreport consumption of politically controversial sources
+   - Memory bias could affect accuracy of reported viewing habits
+   - These biases could systematically affect our understanding of media consumption patterns
+
+3. **Privacy and Data Usage**
+   - While the CCES data is anonymized, it contains detailed demographic and political information that could potentially be used to identify individuals if combined with other data sources
+   - The public availability of this data, while valuable for research, requires careful consideration of how findings might be used or misused
+   - Researchers have an ethical obligation to present findings in ways that don't stigmatize particular groups or encourage harmful stereotypes
+
+4. **Broader Societal Implications**
+   - Research on media consumption patterns could be used to further segment and target audiences, potentially contributing to increased political polarization
+   - Findings about age-based viewing patterns could affect how news organizations target content, potentially excluding certain age groups
+   - Studies of partisan media consumption could reinforce existing stereotypes about different political groups
+
+These ethical considerations inform my analysis in several ways. First, I am careful to acknowledge the limitations of my data and avoid overgeneralizing my findings. Second, I present results in ways that highlight the complexity of media consumption patterns rather than reducing them to simple partisan narratives. Finally, I consider how my findings might be used by various stakeholders and attempt to frame them in ways that promote understanding rather than division.
+
+# Data Import
+
+Import packages:
 ```{r}
 library(tidyverse)
 library(haven)
@@ -396,10 +473,6 @@ What is the correlation between respondents' policy preferences and their media 
 
 
 
-# TODO
- - X Import 2020 CCES data
- - Use `cumulative_ces_policy_preferences.dta` which ends in 2021
-
 
 ```{r}
 # Read in policy preferences data
@@ -437,8 +510,6 @@ network_policy_summary <- cc_media_policy |>
   ) |>
   group_by(network) |>
   summarise(
-    # Calculate mean support for each policy
-    # Note: might need to adjust based on how policies are coded
     carbon_support = mean(enviro_carbon == 1, na.rm = TRUE),
     border_support = mean(immig_border == 1, na.rm = TRUE),
     assault_ban_support = mean(guns_assaultban == 1, na.rm = TRUE),
@@ -446,7 +517,6 @@ network_policy_summary <- cc_media_policy |>
   ) |>
   arrange(desc(n))
 
-# View results
 network_policy_summary
 ```
 
@@ -467,7 +537,6 @@ network_policy_long <- network_policy_summary |>
       policy == "border_support" ~ "Border Wall",
       policy == "assault_ban_support" ~ "Assault Weapons Ban"
     ),
-    # Order networks by ideological lean (roughly)
     network = fct_relevel(network, 
       "MSNBC", "CNN", "PBS", "ABC", "CBS", "NBC", "Other", "Fox News")
   )
@@ -476,7 +545,6 @@ network_policy_long <- network_policy_summary |>
 ggplot(network_policy_long, 
        aes(x = policy, y = network, fill = support)) +
   geom_tile() +
-  # Use diverging color scale centered at 0.5
   scale_fill_gradient2(
     low = "#b2182b",    # Republican red
     mid = "white",
@@ -502,8 +570,6 @@ ggplot(network_policy_long,
   )
 ```
 
-
-# Key Findings:
 
 1. **Clear Network-Policy Alignment**
    - MSNBC and Fox News viewers show starkly opposing policy preferences
