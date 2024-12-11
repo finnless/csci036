@@ -153,6 +153,21 @@ cc_media_ideo |>
   arrange(desc(rowSums(across(starts_with("n_")), na.rm = TRUE)))
 ```
 
+```
+# A tibble: 8 × 15
+  network  `n_Very Liberal` n_Liberal n_Moderate n_Conservative `n_Very Conservative` `n_Not Sure`  n_NA `pct_Very Liberal` pct_Liberal pct_Moderate pct_Conservative `pct_Very Conservative` `pct_Not Sure` pct_NA
+  <chr>               <int>     <int>      <int>          <int>                 <int>        <int> <int>              <dbl>       <dbl>        <dbl>            <dbl>                   <dbl>          <dbl>  <dbl>
+1 Fox News              338       573       2614           3105                  1907          304     3                3.8         6.5         29.6             35.1                    21.6            3.4    0  
+2 ABC                  1011      1993       3409           1258                   590          353     4               11.7        23.1         39.6             14.6                     6.8            4.1    0  
+3 NBC                  1058      2105       3198           1127                   530          276     3               12.8        25.4         38.5             13.6                     6.4            3.3    0  
+4 CBS                   983      1832       3173           1185                   594          315     6               12.2        22.7         39.2             14.7                     7.3            3.9    0.1
+5 CNN                  1207      2266       3070            676                   329          253     3               15.5        29           39.3              8.7                     4.2            3.2    0  
+6 MSNBC                1308      2155       2042            353                   189          118     2               21.2        34.9         33.1              5.7                     3.1            1.9    0  
+7 PBS                   642       932       1287            307                   142          101     2               18.8        27.3         37.7              9                       4.2            3      0.1
+8 Other                 242       328        768            721                   502          113    NA                9.1        12.3         28.7             27                      18.8            4.2   NA
+```
+
+
 Ideological composition of network news viewers bar chart
 ```{r}
 # Create stacked bar chart
@@ -164,7 +179,7 @@ ggplot(cc_media_ideo, aes(x = network, y = pct, fill = fct_rev(ideo5))) +
     "NA" = "grey90",
     "Very Liberal" = "#2166ac",      # Dark blue
     "Liberal" = "#67a9cf",           # Light blue
-    "Moderate" = "#8f34b6",          # White/neutral
+    "Moderate" = "#8f34b6",          # Purple
     "Conservative" = "#ef8a62",      # Light red
     "Very Conservative" = "#b2182b"  # Dark red
   )) +
@@ -179,3 +194,187 @@ ggplot(cc_media_ideo, aes(x = network, y = pct, fill = fct_rev(ideo5))) +
 ```
 
 
+How many people watch multiple networks?
+```{r}
+# Check multiple network viewing
+cc_media |> 
+  select(matches("CC22_300b_[1-8]")) |>
+  # Count how many networks each person watches (where value == 1)
+  mutate(
+    networks_watched = rowSums(across(everything(), ~.x == 1), na.rm = TRUE)
+  ) |>
+  # Summarize the distribution
+  count(networks_watched) |>
+  # Calculate percentages
+  mutate(pct = n/sum(n) * 100)
+```
+
+
+
+Cross tab of relationship between ideology and number of networks watched
+```{r}
+# Analyze ideology vs number of networks watched
+cc_media |> 
+  select(matches("CC22_300b_[1-8]"), ideo5) |>
+  # Count networks watched and convert ideology to factor
+  mutate(
+    networks_watched = rowSums(across(matches("CC22_300b_"), ~.x == 1), na.rm = TRUE),
+    ideo5 = haven::as_factor(ideo5)
+  ) |>
+  # Group by ideology and calculate mean networks watched
+  group_by(ideo5) |>
+  summarise(
+    n = n(),  # number of respondents
+    mean_networks = mean(networks_watched, na.rm = TRUE),
+    median_networks = median(networks_watched, na.rm = TRUE),
+    zero_networks = mean(networks_watched == 0, na.rm = TRUE) * 100,  # % watching zero
+    multiple_networks = mean(networks_watched > 1, na.rm = TRUE) * 100  # % watching multiple
+  ) |>
+  # Remove NA ideology if present
+  filter(!is.na(ideo5))
+```
+
+```
+# A tibble: 6 × 6
+  ideo5                 n mean_networks median_networks zero_networks multiple_networks
+  <fct>             <int>         <dbl>           <dbl>         <dbl>             <dbl>
+1 Very Liberal       7763         0.875               0          65.9              23.1
+2 Liberal           11071         1.10                0          57.6              30.2
+3 Moderate          19231         1.02                0          61.5              27.4
+4 Conservative      11048         0.790               0          61.8              21.6
+5 Very Conservative  6493         0.737               0          62.3              18.0
+6 Not Sure           4354         0.421               0          83.1              10.8
+```
+
+
+box plot of above
+```{r}
+# Create boxplot of networks watched by ideology
+cc_media |> 
+  select(matches("CC22_300b_[1-8]"), ideo5) |>
+  mutate(
+    networks_watched = rowSums(across(matches("CC22_300b_"), ~.x == 1), na.rm = TRUE),
+    ideo5 = haven::as_factor(ideo5)
+  ) |>
+  ggplot(aes(x = ideo5, y = networks_watched)) +
+  geom_boxplot() +
+  labs(
+    title = "Number of Networks Watched by Ideological Group",
+    x = "Ideology",
+    y = "Number of Networks Watched",
+    caption = "Source: CCES 2022"
+  ) +
+  theme_minimal() +
+  coord_flip()  # Horizontal orientation
+```
+
+
+
+
+
+1. **Strong ideologues watch fewer networks**
+   - Very Conservatives average 0.74 networks
+   - Very Liberals average 0.88 networks
+   - Both groups have lower multiple-network viewing rates (18.0% and 23.1% respectively)
+
+2. **Liberals and moderates consume more diverse sources**
+   - Liberals watch most networks (mean = 1.10)
+   - Moderates follow closely (mean = 1.02)
+   - Liberals most likely to watch multiple networks (30.2%)
+
+3. **Overall low TV news consumption**
+   - ~60-65% watch zero networks across most ideological groups
+   - Exception: "Not Sure" group even lower engagement (83.1% watch none)
+
+This suggests ideological polarization may relate to more limited news source selection, though notably, traditional TV news networks have low viewership across all groups.
+
+
+
+## Q1: Age
+
+average age by network
+
+```{r}
+# Analyze age by network viewership
+cc_media |> 
+  select(matches("CC22_300b_[1-8]"), age) |>
+  # Reshape to long format
+  pivot_longer(
+    cols = matches("CC22_300b_"),
+    names_to = "network",
+    values_to = "watches"
+  ) |>
+  # Clean network names and group broadcast networks
+  mutate(
+    network = case_when(
+      network %in% c("CC22_300b_1", "CC22_300b_2", "CC22_300b_3") ~ "Broadcast Networks",
+      network == "CC22_300b_4" ~ "CNN",
+      network == "CC22_300b_5" ~ "Fox News",
+      network == "CC22_300b_6" ~ "MSNBC",
+      network == "CC22_300b_7" ~ "PBS",
+      network == "CC22_300b_8" ~ "Other"
+    )
+  ) |>
+  # Filter for viewers
+  filter(watches == 1) |>
+  # Calculate age statistics by network
+  group_by(network) |>
+  summarise(
+    mean_age = mean(age, na.rm = TRUE),
+    median_age = median(age, na.rm = TRUE),
+    n = n()
+  ) |>
+  arrange(desc(mean_age))
+```
+
+
+age groups and visualize the distribution
+```{r}
+# Create age distribution plot
+cc_media |> 
+  select(matches("CC22_300b_[1-8]"), age) |>
+  pivot_longer(
+    cols = matches("CC22_300b_"),
+    names_to = "network",
+    values_to = "watches"
+  ) |>
+  mutate(
+    network = case_when(
+      network %in% c("CC22_300b_1", "CC22_300b_2", "CC22_300b_3") ~ "Broadcast Networks",
+      network == "CC22_300b_4" ~ "CNN",
+      network == "CC22_300b_5" ~ "Fox News",
+      network == "CC22_300b_6" ~ "MSNBC",
+      network == "CC22_300b_7" ~ "PBS",
+      network == "CC22_300b_8" ~ "Other"
+    )
+  ) |>
+  filter(watches == 1) |>
+  ggplot(aes(x = age, fill = network)) +
+  geom_density(alpha = 0.5) +
+  labs(
+    title = "Age Distribution of Network News Viewers",
+    x = "Age",
+    y = "Density",
+    fill = "Network",
+    caption = "Source: CCES 2022"
+  ) +
+  theme_minimal()
+```
+
+
+
+Analysis of Age and Network News Viewership:
+
+1. CNN has notably younger audience (mean age 51, median 52)
+2. MSNBC and "Other" have oldest viewers (mean age 56)
+3. Broadcast Networks and Fox News have similar age profiles (mean age 54)
+4. All networks skew older, with median ages ranging from 52-60
+5. PBS viewers align with the older trend (mean 56, median 59)
+
+This suggests traditional TV news, regardless of network, primarily reaches older Americans, with CNN being somewhat more successful at attracting younger viewers.
+
+
+
+# TODO
+ - Import 2020 CCES data
+ - Use `cumulative_ces_policy_preferences.dta` which ends in 2021
