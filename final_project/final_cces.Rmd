@@ -72,7 +72,7 @@ The analysis of media consumption patterns and political attitudes raises severa
 
 These ethical considerations inform my analysis in several ways. First, I am careful to acknowledge the limitations of my data and avoid overgeneralizing my findings. Second, I present results in ways that highlight the complexity of media consumption patterns rather than reducing them to simple partisan narratives. Finally, I consider how my findings might be used by various stakeholders and attempt to frame them in ways that promote understanding rather than division.
 
-# Data Import
+# Data Import / Cleaning and Tidying
 
 Import packages:
 ```{r}
@@ -81,6 +81,7 @@ library(haven)
 ```
 
 
+Import data:
 ```{r}
 # Read in the cumulative CCES data
 cc <- read_dta("cumulative_2006-2023.dta")
@@ -105,6 +106,10 @@ cc20_media <- cc20 |>
 ```{r}
 # Helper function to standardize media variables across years
 standardize_media_vars <- function(data, year) {
+  # This function takes survey data and a year, then:
+  # 1. Selects only the case ID and media consumption variables
+  # 2. Removes the year prefix from variable names to make them consistent
+  # This allows us to combine data across years more easily
   # Select relevant columns and rename them
   prefix <- paste0("CC", year, "_300")
  
@@ -165,16 +170,120 @@ clean_network_names <- function(network_col) {
 }
 ```
 
+
+# Data Exploration and Analysis
+
+
+Before diving into our main questions, let's first examine our key variables individually:
+
 ```{r}
-# Create summary of network preferences in 2022
+# Examine ideology distribution
 cc_media |>
   filter(year == 2020) |>
-  select(matches("300b_[1-8]")) |>
-  summarise(across(everything(), 
+  count(ideo5) |>
+  mutate(
+    ideo5 = haven::as_factor(ideo5),
+    pct = n/sum(n) * 100
+  ) |>
+  arrange(desc(n))
+```
+
+```
+# A tibble: 7 × 3
+  ideo5                 n     pct
+  <fct>             <int>   <dbl>
+1 Moderate          19226 31.5   
+2 Liberal           11331 18.6   
+3 Conservative      10716 17.6   
+4 Very Liberal       8132 13.3   
+5 Very Conservative  6803 11.2   
+6 Not Sure           4752  7.79  
+7 NA                   40  0.0656
+```
+
+```{r}
+# Visualize ideology distribution
+cc_media |>
+  filter(year == 2020) |>
+  mutate(ideo5 = haven::as_factor(ideo5)) |>
+  ggplot(aes(x = ideo5)) +
+  geom_bar(fill = "#b45346") +
+  labs(
+    title = "Distribution of Ideological Self-Identification",
+    x = "Ideology",
+    y = "Count",
+    caption = "Source: CCES 2020"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+# Examine age distribution
+cc_media |>
+  filter(year == 2020) |>
+  summarise(
+    mean_age = mean(age, na.rm = TRUE),
+    median_age = median(age, na.rm = TRUE),
+    sd_age = sd(age, na.rm = TRUE),
+    min_age = min(age, na.rm = TRUE),
+    max_age = max(age, na.rm = TRUE)
+  )
+```
+
+```
+# A tibble: 1 × 5
+  mean_age median_age sd_age min_age max_age
+     <dbl>      <dbl>  <dbl>   <dbl>   <dbl>
+1     48.4         49   17.7      18      95
+```
+
+```{r}
+# Visualize age distribution
+cc_media |>
+  filter(year == 2020) |>
+  ggplot(aes(x = age)) +
+  geom_line(stat = "bin", binwidth = 1, color = "#b45346") +
+  labs(
+    title = "Age Distribution of Survey Respondents",
+    x = "Age",
+    y = "Count",
+    caption = "Source: CCES 2020"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+# Examine overall network viewership
+# Note: Uses na.rm=TRUE because some respondents didn't answer all network questions
+# This is expected in survey data and shouldn't bias our results as long as
+# non-response is relatively random across demographic groups
+cc_media |>
+  filter(year == 2020) |>
+  summarise(across(matches("300b_[1-8]"), 
                   ~sum(.x == 1, na.rm = TRUE))) |>
   pivot_longer(everything(), 
               names_to = "network",
-              values_to = "viewers")
+              values_to = "viewers") |>
+  mutate(
+    network = clean_network_names(network),
+    pct_total = viewers / nrow(filter(cc_media, year == 2020)) * 100
+  ) |>
+  arrange(desc(viewers))
+```
+
+```
+# A tibble: 8 × 3
+  network  viewers pct_total
+  <chr>      <int>     <dbl>
+1 CNN        10542     17.3 
+2 Fox News   10494     17.2 
+3 ABC         9430     15.5 
+4 NBC         8960     14.7 
+5 CBS         8411     13.8 
+6 MSNBC       7752     12.7 
+7 PBS         3723      6.10
+8 Other       2483      4.07
 ```
 
 ```{r}
@@ -206,8 +315,30 @@ cc_media |>
   theme_minimal()
 ```
 
+## Research Questions and Analytical Approaches
 
-Crosstabs ideology and media consumption 2020
+This analysis examines three key questions about American TV news consumption, each employing different data science skills:
+
+1. **Network Choice and Ideology** (Data Transformation & Visualization)
+   - Question: How do ideological preferences relate to news network choice, and to what extent do viewers consume news from multiple sources?
+   - Skills: Data reshaping (pivot_longer), grouped summaries, and complex visualizations (stacked bar charts)
+   - Variables: Network viewership (categorical), ideology (ordinal)
+
+2. **Age Distribution Analysis** (Statistical Analysis & Density Plots)
+   - Question: What is the age distribution of viewers across different networks, and how might this impact the future of TV news?
+   - Skills: Density estimation, statistical summaries, and overlapping distribution plots
+   - Variables: Age (continuous), network viewership (categorical)
+
+3. **Policy Preference Alignment** (Statistical Modeling & Heat Maps)
+   - Question: How closely do viewers' policy preferences align with their chosen news sources?
+   - Skills: Linear regression modeling, correlation analysis, and heat map visualization
+   - Variables: Policy positions (categorical), network viewership (categorical), ideology (ordinal)
+
+
+## Q1: Network Viewership and Ideology
+
+
+Crosstabs ideology and media consumption 2020:
 ```{r}
 # Create ideology and media consumption analysis
 cc_media_ideo <- cc_media |>
@@ -395,9 +526,8 @@ This suggests ideological polarization may relate to more limited news source se
 
 
 
-## Q1: Age
+## Q2: Age Distribution
 
-average age by network in 2020
 
 ```{r}
 # Analyze age by network viewership
@@ -467,11 +597,9 @@ Analysis of Age and Network News Viewership:
 This suggests traditional TV news, regardless of network, primarily reaches older Americans, with CNN being somewhat more successful at attracting younger viewers.
 
 
-## Q3: Opinion
+## Q3: Policy Preferences
+
 What is the correlation between respondents' policy preferences and their media source preferences? Additionally, how does this correlation compare to the relationship between their policy preferences and ideology?
-
-
-
 
 
 ```{r}
@@ -651,3 +779,27 @@ cc_media_policy |>
   ) +
   theme_minimal()
 ```
+
+
+# Conclusion
+
+This analysis of CCES data reveals several important patterns in American TV news consumption. The findings demonstrate significant relationships between viewers' ideological preferences, age, and network choices, while also highlighting important nuances in these relationships.
+
+Key findings include:
+1. While ideological sorting exists in news viewership (e.g., Fox News viewers skewing conservative, MSNBC liberal), most networks maintain substantial moderate audiences. Even Fox News and MSNBC draw roughly 28-30% of their viewers from self-identified moderates.
+
+2. TV news viewership skews older across all networks. CNN attracts the youngest audience with a median age of 52, while other networks range from 54-59. This age skew raises questions about the future viability of TV news as a medium.
+
+3. Strong correlations exist between viewers' policy preferences and their chosen news sources, particularly on issues like immigration and climate change. However, broadcast networks (ABC, CBS, NBC) show more ideologically diverse viewership than cable news networks.
+
+Limitations of this analysis include:
+- Reliance on self-reported viewing habits
+- Online-only survey methodology may underrepresent certain populations
+- Focus on traditional TV news excludes emerging digital media sources
+- Cross-sectional nature of the analysis limits causal inference
+
+Future research could:
+- Examine how streaming and social media affect news consumption patterns
+- Track individual-level changes in viewing habits over time
+- Investigate the relationship between local news viewership and political attitudes
+- Compare U.S. patterns with those in other countries
