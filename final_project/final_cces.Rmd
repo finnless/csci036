@@ -83,6 +83,8 @@ cc <- read_dta("cumulative_2006-2023.dta")
 cc22 <- read_dta("CCES22_Common_OUTPUT_vv_topost.dta")
 # Read 2020 CCES data
 cc20 <- read_dta("CCES20.dta")
+# Read in policy preferences data
+policy_prefs <- read_dta("cumulative_ces_policy_preferences.dta")
 ```
 
 Clean data:
@@ -165,6 +167,19 @@ clean_network_names <- function(network_col) {
 }
 ```
 
+```{r}
+# Merge policy preferences with media data
+cc_media_policy <- cc_media |>
+  filter(year == 2020) |>  # Focus on 2020 data
+  # Convert case_id to character for matching
+  mutate(case_id = as.character(case_id)) |>
+  left_join(
+    policy_prefs |> 
+      select(case_id, enviro_carbon, immig_border, guns_assaultban),
+    by = "case_id"
+  )
+```
+
 
 # Data Exploration and Analysis
 
@@ -183,18 +198,6 @@ cc_media |>
   arrange(desc(n))
 ```
 
-```
-# A tibble: 7 × 3
-  ideo5                 n     pct
-  <fct>             <int>   <dbl>
-1 Moderate          19226 31.5   
-2 Liberal           11331 18.6   
-3 Conservative      10716 17.6   
-4 Very Liberal       8132 13.3   
-5 Very Conservative  6803 11.2   
-6 Not Sure           4752  7.79  
-7 NA                   40  0.0656
-```
 
 ```{r}
 # Visualize ideology distribution
@@ -224,13 +227,6 @@ cc_media |>
     min_age = min(age, na.rm = TRUE),
     max_age = max(age, na.rm = TRUE)
   )
-```
-
-```
-# A tibble: 1 × 5
-  mean_age median_age sd_age min_age max_age
-     <dbl>      <dbl>  <dbl>   <dbl>   <dbl>
-1     48.4         49   17.7      18      95
 ```
 
 ```{r}
@@ -265,20 +261,6 @@ cc_media |>
     pct_total = viewers / nrow(filter(cc_media, year == 2020)) * 100
   ) |>
   arrange(desc(viewers))
-```
-
-```
-# A tibble: 8 × 3
-  network  viewers pct_total
-  <chr>      <int>     <dbl>
-1 CNN        10542     17.3 
-2 Fox News   10494     17.2 
-3 ABC         9430     15.5 
-4 NBC         8960     14.7 
-5 CBS         8411     13.8 
-6 MSNBC       7752     12.7 
-7 PBS         3723      6.10
-8 Other       2483      4.07
 ```
 
 ```{r}
@@ -387,19 +369,6 @@ cc_media_ideo |>
   arrange(desc(rowSums(across(starts_with("n_")), na.rm = TRUE)))
 ```
 
-```
-# A tibble: 8 × 15
-  network  `n_Very Liberal` n_Liberal n_Moderate n_Conservative `n_Very Conservative` `n_Not Sure`  n_NA `pct_Very Liberal` pct_Liberal pct_Moderate pct_Conservative `pct_Very Conservative` `pct_Not Sure` pct_NA
-  <chr>               <int>     <int>      <int>          <int>                 <int>        <int> <int>              <dbl>       <dbl>        <dbl>            <dbl>                   <dbl>          <dbl>  <dbl>
-1 CNN                  1872      3111       3963            874                   335          384     3               17.8        29.5         37.6              8.3                     3.2            3.6    0  
-2 Fox News              413       773       2955           3576                  2419          352     6                3.9         7.4         28.2             34.1                    23.1            3.4    0.1
-3 ABC                  1210      2238       3582           1329                   608          454     9               12.8        23.7         38               14.1                     6.4            4.8    0.1
-4 NBC                  1221      2291       3411           1157                   548          331     1               13.6        25.6         38.1             12.9                     6.1            3.7    0  
-5 CBS                  1046      1931       3252           1244                   556          374     8               12.4        23           38.7             14.8                     6.6            4.4    0.1
-6 MSNBC                1606      2770       2629            415                   165          165     2               20.7        35.7         33.9              5.4                     2.1            2.1    0  
-7 PBS                   701      1128       1337            320                   133          104    NA               18.8        30.3         35.9              8.6                     3.6            2.8   NA  
-8 Other                 270       292        718            678                   415          108     2               10.9        11.8         28.9             27.3                    16.7            4.3    0.1
-```
 
 Ideological composition of network news viewers bar chart 2020
 ```{r}
@@ -463,21 +432,6 @@ cc_media |>
   mutate(pct = n/sum(n) * 100)
 ```
 
-```
-# A tibble: 9 × 3
-  networks_watched     n     pct
-             <dbl> <int>   <dbl>
-1                0 35208 57.7   
-2                1  8917 14.6   
-3                2  7266 11.9   
-4                3  4425  7.25  
-5                4  2558  4.19  
-6                5  1395  2.29  
-7                6   796  1.30  
-8                7   392  0.643 
-9                8    43  0.0705
-```
-
 
 Cross tab of relationship between ideology and number of networks watched in 2020
 ```{r}
@@ -503,17 +457,6 @@ cc_media |>
   filter(!is.na(ideo5))
 ```
 
-```
-# A tibble: 6 × 6
-  ideo5                 n mean_networks median_networks zero_networks multiple_networks
-  <fct>             <int>         <dbl>           <dbl>         <dbl>             <dbl>
-1 Very Liberal       8132         1.03                0          59.0              28.1
-2 Liberal           11331         1.28                0          50.9              36.2
-3 Moderate          19226         1.14                0          56.4              30.9
-4 Conservative      10716         0.895               0          55.9              24.5
-5 Very Conservative  6803         0.761               0          57.7              19.2
-6 Not Sure           4752         0.478               0          81.0              12.6
-```
 
 
 bar chart of above FOR 2020
@@ -599,20 +542,6 @@ cc_media |>
   arrange(desc(mean_age))
 ```
 
-```
-# A tibble: 8 × 4
-  network  mean_age median_age     n
-  <chr>       <dbl>      <dbl> <int>
-1 PBS          55.8         59  3723
-2 MSNBC        55.5         58  7752
-3 Other        54.2         57  2483
-4 NBC          54.1         57  8960
-5 Fox News     53.9         57 10494
-6 CBS          53.6         57  8411
-7 ABC          52.4         56  9430
-8 CNN          50.3         52 10542
-```
-
 age groups and visualize the distribution
 ```{r}
 # Create age distribution plot
@@ -659,26 +588,6 @@ What is the correlation between respondents' policy preferences and their media 
 
 
 ```{r}
-# Read in policy preferences data
-policy_prefs <- read_dta("cumulative_ces_policy_preferences.dta")
-```
-
-
-```{r}
-# Merge policy preferences with media data
-cc_media_policy <- cc_media |>
-  filter(year == 2020) |>  # Focus on 2020 data
-  # Convert case_id to character for matching
-  mutate(case_id = as.character(case_id)) |>
-  left_join(
-    policy_prefs |> 
-      select(case_id, enviro_carbon, immig_border, guns_assaultban),
-    by = "case_id"
-  )
-```
-
-
-```{r}
 # Create a summary of policy preferences by network viewership
 network_policy_summary <- cc_media_policy |>
   select(matches("300b_[1-8]"), enviro_carbon, immig_border, guns_assaultban) |>
@@ -702,20 +611,6 @@ network_policy_summary <- cc_media_policy |>
   arrange(desc(n))
 
 network_policy_summary
-```
-
-```
-# A tibble: 8 × 5
-  network  carbon_support border_support assault_ban_support     n
-  <chr>             <dbl>          <dbl>               <dbl> <int>
-1 CNN               0.877          0.463               0.822 10542
-2 Fox News          0.460          0.841               0.425 10494
-3 ABC               0.818          0.572               0.777  9430
-4 NBC               0.829          0.547               0.799  8960
-5 CBS               0.803          0.583               0.765  8411
-6 MSNBC             0.914          0.398               0.879  7752
-7 PBS               0.874          0.444               0.828  3723
-8 Other             0.528          0.712               0.485  2483
 ```
 
 ```{r}
@@ -799,29 +694,6 @@ mod_ideology <- lm(ideo5 ~ watches_fox + watches_msnbc + watches_cnn,
 summary(mod_ideology)
 ```
 
-```
-Call:
-lm(formula = ideo5 ~ watches_fox + watches_msnbc + watches_cnn, 
-    data = cc_media_policy)
-
-Residuals:
-    Min      1Q  Median      3Q     Max 
--2.9630 -0.9460  0.0370  0.5881  3.9836 
-
-Coefficients:
-                  Estimate Std. Error t value Pr(>|t|)    
-(Intercept)        2.94600    0.01191  247.37   <2e-16 ***
-watches_foxTRUE    1.01705    0.01441   70.57   <2e-16 ***
-watches_msnbcTRUE -0.53412    0.01609  -33.19   <2e-16 ***
-watches_cnnTRUE   -0.39551    0.01480  -26.72   <2e-16 ***
----
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-
-Residual standard error: 1.099 on 25793 degrees of freedom
-  (35203 observations deleted due to missingness)
-Multiple R-squared:  0.2795,    Adjusted R-squared:  0.2794 
-F-statistic:  3336 on 3 and 25793 DF,  p-value: < 2.2e-16
-```
 
 1. **Strong Network-Ideology Relationship**
    - Fox News viewing associated with +1.02 points on ideology scale (more conservative)
