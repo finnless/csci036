@@ -390,7 +390,198 @@ Analysis of Age and Network News Viewership:
 This suggests traditional TV news, regardless of network, primarily reaches older Americans, with CNN being somewhat more successful at attracting younger viewers.
 
 
+## Q3: Opinion
+What is the correlation between respondents' policy preferences and their media source preferences? Additionally, how does this correlation compare to the relationship between their policy preferences and ideology?
+
+
+
 
 # TODO
  - X Import 2020 CCES data
  - Use `cumulative_ces_policy_preferences.dta` which ends in 2021
+
+
+```{r}
+# Read in policy preferences data
+policy_prefs <- read_dta("cumulative_ces_policy_preferences.dta")
+```
+
+
+```{r}
+# Merge policy preferences with media data
+cc_media_policy <- cc_media |>
+  filter(year == 2020) |>  # Focus on 2020 data
+  # Convert case_id to character for matching
+  mutate(case_id = as.character(case_id)) |>
+  left_join(
+    policy_prefs |> 
+      select(case_id, enviro_carbon, immig_border, guns_assaultban),
+    by = "case_id"
+  )
+```
+
+
+```{r}
+# Create a summary of policy preferences by network viewership
+network_policy_summary <- cc_media_policy |>
+  select(matches("300b_[1-8]"), enviro_carbon, immig_border, guns_assaultban) |>
+  # Reshape to long format for network viewing
+  pivot_longer(
+    cols = matches("300b_"),
+    names_to = "network",
+    values_to = "watches"
+  ) |>
+  filter(watches == 1) |>  # Keep only viewers
+  mutate(
+    network = clean_network_names(network)
+  ) |>
+  group_by(network) |>
+  summarise(
+    # Calculate mean support for each policy
+    # Note: might need to adjust based on how policies are coded
+    carbon_support = mean(enviro_carbon == 1, na.rm = TRUE),
+    border_support = mean(immig_border == 1, na.rm = TRUE),
+    assault_ban_support = mean(guns_assaultban == 1, na.rm = TRUE),
+    n = n()
+  ) |>
+  arrange(desc(n))
+
+# View results
+network_policy_summary
+```
+
+
+```{r}
+# Reshape data for heatmap
+network_policy_long <- network_policy_summary |>
+  select(-n) |>
+  pivot_longer(
+    cols = ends_with("_support"),
+    names_to = "policy",
+    values_to = "support"
+  ) |>
+  mutate(
+    # Clean up policy names for display
+    policy = case_when(
+      policy == "carbon_support" ~ "Carbon Regulation",
+      policy == "border_support" ~ "Border Wall",
+      policy == "assault_ban_support" ~ "Assault Weapons Ban"
+    ),
+    # Order networks by ideological lean (roughly)
+    network = fct_relevel(network, 
+      "MSNBC", "CNN", "PBS", "ABC", "CBS", "NBC", "Other", "Fox News")
+  )
+
+# Create heatmap
+ggplot(network_policy_long, 
+       aes(x = policy, y = network, fill = support)) +
+  geom_tile() +
+  # Use diverging color scale centered at 0.5
+  scale_fill_gradient2(
+    low = "#b2182b",    # Republican red
+    mid = "white",
+    high = "#2166ac",   # Democratic blue
+    midpoint = 0.5,
+    labels = scales::percent
+  ) +
+  # Add text labels
+  geom_text(aes(label = scales::percent(support, accuracy = 1)), 
+            color = "black", size = 3) +
+  labs(
+    title = "Policy Preferences by Network Viewership",
+    x = "Policy Position",
+    y = "Network",
+    fill = "Support\nLevel",
+    caption = "Source: CCES 2020"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+```
+
+
+# Key Findings:
+
+1. **Clear Network-Policy Alignment**
+   - MSNBC and Fox News viewers show starkly opposing policy preferences
+   - MSNBC viewers strongly support climate and gun control (91%, 88%)
+   - Fox News viewers strongly support border wall (84%)
+
+2. **Broadcast Network Consistency**
+   - ABC, CBS, and NBC viewers show similar preferences
+   - Generally align with CNN/MSNBC but less strongly
+   - Support levels: ~80% for carbon regulation and assault ban, ~55% for border wall
+
+3. **Policy Polarization**
+   - Border wall shows greatest viewer polarization (84% Fox vs 40% MSNBC)
+   - Carbon regulation and assault weapon ban show similar patterns
+   - PBS viewers align closely with CNN on all issues
+
+
+```{r}
+# Create dummy variables for watching each network
+cc_media_policy <- cc_media_policy |>
+  mutate(
+    watches_fox = `300b_5` == 1,
+    watches_msnbc = `300b_6` == 1,
+    watches_cnn = `300b_4` == 1
+  )
+
+# Regression of ideology on network choice
+mod_ideology <- lm(ideo5 ~ watches_fox + watches_msnbc + watches_cnn, 
+                  data = cc_media_policy)
+summary(mod_ideology)
+```
+
+
+1. **Strong Network-Ideology Relationship**
+   - Fox News viewing associated with +1.02 points on ideology scale (more conservative)
+   - MSNBC viewing associated with -0.53 points (more liberal)
+   - CNN viewing associated with -0.40 points (more liberal)
+   - All effects highly significant (p < 0.001)
+
+2. **Model Fit**
+   - R² = 0.28, suggesting network choice explains 28% of ideological variance
+   - Baseline (intercept) ideology is 2.95 (slightly conservative)
+
+```{r}
+# Create visualization with proper handling of missing values
+cc_media_policy |>
+  # First filter to only the complete cases used in the regression
+  filter(!is.na(ideo5), !is.na(watches_fox), !is.na(watches_msnbc), !is.na(watches_cnn)) |>
+  mutate(
+    predicted_ideology = predict(mod_ideology),
+    network_combo = case_when(
+      watches_fox & !watches_msnbc & !watches_cnn ~ "Fox Only",
+      !watches_fox & watches_msnbc & !watches_cnn ~ "MSNBC Only",
+      !watches_fox & !watches_msnbc & watches_cnn ~ "CNN Only",
+      watches_fox & watches_msnbc ~ "Fox + MSNBC",
+      watches_fox & watches_cnn ~ "Fox + CNN",
+      watches_msnbc & watches_cnn ~ "MSNBC + CNN",
+      watches_fox & watches_msnbc & watches_cnn ~ "All Three",
+      TRUE ~ "None"
+    )
+  ) |>
+  group_by(network_combo) |>
+  summarise(
+    avg_ideology = mean(ideo5, na.rm = TRUE),
+    pred_ideology = mean(predicted_ideology, na.rm = TRUE),
+    n = n()
+  ) |>
+  filter(n > 100) |>  # Filter for combinations with sufficient data
+  ggplot(aes(x = reorder(network_combo, avg_ideology), y = avg_ideology)) +
+  geom_col(fill = "#b45346") +
+  geom_point(aes(y = pred_ideology), color = "black", size = 3) +
+  coord_flip() +
+  labs(
+    title = "Average Ideology by Network Viewing Combinations",
+    subtitle = "Black dots show model predictions",
+    x = "Network Combination",
+    y = "Average Ideology (1 = Very Liberal, 5 = Very Conservative)",
+    caption = "Source: CCES 2020"
+  ) +
+  theme_minimal()
+```
