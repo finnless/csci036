@@ -46,9 +46,14 @@ The cumulative data set lacks certain variables specific to media consumption an
 
 Yes, all questions involve relationships between multiple variables.
 
-1. Analyzes changes over time (numerical variable 'year') in media source preference (categorical) across different age groups (numerical) and party affiliations (categorical).
+[Had to change first question which was asking about change over time because the media source question wasn't asked for earlier years.]
+# TODO. These aren't questions, edit questions above.
+
+1. Analyzes respondant age (numerical variable 'age') vs media source preference (categorical).
 2. Explores the overlap between media consumption patterns (categorical) and political identification (categorical), requiring cross-tabulation and percentage calculations.
-3. Investigates correlations between issue priorities (could be numerical if using rating scales) and political leanings (categorical or numerical if using an ideology scale), as well as media source preferences (categorical).
+3. Investigates correlations between issue priorities (could be numerical if using rating scales) and political leanings (categorical or numerical if using an ideology scale), as well as media source preferences (categorical)
+
+# NOTE: For Q2, could check topline ideological composition of network news viewers vs overall ideological composition of CCES respondents.
 
 
 **9. What is your plan for how to work with these data set(s)? Include necessary importing/cleaning/tidying steps (with details specific to your data), as well as how you plan to answer your questions, including what data skills you'll demonstrate in answering each question.**
