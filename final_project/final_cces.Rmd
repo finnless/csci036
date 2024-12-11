@@ -97,3 +97,85 @@ cc_media |>
   ) +
   theme_minimal()
 ```
+
+
+Crosstabs ideology and media consumption
+```{r}
+# Create ideology and media consumption analysis
+cc_media_ideo <- cc_media |>
+  # Select network preferences and ideology
+  select(matches("CC22_300b_[1-8]"), ideo5) |>
+  # Reshape network data to long format
+  pivot_longer(
+    cols = matches("CC22_300b_"),
+    names_to = "network",
+    values_to = "watches"
+  ) |>
+  # Clean up network names
+  mutate(
+    network = case_when(
+      network == "CC22_300b_1" ~ "ABC",
+      network == "CC22_300b_2" ~ "CBS",
+      network == "CC22_300b_3" ~ "NBC",
+      network == "CC22_300b_4" ~ "CNN",
+      network == "CC22_300b_5" ~ "Fox News",
+      network == "CC22_300b_6" ~ "MSNBC",
+      network == "CC22_300b_7" ~ "PBS",
+      network == "CC22_300b_8" ~ "Other"
+    ),
+    # Convert ideo5 to factor
+    ideo5 = haven::as_factor(ideo5)
+  ) |>
+  # Filter for those who watch (watches == 1)
+  filter(watches == 1) |>
+  # Create cross-tabulation
+  count(network, ideo5) |>
+  # Convert to percentages within each network
+  group_by(network) |>
+  mutate(pct = n / sum(n) * 100) |>
+  ungroup()
+
+cc_media_ideo
+```
+
+Formatted Crosstabs
+```{r}
+# Create formatted table
+cc_media_ideo |>
+  # Round percentages
+  mutate(pct = round(pct, 1)) |>
+  # Pivot wider for easier reading
+  pivot_wider(
+    names_from = ideo5,
+    values_from = c(n, pct)
+  ) |>
+  # Arrange by total viewership
+  arrange(desc(rowSums(across(starts_with("n_")), na.rm = TRUE)))
+```
+
+Ideological composition of network news viewers bar chart
+```{r}
+# Create stacked bar chart
+ggplot(cc_media_ideo, aes(x = network, y = pct, fill = fct_rev(ideo5))) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_manual(values = c(
+    "Not Sure" = "grey70",
+    "NA" = "grey90",
+    "Very Liberal" = "#2166ac",      # Dark blue
+    "Liberal" = "#67a9cf",           # Light blue
+    "Moderate" = "#8f34b6",          # White/neutral
+    "Conservative" = "#ef8a62",      # Light red
+    "Very Conservative" = "#b2182b"  # Dark red
+  )) +
+  labs(
+    title = "Ideological Composition of Network News Viewers",
+    x = "Network",
+    y = "Percentage of Viewers",
+    fill = "Ideology",
+    caption = "Source: CCES 2022"
+  ) +
+  theme_minimal()
+```
+
+
